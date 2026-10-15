@@ -1,17 +1,19 @@
-/** R3.1 audit data only; this is not a runtime registry or new prompt version. */
-export const PROMPT_BASELINE_VERSION = "r3.2/modes-v1";
+import { GAME_PROMPT_VERSION, TASK_PROMPT_PROFILES } from "@/lib/ai/taskPromptProfiles";
+
+/** Audit data only; runtime generation uses the actual builders below. */
+export const PROMPT_BASELINE_VERSION = "r3.3/tasks-v1";
 export const BASELINE_SOURCE_COMMIT = "31a49a296d4b4e73447b63d272be671bf73b8030";
 
 export const PROMPT_ENTRY_POINTS = [
   { id: "chat", source: "lib/api/modelApi.ts", builder: "lib/agent/promptBuilder.ts", versions: ["r3.2/mode-prompts-v1", "mode-registry/r3.2-v1", "persona-profile/r3.2-v1", "memory-context/v2", "web-search-context/v2"], transport: "chat", format: "Markdown + optional citations", context: "server Persona, confirmed relevant memory, selected branch, optional search", fallback: "visible error / cancel, no fabricated complete answer" },
-  { id: "agent-task", source: "lib/tasks/agentPromptGenerator.ts", builder: "lib/tasks/agentPromptGenerator.ts", versions: [], transport: "agent", format: "readable text", context: "saved task prompt only; no chat Persona or global memory", fallback: "typed missing-config/empty/oversize/provider error" },
-  { id: "news", source: "lib/tasks/personalBriefingGenerator.ts", builder: "lib/tasks/personalBriefingGenerator.ts", versions: [], transport: "agent", format: "two exact Markdown headings + valid [Sn]; sources appended by code", context: "topic, Shanghai date, novel retrieved evidence; optional separate reflection call", fallback: "no sources / no novelty / invalid output errors" },
-  { id: "books", source: "lib/tasks/bookRecommendationGenerator.ts", builder: "lib/tasks/bookRecommendationGenerator.ts", versions: [], transport: "agent", format: "four exact headings; 2–3 titled books, evidence per book", context: "explicit reading profile + bibliographic search evidence", fallback: "profile/search/empty/contract errors" },
-  { id: "reflection", source: "lib/tasks/reflectionQuestionGenerator.ts", builder: "lib/tasks/reflectionQuestionGenerator.ts", versions: [], transport: "agent", format: "JSON: 3–5 candidates; code filters, scores and renders", context: "goals, avoided topics, style, bounded input; history used by selector", fallback: "disabled / invalid JSON / no quality candidate errors" },
-  { id: "memorization", source: "lib/plugins/hostCapabilityAdapters.ts", builder: "lib/plugins/hostCapabilityAdapters.ts", versions: [], transport: "agent", format: "JSON score/feedback/missedPoints", context: "plugin-authorized target, recitation, localScore; no global memory", fallback: "caller retains deterministic scoring if model evaluation unavailable" },
-  { id: "problem-solving", source: "lib/plugins/hostCapabilityAdapters.ts", builder: "lib/plugins/hostCapabilityAdapters.ts", versions: [], transport: "agent", format: "validated JSON; hint/guided/check/explain; optional attached image", context: "problem, answer, prior attempt, bounded deterministic tool evidence", fallback: "invalid result or unsupported-image error; service retains existing record" },
-  { id: "review-card", source: "lib/plugins/hostCapabilityAdapters.ts", builder: "lib/plugins/hostCapabilityAdapters.ts", versions: [], transport: "agent", format: "JSON front/back/reason/tags", context: "selected problem/attempt only", fallback: "invalid result error, no automatic task creation" },
-  { id: "game", source: "lib/game/gameTurnService.ts", builder: "lib/game/gameTurnService.ts", versions: [], transport: "game", format: "JSON narrative/statePatch; code validates and applies patch", context: "world/characters, selected branch, authoritative state/dice/check results", fallback: "invalid/empty/provider error, no partial turn committed" },
+  { id: "agent-task", source: "lib/tasks/agentPromptGenerator.ts", builder: "lib/tasks/agentPromptGenerator.ts", versions: [TASK_PROMPT_PROFILES["agent-task"].version], transport: "agent", format: "readable text", context: "saved task prompt only; no chat Persona or global memory", fallback: "typed missing-config/empty/oversize/provider error" },
+  { id: "news", source: "lib/tasks/personalBriefingGenerator.ts", builder: "lib/tasks/personalBriefingGenerator.ts", versions: [TASK_PROMPT_PROFILES["news"].version], transport: "agent", format: "two exact Markdown headings + valid [Sn]; sources appended by code", context: "topic, Shanghai date, novel retrieved evidence; optional separate reflection call", fallback: "no sources / no novelty / invalid output errors" },
+  { id: "books", source: "lib/tasks/bookRecommendationGenerator.ts", builder: "lib/tasks/bookRecommendationGenerator.ts", versions: [TASK_PROMPT_PROFILES["books"].version], transport: "agent", format: "four exact headings; 2–3 titled books, evidence per book", context: "explicit reading profile + bibliographic search evidence", fallback: "profile/search/empty/contract errors" },
+  { id: "reflection", source: "lib/tasks/reflectionQuestionGenerator.ts", builder: "lib/tasks/reflectionQuestionGenerator.ts", versions: [TASK_PROMPT_PROFILES["reflection"].version], transport: "agent", format: "JSON: 3–5 candidates; code filters, scores and renders", context: "goals, avoided topics, style, bounded input; history used by selector", fallback: "disabled / invalid JSON / no quality candidate errors" },
+  { id: "memorization", source: "lib/plugins/hostCapabilityAdapters.ts", builder: "lib/plugins/hostCapabilityAdapters.ts", versions: [TASK_PROMPT_PROFILES["memorization"].version], transport: "agent", format: "JSON score/feedback/missedPoints", context: "plugin-authorized target, recitation, localScore; no global memory", fallback: "caller retains deterministic scoring if model evaluation unavailable" },
+  { id: "problem-solving", source: "lib/plugins/hostCapabilityAdapters.ts", builder: "lib/plugins/hostCapabilityAdapters.ts", versions: [TASK_PROMPT_PROFILES["problem-solving"].version], transport: "agent", format: "validated JSON; hint/guided/check/explain; optional attached image", context: "problem, answer, prior attempt, bounded deterministic tool evidence", fallback: "invalid result or unsupported-image error; service retains existing record" },
+  { id: "review-card", source: "lib/plugins/hostCapabilityAdapters.ts", builder: "lib/plugins/hostCapabilityAdapters.ts", versions: [TASK_PROMPT_PROFILES["review-card"].version], transport: "agent", format: "JSON front/back/reason/tags", context: "selected problem/attempt only", fallback: "invalid result error, no automatic task creation" },
+  { id: "game", source: "lib/game/gameTurnService.ts", builder: "lib/game/gameTurnService.ts", versions: [GAME_PROMPT_VERSION], transport: "game", format: "JSON narrative/statePatch; code validates and applies patch", context: "world/characters, selected branch, authoritative state/dice/check results", fallback: "invalid/empty/provider error, no partial turn committed" },
 ] as const;
 export type PromptEntryId = typeof PROMPT_ENTRY_POINTS[number]["id"];
 
@@ -43,7 +45,7 @@ export const MODEL_CALLER_FILES = [
 ] as const;
 
 export const PROMPT_SOURCE_FILES = [...new Set([
-  ...MODEL_CALLER_FILES, "lib/ai/server/modelProvider.ts", "lib/ai/promptEnvelope.ts",
+  ...MODEL_CALLER_FILES, "lib/ai/server/modelProvider.ts", "lib/ai/promptEnvelope.ts", "lib/ai/taskPromptProfiles.ts", "lib/ai/modelUsage.ts",
   "lib/agent/promptBuilder.ts", "lib/agent/modeRegistry.ts", "lib/agent/policyLayer.ts",
   "lib/persona/personaProfile.ts", "lib/memory/memoryRetrieval.ts", "lib/search/webSearch.ts",
   "lib/proactivity/proactivityPolicy.ts", "lib/api/promptExportApi.ts",
@@ -51,10 +53,10 @@ export const PROMPT_SOURCE_FILES = [...new Set([
 
 export const QUALITY_DIMENSIONS = ["task-completion", "actionability", "facts-and-citations", "mode-fit", "tool-honesty", "naturalness", "continuity"] as const;
 export const KNOWN_PROMPT_GAPS = [
-  { id: "G1", target: "R3.3", finding: "All seven agent-backed task/learning families inherit the scheduled-task system instruction, even foreground learning.", status: "source-observation-not-measured-quality-loss" },
-  { id: "G2", target: "R3.3", finding: "News/books heading instructions include explanatory parentheses while validators require exact headings; real format failure rate is not measured.", status: "risk-not-a-real-model-failure" },
+  { id: "G1", target: "R3.3", finding: "Former shared scheduled-task wrapper replaced by seven business-specific prefixes for text and image requests.", status: "implemented-real-quality-not-measured" },
+  { id: "G2", target: "R3.3", finding: "News/books instructions now use exact validator headings; explanations are separate from heading lines.", status: "implemented-real-format-success-rate-not-measured" },
   { id: "G3", target: "R3.2/R4.5", finding: "Proactive contact currently uses deterministic templates, not a context-aware generation prompt.", status: "current-design-not-a-bug" },
-  { id: "G4", target: "R3.2/R3.3", finding: "Only chat has Prompt Envelope layer versions; the other task templates have no explicit template-version field.", status: "source-observation" },
+  { id: "G4", target: "R3.2/R3.3", finding: "Eight task/game template versions now travel with real provider requests and optional usage metadata; old records remain valid.", status: "implemented-no-prompt-body-logged" },
   { id: "G5", target: "R4.3", finding: "Memorization prompt allows meaning-preserving paraphrases; no separate strict verbatim/spelling task exists yet.", status: "missing-planned-capability" },
   { id: "G6", target: "R5.4/R1.3", finding: "No validated branch-aware summary in current chat assembly; old head/tail compressor is not a semantic summary baseline.", status: "pending-existing-plan" },
 ] as const;

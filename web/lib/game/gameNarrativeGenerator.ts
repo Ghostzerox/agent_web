@@ -1,4 +1,5 @@
 import type { ChatCompletionMessage } from "@/lib/ai/messages";
+import { GAME_PROMPT_VERSION } from "@/lib/ai/taskPromptProfiles";
 import {
   ModelProviderError,
   type ModelProvider,
@@ -68,7 +69,7 @@ export function createGameNarrativeGenerator(
       try {
         for await (const event of dependencies
           .createProvider(config)
-          .stream({ messages, business: "game" }, providerSignal)) {
+          .stream({ messages, business: "game", promptVersion: GAME_PROMPT_VERSION }, providerSignal)) {
           if (event.type !== "delta") continue;
           content += event.text;
           if (content.length > MAX_GAME_RESULT_LENGTH) {

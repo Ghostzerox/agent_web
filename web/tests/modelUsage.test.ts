@@ -8,6 +8,12 @@ export function usageCall(overrides: Partial<ModelCallTelemetry> = {}): ModelCal
 }
 
 describe("model usage and cost", () => {
+  it("accepts bounded template-version metadata while remaining compatible with old records", () => {
+    expect(modelCallSchema.parse(usageCall()).promptVersion).toBeUndefined();
+    expect(modelCallSchema.parse(usageCall({ promptVersion: "news/r3.3-v1" })).promptVersion).toBe("news/r3.3-v1");
+    expect(() => modelCallSchema.parse(usageCall({ promptVersion: "x".repeat(101) }))).toThrow();
+    expect(() => modelCallSchema.parse({ ...usageCall(), prompt: "private material" })).toThrow();
+  });
   it("parses DeepSeek cache accounting and equivalent cached_tokens", () => {
     expect(usageCall().usage).toEqual({ inputTokens: 100, outputTokens: 20, cachedInputTokens: 80, uncachedInputTokens: 20, reasoningTokens: null });
     expect(parseTokenUsage({ usage: { prompt_tokens: 100, completion_tokens: 20, prompt_tokens_details: { cached_tokens: 60 }, completion_tokens_details: { reasoning_tokens: 10 } } })).toMatchObject({ cachedInputTokens: 60, uncachedInputTokens: 40, reasoningTokens: 10 });

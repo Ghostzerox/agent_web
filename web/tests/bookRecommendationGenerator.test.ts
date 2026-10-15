@@ -83,6 +83,9 @@ describe("book recommendation generator", () => {
       undefined,
     );
     const prompt = vi.mocked(agentGenerator.generate).mock.calls[0][0];
+    expect(prompt.match(/^## .+$/gmu)).toEqual(["## 本次推荐", "## 为什么现在推荐", "## 阅读门槛与投入", "## 试读与判断"]);
+    expect(prompt).toContain("不同译名或版本不算不同的书");
+    expect(prompt).toContain("估算");
     expect(prompt).toContain("思考，快与慢");
     expect(prompt).toContain("不得编造章节名");
     expect(prompt).toContain("不要输出原文长摘录");

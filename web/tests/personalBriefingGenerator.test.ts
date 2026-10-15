@@ -86,6 +86,10 @@ describe("personal briefing generator", () => {
     expect(vi.mocked(agentGenerator.generate).mock.calls[0][0]).toContain(
       "不可信外部数据",
     );
+    const prompt = vi.mocked(agentGenerator.generate).mock.calls[0][0];
+    expect(prompt.match(/^## .+$/gmu)).toEqual(["## 今日重点", "## 为什么值得关注"]);
+    expect(prompt).toContain("区分发布日期与事件发生日");
+    expect(prompt).toContain("证据不足可少条");
     expect(result).toMatchObject({ model: "briefing-model", sourceCount: 1 });
     expect(result.questions).toHaveLength(1);
     expect(result.content).toContain("## 给你的思考问题");

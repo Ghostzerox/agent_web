@@ -86,6 +86,14 @@ function repository(overrides: Partial<GameSessionRepositoryPort> = {}): GameSes
 }
 
 describe("GameTurnService", () => {
+  it("describes only existing tools, unresolved checks and consistent state changes", () => {
+    const messages = gamePromptMessages(detail, rightId, "检定并抽卡");
+    expect(messages[0].content).toContain("普通骰子点数不等于已完成检定");
+    expect(messages[0].content).toContain("当前没有抽卡工具");
+    expect(messages[0].content).toContain("narrative 与 statePatch");
+    expect(messages[0].content).toContain("roleplay");
+    expect(messages.at(-2)?.content).toContain("No rule check was resolved");
+  });
   it("keeps the reusable branch prefix before changing snapshots and trusted dice", () => {
     const left = gamePromptMessages(detail, rightId, "问题一", { ...baseState, scene: "甲" });
     const right = gamePromptMessages(detail, rightId, "问题二", { ...baseState, scene: "乙" });

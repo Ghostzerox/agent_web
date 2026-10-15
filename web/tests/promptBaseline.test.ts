@@ -3,7 +3,8 @@ import { resolve } from "node:path";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { comparePromptBaselines, promptBaselineCases, promptBaselineSnapshot, runPromptBaseline } from "@/evals/r3/promptBaseline";
 import { MODEL_CALLER_FILES, MODULE_PROMPT_COVERAGE, PROMPT_ENTRY_POINTS, PROMPT_SOURCE_FILES } from "@/evals/r3/promptInventory";
-import baseline from "@/evals/r3/baseline-r3.2.json";
+import baseline from "@/evals/r3/baseline-r3.3.json";
+import previous from "@/evals/r3/baseline-r3.2.json";
 import original from "@/evals/r3/baseline.json";
 
 vi.mock("@/lib/db/client", () => ({ getDatabase: () => { throw new Error("Database access is forbidden in prompt baseline tests"); } }));
@@ -12,7 +13,7 @@ const fetch = vi.fn(() => { throw new Error("Network access is forbidden"); });
 beforeAll(async () => { vi.stubGlobal("fetch", fetch); result = await runPromptBaseline(); });
 afterAll(() => vi.unstubAllGlobals());
 
-describe("R3.1 offline prompt baseline", () => {
+describe("R3 offline prompt baselines", () => {
   it("covers nine generation families and all sixteen modules, including deterministic services", () => {
     expect(PROMPT_ENTRY_POINTS).toHaveLength(9);
     expect(MODULE_PROMPT_COVERAGE).toHaveLength(16);
@@ -27,10 +28,10 @@ describe("R3.1 offline prompt baseline", () => {
   });
 
   it("passes real assembly/validator fixtures without a Provider, search network or database", () => {
-    expect(result.total).toBe(51);
+    expect(result.total).toBe(67);
     expect(result.cases.filter((item) => !item.passed)).toEqual([]);
     expect(result.passed).toBe(result.total);
-    expect(result.cases.filter((item) => item.kind === "normal")).toHaveLength(38);
+    expect(result.cases.filter((item) => item.kind === "normal")).toHaveLength(54);
     expect(fetch).not.toHaveBeenCalled();
     expect(result.realModelCalls).toBe(0);
   });
@@ -54,7 +55,7 @@ describe("R3.1 offline prompt baseline", () => {
     expect(result.cases.every((item) => item.answerQuality === "not-measured" && item.actualInputTokens === null && item.actualOutputTokens === null && item.actualCost === null && item.latencyMs === null)).toBe(true);
     expect(JSON.stringify(result)).not.toContain("synthetic-not-a-real-key");
     expect(result.knownGaps).toHaveLength(6);
-    expect(PROMPT_ENTRY_POINTS.filter((item) => item.versions.length === 0)).toHaveLength(8);
+    expect(PROMPT_ENTRY_POINTS.every((item) => item.versions.length > 0)).toBe(true);
   });
 
   it("records no generation on disabled/no-evidence paths and rejects invalid outputs", () => {
@@ -72,14 +73,19 @@ describe("R3.1 offline prompt baseline", () => {
     expect(calls).toEqual([...MODEL_CALLER_FILES].sort());
   });
 
-  it("preserves R3.1 as a reference and changes only existing chat requests, not task or game templates", () => {
+  it("preserves R3.1 and R3.2 references; R3.3 changes task/game requests without changing chat", () => {
     const comparison = comparePromptBaselines(original, promptBaselineSnapshot(result));
     expect(original.version).toBe("r3.1/inventory-v1");
     expect(comparison.removedCases).toEqual([]);
     expect(comparison.changedExistingFixtures).toEqual([]);
-    expect(comparison.addedCases).toHaveLength(20);
-    expect(comparison.changedExistingRequests).toHaveLength(8);
-    expect(comparison.changedExistingRequests.every((item) => item.id.startsWith("chat-") && item.deltaCharacters > 0)).toBe(true);
-    expect(comparison.changedSourceFiles.sort()).toEqual(["lib/agent/modeRegistry.ts", "lib/persona/personaProfile.ts", "lib/ai/promptEnvelope.ts"].sort());
+    expect(comparison.addedCases).toHaveLength(36);
+    const taskComparison = comparePromptBaselines(previous, promptBaselineSnapshot(result));
+    expect(previous.version).toBe("r3.2/modes-v1");
+    expect(taskComparison.removedCases).toEqual([]);
+    expect(taskComparison.changedExistingFixtures).toEqual([]);
+    expect(taskComparison.addedCases).toHaveLength(16);
+    expect(taskComparison.changedExistingRequests).toHaveLength(20);
+    expect(taskComparison.changedExistingRequests.every((item) => !item.id.startsWith("chat-") && !item.id.startsWith("mode-"))).toBe(true);
+    expect(taskComparison.addedSourceFiles.sort()).toEqual(["lib/ai/taskPromptProfiles.ts", "lib/ai/modelUsage.ts"].sort());
   });
 });

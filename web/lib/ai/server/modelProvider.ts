@@ -6,6 +6,7 @@ import { inputTextCharacters, latestRequestText, resolveGenerationBudget, type G
 
 export type ModelStreamRequest = {
   business?: ModelBusiness;
+  promptVersion?: string;
   generationBudget?: GenerationBudget;
   messages: Array<
     | ChatCompletionMessage
@@ -148,6 +149,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
             attempts: state.attempts, durationMs: Date.now() - started, firstTokenMs,
             usage: state.usage, finishReason: state.finishReason, errorCode,
             requestCharacters: inputTextCharacters(request.messages), maxOutputTokens: generationBudget.maxOutputTokens,
+            ...(request.promptVersion ? { promptVersion: request.promptVersion } : {}),
             price, estimatedCost: estimateTokenCost(state.usage, price),
           });
         } catch {

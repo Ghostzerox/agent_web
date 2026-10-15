@@ -4,7 +4,7 @@
 
 基准运行源码：`31a49a296d4b4e73447b63d272be671bf73b8030`；离线基线版本 `r3.1/inventory-v1`。这个版本是评测/清单版本，不是给未版本化的运行时模板冒加版本号。
 
-R3.2 更新说明：本文保留 R3.1 盘点时的历史事实与原 31 个样例基线；当前模式/Persona 与主动问候已优化，见 [`MODE_PROMPT_GUIDE.md`](./MODE_PROMPT_GUIDE.md)。原 `baseline.json` 未覆盖，默认命令检查 `baseline-r3.2.json`（51 个样例），并打印与 R3.1 的差异。下文旧版本/数量不能作为当前运行版本。
+R3.3 更新说明：本文保留 R3.1 盘点时的历史事实与原 31 个样例基线。对话/问候优化见 [`MODE_PROMPT_GUIDE.md`](./MODE_PROMPT_GUIDE.md)，任务/学习/游戏模板见 [`TASK_PROMPT_GUIDE.md`](./TASK_PROMPT_GUIDE.md)。原 R3.1/R3.2 快照未覆盖；默认命令检查 `baseline-r3.3.json`（67 例），并打印与 R3.1/R3.2 的差异。G1/G2/G4 已在 R3.3 实现修订，真实质量仍未测。下文旧版本/数量/现状是历史记录，不能作为当前运行事实。
 
 ## 1. 调用结构与完整范围
 

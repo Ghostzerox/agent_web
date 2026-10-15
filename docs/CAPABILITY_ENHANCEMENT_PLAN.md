@@ -1,7 +1,7 @@
 # R3–R5：提示词、模块工具与分域记忆增强规划
 
 - 创建/修订：2026-10-15。
-- 状态：R3.1 清单/离线基线、R3.2 对话/问候模板实现已完成；R3.3–R3.4、R4/R5 待开发。真实模型质量/费用仍待测，不因离线基线通过而标为已验证。
+- 状态：R3.1 清单/离线基线、R3.2 对话/问候、R3.3 各类任务模板实现已完成；R3.4、R4/R5 待开发。真实模型质量/费用仍待测，不因离线基线通过而标为已验证。
 - 优先级事实来源：[`PRODUCT_MAINLINE_GUIDE.md`](./PRODUCT_MAINLINE_GUIDE.md)。
 - 目的：让每种模式更会完成自己的任务，并通过真实工具和可追溯记忆提升连续性，不另建通用 Agent 框架。
 - 承接：R1 成本观测/预算、R2 共享 UI、Core Prompt/搜索/Verifier、Phase 5 记忆、Phase 6 GameSession、Phase 7 Plugin API v1。
@@ -63,12 +63,12 @@
 |---|---|---|
 | R3.1 ✅ | 调用点/Prompt 清单与小型任务样例集 | 已完成：16 模块/9 类入口、31 个合成拼装与验证样例、源码/请求指纹、6 项差异记录及人工评分口径；真实质量未测 |
 | R3.2 ✅ | 自动/专业/陪伴/反思及主动联系模板 | 已实现四种模式与共享 Persona、规则问候文案；版本/旧导出兼容与权限限制回归通过，51 个离线场景；真实回答质量待实测 |
-| R3.3 | 新闻/书籍/定时任务/背书/解题/娱乐模板与工具说明 | 核对全部真实调用点；结构化结果可校验，缺证据不捏造，逐字/要点、主持/角色等任务差异可见 |
+| R3.3 ✅ | 新闻/书籍/定时任务/背书/解题/娱乐模板与工具说明 | 已实现七种任务前缀、标题契约对齐、学习/游戏策略及八类版本元数据；67 个离线场景。语义复述与逐字检查边界明确，逐字工具仍在 R4；真实质量待测 |
 | R3.4 | 任务质量与成本对照、集成回归 | 每类任务至少 5 个正常/边界样例；受影响 Core 固定回归保持；付费对照另获预算同意，不以 Mock 满分宣称质量提升 |
 
 质量维度：任务完成度、可操作性、事实/引用、模式适配、工具调用正确性、自然度、上下文连续性、延迟和含检索/摘要/重试的总费用。R3.1 先记录基线并约定量化门槛，不能事后只挑漂亮回答。
 
-R3.1 使用方法、完整调用链与质量对照标准见 [`PROMPT_INVENTORY_AND_BASELINE.md`](./PROMPT_INVENTORY_AND_BASELINE.md)，交付与测试见 [`reports/R3_1_REPORT.md`](./reports/R3_1_REPORT.md)。R3.2 模板与成本变化见 [`MODE_PROMPT_GUIDE.md`](./MODE_PROMPT_GUIDE.md)，交付结果见 [`reports/R3_2_REPORT.md`](./reports/R3_2_REPORT.md)。下一步为 R3.3，不是立即实施其他所有能力。
+R3.1 使用方法、完整调用链与质量对照标准见 [`PROMPT_INVENTORY_AND_BASELINE.md`](./PROMPT_INVENTORY_AND_BASELINE.md)，交付与测试见 [`reports/R3_1_REPORT.md`](./reports/R3_1_REPORT.md)。R3.2 见 [`MODE_PROMPT_GUIDE.md`](./MODE_PROMPT_GUIDE.md) 与 [`reports/R3_2_REPORT.md`](./reports/R3_2_REPORT.md)；R3.3 任务模板、版本与成本取舍见 [`TASK_PROMPT_GUIDE.md`](./TASK_PROMPT_GUIDE.md)，交付见 [`reports/R3_3_REPORT.md`](./reports/R3_3_REPORT.md)。下一步为 R3.4，不是立即实施其他所有能力。
 
 ## 4. R4：全模块工具补全与优化
 

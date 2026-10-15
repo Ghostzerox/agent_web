@@ -5,6 +5,7 @@ import {
 } from "@/lib/ai/server/modelProvider";
 import { createMeasuredProvider } from "@/lib/ai/server/measuredProvider";
 import type { ModelBusiness } from "@/lib/ai/modelUsage";
+import { taskPromptProfile, taskSystemPrompt } from "@/lib/ai/taskPromptProfiles";
 import {
   resolveModelProviderConfig,
 } from "@/lib/ai/server/modelCredentialService";
@@ -14,10 +15,6 @@ import {
 } from "@/lib/ai/server/modelConfig";
 
 const MAX_AGENT_RESULT_LENGTH = 100_000;
-
-const SCHEDULED_TASK_SYSTEM_PROMPT = `你正在执行用户预先安排的定时任务。
-请直接完成用户给出的任务，并输出可独立阅读的最终内容。
-除非用户另有要求，使用中文；不要声称已经执行你无法执行的现实世界操作。`;
 
 export type AgentPromptResult = {
   content: string;
@@ -55,16 +52,16 @@ type AgentPromptGeneratorDependencies = {
   createProvider: (config: ModelProviderConfig) => ModelProvider;
 };
 
-function promptMessages(prompt: string): ChatCompletionMessage[] {
+function promptMessages(prompt: string, business: ModelBusiness): ChatCompletionMessage[] {
   return [
-    { role: "system", content: SCHEDULED_TASK_SYSTEM_PROMPT },
+    { role: "system", content: taskSystemPrompt(business) },
     { role: "user", content: prompt },
   ];
 }
 
-function promptMessagesWithImage(prompt: string, imageDataUrl: string) {
+function promptMessagesWithImage(prompt: string, imageDataUrl: string, business: ModelBusiness) {
   return [
-    { role: "system" as const, content: SCHEDULED_TASK_SYSTEM_PROMPT },
+    { role: "system" as const, content: taskSystemPrompt(business) },
     {
       role: "user" as const,
       content: [
@@ -108,7 +105,7 @@ export function createAgentPromptGenerator(
     try {
       for await (const event of dependencies
         .createProvider(config)
-        .stream({ messages, business: options?.business ?? "agent-task" }, providerSignal)) {
+        .stream({ messages, business: options?.business ?? "agent-task", promptVersion: taskPromptProfile(options?.business ?? "agent-task").version }, providerSignal)) {
         if (event.type !== "delta") continue;
         content += event.text;
         if (content.length > MAX_AGENT_RESULT_LENGTH) {
@@ -146,10 +143,10 @@ export function createAgentPromptGenerator(
 
   return {
     async generate(prompt, signal, options) {
-      return generateMessages(promptMessages(prompt), signal, options);
+      return generateMessages(promptMessages(prompt, options?.business ?? "agent-task"), signal, options);
     },
     async generateWithImage(prompt, imageDataUrl, signal, options) {
-      return generateMessages(promptMessagesWithImage(prompt, imageDataUrl), signal, options);
+      return generateMessages(promptMessagesWithImage(prompt, imageDataUrl, options?.business ?? "agent-task"), signal, options);
     },
   };
 }

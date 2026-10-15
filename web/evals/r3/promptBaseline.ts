@@ -21,6 +21,8 @@ import type { Session } from "@/lib/config";
 import { rollGameDice } from "@/lib/game/dice";
 import { BASELINE_SOURCE_COMMIT, KNOWN_PROMPT_GAPS, MODULE_PROMPT_COVERAGE, PROMPT_BASELINE_VERSION, PROMPT_SOURCE_FILES, QUALITY_DIMENSIONS, type PromptEntryId } from "./promptInventory";
 import { MODE_QUALITY_SCENARIOS } from "./modeQualityScenarios";
+import { TASK_QUALITY_SCENARIOS } from "./taskQualityScenarios";
+import { GAME_PROMPT_VERSION, taskPromptProfile, taskSystemPrompt } from "@/lib/ai/taskPromptProfiles";
 
 export const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 const date = new Date("2026-10-15T01:00:00.000Z");
@@ -146,6 +148,30 @@ export function promptBaselineCases(): PromptBaselineCase[] {
   for (const scenario of MODE_QUALITY_SCENARIOS) {
     cases.push({ ...scenario, id: `mode-${scenario.id}`, entry: "chat", kind: "normal", mockOutput: "合成回答；不用于判断实际质量。",
       async run(h) { await captureChat(h, { ...chatFixture(this.input), mode: scenario.mode }); },
+    });
+  }
+  for (const scenario of TASK_QUALITY_SCENARIOS) {
+    const mockOutputs = { "agent-task": "合成任务结果。", news: newsOutput, books: booksOutput, reflection: reflectionOutput,
+      memorization: '{"score":50,"feedback":"合成反馈，未测模型质量。","missedPoints":[]}', "problem-solving": problemOutput,
+      "review-card": '{"front":"如何复核加法？","back":"逐项计数后用逆运算检查。","reason":"避免未校验结果。","tags":["加法"]}', game: '{"narrative":"港口笼罩着薄雾。","statePatch":{}}' };
+    cases.push({ ...scenario, id: `task-probe-${scenario.id}`, kind: "normal", mockOutput: mockOutputs[scenario.entry],
+      async run(h) {
+        switch (scenario.entry) {
+          case "agent-task": await h.agent.generate(this.input); break;
+          case "news": await createPersonalBriefingGenerator({ agent: h.agent, search: { search: async () => evidence } }).generate(this.input, date, id); break;
+          case "books": await createBookRecommendationGenerator({ agent: h.agent, profiles: { get: async () => reading }, search: { search: async () => evidence } }).generate(this.input, date); break;
+          case "reflection": await createReflectionQuestionGenerator({ agent: h.agent, preferences: { get: async () => preferences }, history: { listRecentReflectionQuestions: async () => [] } }).generate(this.input, "本周英语学习记录待复盘。", date); break;
+          case "memorization": await operations.execute("study.memorization", "memorization.evaluate", { materialTitle: "蒸发", cue: "解释蒸发", target: "液态水变成水蒸气叫蒸发", recitation: this.input, localScore: 100 }, h.agent); break;
+          case "problem-solving": await operations.execute("study.problem-solving", "problem-solving.respond", { title: "条件缺失", problemText: this.input, strategy: "hint", userAnswer: null, priorContext: "", toolEvidence: "", imageDataUrl: null }, h.agent); break;
+          case "review-card": await operations.execute("study.problem-solving", "problem-solving.review-card", { title: "加法检查", problemSummary: "加法结果待复核", userAnswer: null, misconception: null, errorTags: [], response: this.input }, h.agent); break;
+          case "game": await createGameNarrativeGenerator({ getConfig: () => config, createProvider: () => h.provider }).generate(gamePromptMessages(gameFixture(), null, this.input)); break;
+        }
+        const request = h.requests[0];
+        check(request.business === scenario.entry, "Wrong business attribution");
+        check(request.promptVersion === (scenario.entry === "game" ? GAME_PROMPT_VERSION : taskPromptProfile(scenario.entry).version), "Missing actual prompt version");
+        if (scenario.entry !== "game") check(request.messages[0].content === taskSystemPrompt(scenario.entry), "Wrong task system instruction");
+        check(requestText(h).includes(this.input), "Scenario input did not reach actual builder");
+      },
     });
   }
   return cases;

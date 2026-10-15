@@ -89,6 +89,10 @@ describe("reflection question generator", () => {
     );
     expect(result.questions).toHaveLength(1);
     expect(result.content).toContain("系统从 3 个候选中筛选出 1 个");
+    const prompt = agent.generate.mock.calls[0][0];
+    expect(prompt).toContain("恰好一个问号");
+    expect(prompt).toContain("challenging");
+    expect(prompt).toContain("不虚构用户过往");
   });
 
   it("respects the global off switch without calling the model", async () => {

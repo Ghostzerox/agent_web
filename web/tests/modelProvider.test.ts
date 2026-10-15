@@ -79,11 +79,12 @@ describe("OpenAICompatibleProvider", () => {
     vi.stubGlobal("fetch", fetcher);
     const provider = new OpenAICompatibleProvider({ apiKey: "server-secret", baseUrl: "https://api.deepseek.com", model: "mock" }, record);
     const events = [];
-    for await (const event of provider.stream({ messages: [{ role: "user", content: "private question" }], business: "news" })) events.push(event);
+    for await (const event of provider.stream({ messages: [{ role: "user", content: "private question" }], business: "news", promptVersion: "news/r3.3-v1" })) events.push(event);
     expect(JSON.parse(fetcher.mock.calls[0][1].body)).toMatchObject({ stream_options: { include_usage: true } });
+    expect(JSON.parse(fetcher.mock.calls[0][1].body)).not.toHaveProperty("promptVersion");
     expect(events.at(-1)).toMatchObject({ type: "done", finishReason: "stop", usage: { cachedInputTokens: 80 } });
     expect(record).toHaveBeenCalledTimes(1);
-    expect(record.mock.calls[0][0]).toMatchObject({ business: "news", status: "completed", attempts: 1, estimatedCost: null, usage: { inputTokens: 100 } });
+    expect(record.mock.calls[0][0]).toMatchObject({ business: "news", promptVersion: "news/r3.3-v1", status: "completed", attempts: 1, estimatedCost: null, usage: { inputTokens: 100 } });
     expect(JSON.stringify(record.mock.calls)).not.toMatch(/server-secret|private question|回答/u);
   });
 

@@ -8,6 +8,7 @@ import {
 import {
   createAgentPromptGenerator,
 } from "@/lib/tasks/agentPromptGenerator";
+import { TASK_PROMPT_PROFILES, taskSystemPrompt } from "@/lib/ai/taskPromptProfiles";
 
 async function* streamText(...parts: string[]) {
   for (const text of parts) yield { type: "delta" as const, text };
@@ -15,6 +16,22 @@ async function* streamText(...parts: string[]) {
 }
 
 describe("Agent Prompt generator", () => {
+  it.each(Object.keys(TASK_PROMPT_PROFILES) as Array<keyof typeof TASK_PROMPT_PROFILES>)("selects the %s system prefix and version for text and images", async (business) => {
+    const requests: ModelStreamRequest[] = [];
+    const generator = createAgentPromptGenerator({
+      getConfig: () => ({ apiKey: "test-key", baseUrl: "https://provider.invalid/v1", model: "mock" }),
+      createProvider: () => ({ async *stream(request) { requests.push(request); yield* streamText("合成输出"); } }),
+    });
+    await generator.generate("本次材料", undefined, { business });
+    await generator.generateWithImage?.("本次材料", "data:image/png;base64,aGVsbG8=", undefined, { business });
+    for (const request of requests) {
+      expect(request).toMatchObject({ business, promptVersion: TASK_PROMPT_PROFILES[business].version });
+      expect(request.messages[0]).toEqual({ role: "system", content: taskSystemPrompt(business) });
+      if (business !== "agent-task") expect(request.messages[0].content).not.toContain("定时任务");
+    }
+    expect(requests).toHaveLength(2);
+  });
+
   it("uses the server provider directly and collects streamed output", async () => {
     const stream = vi.fn(
       (request: ModelStreamRequest, signal?: AbortSignal) => {
