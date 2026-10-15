@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -9,6 +9,16 @@ async function readProjectFile(relativePath: string) {
 }
 
 describe("single-user self-hosting artifacts", () => {
+  it("pins migration SQL to LF so Windows worktrees preserve applied checksums", async () => {
+    expect(await readProjectFile(".gitattributes")).toMatch(/^\*\.sql text eol=lf$/mu);
+    const entries = await readdir(path.join(projectRoot, "web/drizzle"), { recursive: true });
+    const sql = entries.filter((entry) => entry.endsWith(".sql"));
+    expect(sql.length).toBeGreaterThan(0);
+    for (const relative of sql) {
+      expect(await readProjectFile(path.join("web/drizzle", relative)), relative).not.toContain("\r\n");
+    }
+  });
+
   it("keeps PostgreSQL private and persists it in a named volume", async () => {
     const compose = await readProjectFile("docker-compose.yml");
     const postgresSection = compose.split("  web:")[0];

@@ -1,9 +1,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
-import { promptBaselineCases, promptBaselineSnapshot, runPromptBaseline } from "@/evals/r3/promptBaseline";
+import { comparePromptBaselines, promptBaselineCases, promptBaselineSnapshot, runPromptBaseline } from "@/evals/r3/promptBaseline";
 import { MODEL_CALLER_FILES, MODULE_PROMPT_COVERAGE, PROMPT_ENTRY_POINTS, PROMPT_SOURCE_FILES } from "@/evals/r3/promptInventory";
-import baseline from "@/evals/r3/baseline.json";
+import baseline from "@/evals/r3/baseline-r3.2.json";
+import original from "@/evals/r3/baseline.json";
 
 vi.mock("@/lib/db/client", () => ({ getDatabase: () => { throw new Error("Database access is forbidden in prompt baseline tests"); } }));
 let result: Awaited<ReturnType<typeof runPromptBaseline>>;
@@ -26,10 +27,10 @@ describe("R3.1 offline prompt baseline", () => {
   });
 
   it("passes real assembly/validator fixtures without a Provider, search network or database", () => {
-    expect(result.total).toBe(31);
+    expect(result.total).toBe(51);
     expect(result.cases.filter((item) => !item.passed)).toEqual([]);
     expect(result.passed).toBe(result.total);
-    expect(result.cases.filter((item) => item.kind === "normal")).toHaveLength(18);
+    expect(result.cases.filter((item) => item.kind === "normal")).toHaveLength(38);
     expect(fetch).not.toHaveBeenCalled();
     expect(result.realModelCalls).toBe(0);
   });
@@ -69,5 +70,16 @@ describe("R3.1 offline prompt baseline", () => {
       .filter((path) => /\.(?:stream|generate|generateWithImage)(?:\?\.)?\s*\(/u.test(readFileSync(resolve("lib", path), "utf8")))
       .map((path) => `lib/${path.replaceAll("\\", "/")}`).sort();
     expect(calls).toEqual([...MODEL_CALLER_FILES].sort());
+  });
+
+  it("preserves R3.1 as a reference and changes only existing chat requests, not task or game templates", () => {
+    const comparison = comparePromptBaselines(original, promptBaselineSnapshot(result));
+    expect(original.version).toBe("r3.1/inventory-v1");
+    expect(comparison.removedCases).toEqual([]);
+    expect(comparison.changedExistingFixtures).toEqual([]);
+    expect(comparison.addedCases).toHaveLength(20);
+    expect(comparison.changedExistingRequests).toHaveLength(8);
+    expect(comparison.changedExistingRequests.every((item) => item.id.startsWith("chat-") && item.deltaCharacters > 0)).toBe(true);
+    expect(comparison.changedSourceFiles.sort()).toEqual(["lib/agent/modeRegistry.ts", "lib/persona/personaProfile.ts", "lib/ai/promptEnvelope.ts"].sort());
   });
 });

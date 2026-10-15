@@ -1,9 +1,9 @@
 /** R3.1 audit data only; this is not a runtime registry or new prompt version. */
-export const PROMPT_BASELINE_VERSION = "r3.1/inventory-v1";
+export const PROMPT_BASELINE_VERSION = "r3.2/modes-v1";
 export const BASELINE_SOURCE_COMMIT = "31a49a296d4b4e73447b63d272be671bf73b8030";
 
 export const PROMPT_ENTRY_POINTS = [
-  { id: "chat", source: "lib/api/modelApi.ts", builder: "lib/agent/promptBuilder.ts", versions: ["r1/cache-friendly-v1", "mode-registry/v1", "persona-profile/v1", "memory-context/v2", "web-search-context/v2"], transport: "chat", format: "Markdown + optional citations", context: "server Persona, confirmed relevant memory, selected branch, optional search", fallback: "visible error / cancel, no fabricated complete answer" },
+  { id: "chat", source: "lib/api/modelApi.ts", builder: "lib/agent/promptBuilder.ts", versions: ["r3.2/mode-prompts-v1", "mode-registry/r3.2-v1", "persona-profile/r3.2-v1", "memory-context/v2", "web-search-context/v2"], transport: "chat", format: "Markdown + optional citations", context: "server Persona, confirmed relevant memory, selected branch, optional search", fallback: "visible error / cancel, no fabricated complete answer" },
   { id: "agent-task", source: "lib/tasks/agentPromptGenerator.ts", builder: "lib/tasks/agentPromptGenerator.ts", versions: [], transport: "agent", format: "readable text", context: "saved task prompt only; no chat Persona or global memory", fallback: "typed missing-config/empty/oversize/provider error" },
   { id: "news", source: "lib/tasks/personalBriefingGenerator.ts", builder: "lib/tasks/personalBriefingGenerator.ts", versions: [], transport: "agent", format: "two exact Markdown headings + valid [Sn]; sources appended by code", context: "topic, Shanghai date, novel retrieved evidence; optional separate reflection call", fallback: "no sources / no novelty / invalid output errors" },
   { id: "books", source: "lib/tasks/bookRecommendationGenerator.ts", builder: "lib/tasks/bookRecommendationGenerator.ts", versions: [], transport: "agent", format: "four exact headings; 2–3 titled books, evidence per book", context: "explicit reading profile + bibliographic search evidence", fallback: "profile/search/empty/contract errors" },
@@ -46,6 +46,7 @@ export const PROMPT_SOURCE_FILES = [...new Set([
   ...MODEL_CALLER_FILES, "lib/ai/server/modelProvider.ts", "lib/ai/promptEnvelope.ts",
   "lib/agent/promptBuilder.ts", "lib/agent/modeRegistry.ts", "lib/agent/policyLayer.ts",
   "lib/persona/personaProfile.ts", "lib/memory/memoryRetrieval.ts", "lib/search/webSearch.ts",
+  "lib/proactivity/proactivityPolicy.ts", "lib/api/promptExportApi.ts",
 ])].sort();
 
 export const QUALITY_DIMENSIONS = ["task-completion", "actionability", "facts-and-citations", "mode-fit", "tool-honesty", "naturalness", "continuity"] as const;

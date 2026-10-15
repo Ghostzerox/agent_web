@@ -5,6 +5,7 @@ import type {
 import { nextAllowedPushAt } from "@/lib/notifications/quietHours";
 
 const SHANGHAI_OFFSET_MS = 8 * 60 * 60 * 1000;
+export const PROACTIVITY_COPY_VERSION = "proactivity-copy/r3.2-v1" as const;
 
 export type ProactivitySignal = {
   reason: ProactivityReason;
@@ -136,7 +137,7 @@ export function evaluateProactivity(
       triggerKey: `goal_followup:${signal.refId}:${dayKey}`,
       triggerRefId: signal.refId,
       title: `${compact(input.assistantName, 30)}的目标问候`,
-      body: `${prefix}你之前确认过一个目标：“${goal}”。如果今天合适，可以花几分钟看看最小的下一步；现在不方便也完全没关系。`,
+      body: `${prefix}你之前确认的目标是：“${goal}”。今天想继续一点，还是先歇歇？如果愿意，我们可以只挑一个几分钟能做的小步骤；现在不方便也完全没关系。`,
       rationale: "因为你开启了“已确认目标跟进”，并且这项目标仍然有效。",
     };
   }
@@ -146,7 +147,7 @@ export function evaluateProactivity(
     triggerKey: `checkin:${signal.refId}:${dayKey}`,
     triggerRefId: signal.refId,
     title: `${compact(input.assistantName, 30)}的温和问候`,
-    body: `${prefix}来轻轻问候一下。你开启了 ${input.policy.checkinAfterDays} 天未互动后的问候；如果今天想聊聊，我在这里。现在不想回应也完全没关系。`,
+    body: `${prefix}来和你打个招呼。今天想随便聊聊，还是说说最近在做的事？不需要准备好话题，现在不想回应也完全没关系。`,
     rationale: `因为你主动开启了 ${input.policy.checkinAfterDays} 天未互动后的温和问候。`,
   };
 }

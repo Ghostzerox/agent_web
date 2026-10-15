@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluateProactivity,
+  PROACTIVITY_COPY_VERSION,
   type ProactivityEvaluationInput,
 } from "@/lib/proactivity/proactivityPolicy";
 
@@ -94,5 +95,23 @@ describe("proactivity policy", () => {
       now: new Date("2026-09-28T15:00:00.000Z"),
       signals: [{ reason: "goal_followup", refId: "goal-1", content: "目标" }],
     }))).toEqual({ status: "skipped", code: "quiet_hours" });
+  });
+
+  it("uses the revised conversational copy while retaining a separate policy explanation", () => {
+    const decision = evaluateProactivity(input({ signals: [{ reason: "checkin", refId: "message-1", lastUserActivityAt: new Date("2026-09-20T00:00:00.000Z") }] }));
+    expect(PROACTIVITY_COPY_VERSION).toBe("proactivity-copy/r3.2-v1");
+    expect(decision.status).toBe("created");
+    if (decision.status !== "created") throw new Error("Expected contact");
+    expect(decision.body).toContain("今天想随便聊聊");
+    expect(decision.body).not.toContain("你开启了");
+    expect(decision.body).toContain("不想回应也完全没关系");
+    expect(decision.rationale).toContain("主动开启了 3 天");
+    expect(decision.body).not.toMatch(/你一定|你肯定|想你|为什么不回|让我失望/u);
+  });
+
+  it("does not contact users for a disallowed or already-used reason", () => {
+    const signal = { reason: "goal_followup" as const, refId: "goal-1", content: "完成作品集" };
+    expect(evaluateProactivity(input({ policy: { ...input().policy, allowedReasons: ["checkin"] }, signals: [signal] }))).toEqual({ status: "skipped", code: "no_signal" });
+    expect(evaluateProactivity(input({ usedTriggerKeys: new Set(["goal_followup:goal-1:2026-09-28"]), signals: [signal] }))).toEqual({ status: "skipped", code: "no_signal" });
   });
 });

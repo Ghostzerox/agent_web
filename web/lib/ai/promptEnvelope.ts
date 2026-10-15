@@ -4,9 +4,11 @@ import {
   type PromptMessage,
 } from "@/lib/ai/messages";
 import type { GenerationBudget } from "@/lib/ai/server/tokenBudget";
+import { CORE_MODE_PROMPT_VERSION } from "@/lib/agent/modeRegistry";
+import { PERSONA_PROMPT_VERSION } from "@/lib/persona/personaProfile";
 
 export const PROMPT_ENVELOPE_SCHEMA_VERSION = 1 as const;
-export const PROMPT_COMPOSER_VERSION = "r1/cache-friendly-v1" as const;
+export const PROMPT_COMPOSER_VERSION = "r3.2/mode-prompts-v1" as const;
 
 export type PromptTrigger = "send" | "retry";
 
@@ -22,7 +24,7 @@ export type PromptEnvelope = {
     activeLeafId: string | null;
   };
   composer: {
-    version: typeof PROMPT_COMPOSER_VERSION | "phase-5.2/v1" | "phase-5.3/v1";
+    version: typeof PROMPT_COMPOSER_VERSION | "r1/cache-friendly-v1" | "phase-5.2/v1" | "phase-5.3/v1";
     layerOrder: Array<PromptMessage["source"]>;
   };
   provider: ModelRequestMetadata;
@@ -63,9 +65,9 @@ export type PromptEnvelope = {
 
 const LAYER_VERSIONS: Record<PromptMessage["source"], string> = {
   policy: "core-policy/v1",
-  mode: "mode-registry/v1",
+  mode: CORE_MODE_PROMPT_VERSION,
   citation: "citation-policy/v1",
-  persona: "persona-profile/v1",
+  persona: PERSONA_PROMPT_VERSION,
   memory: "memory-context/v2",
   "web-search": "web-search-context/v2",
   conversation: "conversation-tree/v2",

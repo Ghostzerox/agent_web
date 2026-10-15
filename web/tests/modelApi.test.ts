@@ -108,7 +108,7 @@ describe("Model API", () => {
     expect(body).toContain('"baseUrl":"https://provider.example/v1"');
     expect(body).toContain('"model":"test-model"');
     expect(body).toContain('"format":"ai-study-companion.prompt-envelope"');
-    expect(body).toContain('"composer":{"version":"r1/cache-friendly-v1"');
+    expect(body).toContain('"composer":{"version":"r3.2/mode-prompts-v1"');
     expect(body).toContain('event: delta\ndata: {"text":"专业"}');
     expect(body).toContain('event: delta\ndata: {"text":"回答"}');
     expect(body).toContain("event: done");

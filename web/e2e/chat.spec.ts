@@ -6,6 +6,7 @@ import { verifyResponse } from "../lib/ai/responseVerifier";
 import type {
   MessageCitation,
   ResponseVerification,
+  PromptMessage,
 } from "../lib/ai/messages";
 
 type MockMessage = {
@@ -344,6 +345,30 @@ test("persists the selected conversation mode across reloads", async ({ page }) 
   );
 });
 
+test("sends revised mode and shared Persona instructions for four modes", async ({ page }) => {
+  await installServerDataMock(page);
+  const captured: PromptMessage[][] = [];
+  await page.route("**/api/v1/model/stream", (route) => {
+    captured.push(route.request().postDataJSON().prompt);
+    return route.fulfill({ contentType: "text/event-stream", body: 'event: delta\ndata: {"text":"合成回归回答。"}\n\nevent: done\ndata: {}\n\n' });
+  });
+  await page.goto("/chat");
+  for (const [mode, rule] of [["auto", "不把普通问题强行心理分析"], ["professional", "先给直接结论"], ["companion", "不急着列计划"], ["reflection", "一次提出一到两个"]]) {
+    await page.getByRole("button", { name: "+ 新建对话" }).click();
+    const selector = page.getByRole("combobox", { name: "对话模式" });
+    await selector.selectOption(mode);
+    await expect(selector).toHaveValue(mode);
+    await page.getByLabel("消息输入").fill("请直接回答：2+2等于几？不要追问。");
+    await page.getByLabel("消息输入").press("Enter");
+    await expect(page.getByText("合成回归回答。", { exact: true })).toBeVisible();
+    await expect(selector).toBeEnabled();
+    expect(captured.at(-1)?.find((message) => message.source === "mode")?.content).toContain(rule);
+    expect(captured.at(-1)?.find((message) => message.source === "persona")?.content).toContain("不必每轮以问题结束");
+  }
+  expect(captured).toHaveLength(4);
+  expect(new Set(captured.map((prompt) => prompt[0].content)).size).toBe(1);
+});
+
 test("offers review instead of silently saving an explicit memory", async ({ page }) => {
   await installServerDataMock(page);
   await page.route("**/api/v1/model/stream", (route) =>
@@ -457,7 +482,7 @@ test("exports the exact latest model Prompt as JSON", async ({ page }) => {
   });
   expect(exported.envelope).toMatchObject({
     schemaVersion: 1,
-    composerVersion: "r1/cache-friendly-v1",
+    composerVersion: "r3.2/mode-prompts-v1",
   });
   expect(exported.integrity.auditContentHash).toMatch(/^[a-f0-9]{64}$/);
   expect(exported.request.messages.at(-1)).toEqual({

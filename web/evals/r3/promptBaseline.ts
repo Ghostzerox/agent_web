@@ -20,6 +20,7 @@ import type { RetrievedMemory } from "@/lib/memory/memoryRetrieval";
 import type { Session } from "@/lib/config";
 import { rollGameDice } from "@/lib/game/dice";
 import { BASELINE_SOURCE_COMMIT, KNOWN_PROMPT_GAPS, MODULE_PROMPT_COVERAGE, PROMPT_BASELINE_VERSION, PROMPT_SOURCE_FILES, QUALITY_DIMENSIONS, type PromptEntryId } from "./promptInventory";
+import { MODE_QUALITY_SCENARIOS } from "./modeQualityScenarios";
 
 export const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 const date = new Date("2026-10-15T01:00:00.000Z");
@@ -142,6 +143,11 @@ export function promptBaselineCases(): PromptBaselineCase[] {
       async run(h) { const session = { ...gameFixture(), kind }; const messages = gamePromptMessages(session, null, this.input, undefined, kind === "tabletop" ? [{ kind: "dice_roll", payload: rollGameDice({ count: 1, sides: 20, modifier: 0, purpose: "观察" }, "synthetic-seed") }] : []); await createGameNarrativeGenerator({ getConfig: () => config, createProvider: () => h.provider }).generate(messages); check(requestText(h).includes("虚构 GameSession") && requestText(h).includes("可信结果"), "Missing actual game contract"); },
     });
   }
+  for (const scenario of MODE_QUALITY_SCENARIOS) {
+    cases.push({ ...scenario, id: `mode-${scenario.id}`, entry: "chat", kind: "normal", mockOutput: "合成回答；不用于判断实际质量。",
+      async run(h) { await captureChat(h, { ...chatFixture(this.input), mode: scenario.mode }); },
+    });
+  }
   return cases;
 }
 
@@ -175,4 +181,19 @@ export async function runPromptBaseline() {
 export function promptBaselineSnapshot(result: Awaited<ReturnType<typeof runPromptBaseline>>) {
   return { version: result.version, sourceHashes: result.sourceHashes,
     snapshots: Object.fromEntries(result.cases.map(({ id, fixtureSha256, requestSha256, messageCount, inputTextCharacters, hasImage }) => [id, { fixtureSha256, requestSha256, messageCount, inputTextCharacters, hasImage }])) };
+}
+
+type BaselineSnapshot = ReturnType<typeof promptBaselineSnapshot>;
+export function comparePromptBaselines(reference: BaselineSnapshot, current: BaselineSnapshot) {
+  return {
+    changedSourceFiles: Object.keys(reference.sourceHashes).filter((path) => reference.sourceHashes[path] !== current.sourceHashes[path]),
+    addedSourceFiles: Object.keys(current.sourceHashes).filter((path) => !(path in reference.sourceHashes)),
+    removedCases: Object.keys(reference.snapshots).filter((id) => !(id in current.snapshots)),
+    addedCases: Object.keys(current.snapshots).filter((id) => !(id in reference.snapshots)),
+    changedExistingFixtures: Object.keys(reference.snapshots).filter((id) => current.snapshots[id] && reference.snapshots[id].fixtureSha256 !== current.snapshots[id].fixtureSha256),
+    changedExistingRequests: Object.entries(reference.snapshots).flatMap(([id, before]) => {
+      const after = current.snapshots[id];
+      return after && before.requestSha256 !== after.requestSha256 ? [{ id, beforeCharacters: before.inputTextCharacters, afterCharacters: after.inputTextCharacters, deltaCharacters: after.inputTextCharacters - before.inputTextCharacters }] : [];
+    }),
+  };
 }

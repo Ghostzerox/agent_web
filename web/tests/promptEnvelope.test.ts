@@ -9,7 +9,7 @@ describe("Prompt envelope", () => {
   it("versions every layer and hashes the exact provider request", async () => {
     const envelope = await createTestPromptEnvelope();
 
-    expect(envelope.composer).toMatchObject({ version: "r1/cache-friendly-v1" });
+    expect(envelope.composer).toMatchObject({ version: "r3.2/mode-prompts-v1" });
     expect(envelope.promptLayers.map((layer) => layer.position)).toEqual([0, 1, 2]);
     expect(envelope.promptLayers.map((layer) => layer.version)).toEqual([
       "core-policy/v1",
