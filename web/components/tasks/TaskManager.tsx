@@ -17,6 +17,7 @@ import { getCapacitorLocalNotificationAdapter } from "@/lib/platform/capacitorLo
 import { appHref, currentAppSearchParams } from "@/lib/platform/appNavigation";
 import type { TaskSchedule } from "@/lib/tasks/schedule";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
+import { previewTaskSchedule, taskPreviewConflicts } from "@/lib/tools/taskPreview";
 
 type FormState = {
   title: string;
@@ -170,6 +171,7 @@ export function TaskManager() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [schedulePreview, setSchedulePreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [nativeNotifications, setNativeNotifications] =
     useState<NativeNotificationState>({ kind: "unsupported" });
@@ -369,7 +371,9 @@ export function TaskManager() {
           </h2>
         </div>
 
-        <form className="space-y-4" onSubmit={submit}>
+        <form className="space-y-4" onSubmit={(event) => { setSchedulePreview(null); void submit(event); }} onChange={() => setSchedulePreview(null)}>
+          <button type="button" className="min-h-11 rounded-xl border px-4 text-sm" onClick={() => { try { const candidate = inputFromForm(form); const now = new Date(); const times = previewTaskSchedule(candidate.schedule, now); const conflicts = taskPreviewConflicts(candidate, tasks.filter((item) => item.id !== editingId && item.status === "active").map((item) => ({ title: item.title, schedule: scheduleFromTask(item) })), now); setSchedulePreview(`上海时间：${times.map((instant) => new Date(instant).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" })).join("；")}。${conflicts.length ? `发现 ${conflicts.length} 个同刻任务，请检查是否重复。` : "未发现预览窗口内的同刻任务。"} 尚未保存。`); } catch (caught) { setSchedulePreview(friendlyError(caught)); } }}>预览未来运行与冲突</button>
+          {schedulePreview && <p role="status" className="rounded-xl bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-950 dark:text-blue-100">{schedulePreview}</p>}
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
             任务类型
             <select

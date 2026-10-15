@@ -1,4 +1,5 @@
 import type { ReadingProfileRecord } from "@/lib/db/schema";
+import { normalizeBookTitle, normalizeKnownCitationMarkers, usableSourceCitations } from "@/lib/tools/sourceTools";
 import type { WebCitation, WebSearchProvider } from "@/lib/search/webSearch";
 import type {
   AgentPromptGeneratorPort,
@@ -127,7 +128,9 @@ function evidencePrompt(
 function validateGeneratedContent(
   content: string,
   citations: readonly WebCitation[],
+  profile: ReadingProfileRecord,
 ): Set<string> {
+  if (/\[\^S\d+\]/u.test(content)) throw new BookRecommendationGenerationError("BOOK_OUTPUT_INVALID", "Unknown or unsupported footnote source id.", false);
   const requiredHeadings = [
     "## 本次推荐",
     "## 为什么现在推荐",
@@ -148,6 +151,11 @@ function validateGeneratedContent(
 
   const recommendationSection = content.split("## 为什么现在推荐")[0] ?? "";
   const books = recommendationSection.match(/^###\s+《.+》\s*[—-]\s*.+$/gmu) ?? [];
+  const titles = books.map((heading) => normalizeBookTitle(/^###\s+《(.+)》\s*[—-]/u.exec(heading)?.[1] ?? heading));
+  const excluded = [...profile.readBooks, ...profile.dislikedBooks].map(normalizeBookTitle);
+  if (new Set(titles).size !== titles.length || titles.some((title) => excluded.includes(title))) {
+    throw new BookRecommendationGenerationError("BOOK_OUTPUT_INVALID", "Book recommendations repeat a title or recommend an excluded book.", false);
+  }
   if (books.length < 2 || books.length > 3) {
     throw new BookRecommendationGenerationError(
       "BOOK_OUTPUT_INVALID",
@@ -245,6 +253,7 @@ export function createBookRecommendationGenerator(dependencies: {
           true,
         );
       }
+      citations = usableSourceCitations(citations, scheduledFor);
       if (citations.length === 0) {
         throw new BookRecommendationGenerationError(
           "BOOK_NO_SOURCES",
@@ -259,10 +268,11 @@ export function createBookRecommendationGenerator(dependencies: {
         signal,
         { business: "books" },
       );
-      const citedIds = validateGeneratedContent(generated.content, citations);
+      const content = normalizeKnownCitationMarkers(generated.content, citations.map(({ id }) => id));
+      const citedIds = validateGeneratedContent(content, citations, profile);
       const citedSources = citations.filter((citation) => citedIds.has(citation.id));
       return {
-        content: `${generated.content.trim()}\n\n${sourceAppendix(dateLabel, topic, profile, citedSources)}`,
+        content: `${content.trim()}\n\n${sourceAppendix(dateLabel, topic, profile, citedSources)}`,
         model: generated.model,
         sourceCount: citedSources.length,
       };

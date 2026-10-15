@@ -65,6 +65,12 @@ function agent(content = validContent): AgentPromptGeneratorPort {
 }
 
 describe("book recommendation generator", () => {
+  it("normalizes only known footnote markers and rejects unknown source ids", async () => {
+    const generate = (content: string) => createBookRecommendationGenerator({ search: search(), agent: agent(content), profiles: { get: async () => profile } }).generate("主题", new Date("2026-10-16T00:00:00Z"));
+    expect((await generate(validContent.replaceAll("[S1]", "[^S1]"))).content).not.toContain("[^S1]");
+    await expect(generate(validContent.replaceAll("[S1]", "[^S99]"))).rejects.toMatchObject({ code: "BOOK_OUTPUT_INVALID" });
+    await expect(generate(validContent.replaceAll("《正义之心》", "《侦察兵思维》"))).rejects.toMatchObject({ code: "BOOK_OUTPUT_INVALID" });
+  });
   it("combines explicit reading preferences with cited bibliographic evidence", async () => {
     const searchProvider = search();
     const agentGenerator = agent();

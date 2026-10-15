@@ -38,7 +38,7 @@ async function main() {
   }
   const budget = new EvaluationBudget(Number(argument("--budget-cny")));
   const reviewedOn = argument("--pricing-reviewed-on") ?? REVIEWED_PRICE.asOf;
-  if (new Date().toISOString().slice(0, 10) !== reviewedOn) throw new Error("Pricing must be re-verified for today's live evaluation before spending");
+  if (new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Shanghai" }).format(new Date()) !== reviewedOn) throw new Error("Pricing must be re-verified for today's live evaluation before spending");
   const candidateCommit = argument("--candidate-commit") ?? QUALITY_CANDIDATE_COMMIT;
   const referenceDirectory = argument("--reference-dir");
   if (!referenceDirectory) throw new Error("Reference modules required");

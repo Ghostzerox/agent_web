@@ -1,4 +1,5 @@
 import type { WebCitation, WebSearchProvider } from "@/lib/search/webSearch";
+import { usableSourceCitations } from "@/lib/tools/sourceTools";
 import type {
   BriefingFeedback,
   BriefingSourceSignal,
@@ -294,6 +295,7 @@ export function createPersonalBriefingGenerator(dependencies: {
           true,
         );
       }
+      citations = usableSourceCitations(citations, scheduledFor);
       if (citations.length === 0) {
         throw new PersonalBriefingGenerationError(
           "BRIEFING_NO_SOURCES",
