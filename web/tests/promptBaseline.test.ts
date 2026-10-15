@@ -3,7 +3,8 @@ import { resolve } from "node:path";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { comparePromptBaselines, promptBaselineCases, promptBaselineSnapshot, runPromptBaseline } from "@/evals/r3/promptBaseline";
 import { MODEL_CALLER_FILES, MODULE_PROMPT_COVERAGE, PROMPT_ENTRY_POINTS, PROMPT_SOURCE_FILES } from "@/evals/r3/promptInventory";
-import baseline from "@/evals/r3/baseline-r4.json";
+import baseline from "@/evals/r3/baseline-r5.1.json";
+import tools from "@/evals/r3/baseline-r4.json";
 import tasks from "@/evals/r3/baseline-r3.3.json";
 import previous from "@/evals/r3/baseline-r3.2.json";
 import original from "@/evals/r3/baseline.json";
@@ -87,7 +88,7 @@ describe("R3 offline prompt baselines", () => {
     expect(taskComparison.addedCases).toHaveLength(29);
     expect(taskComparison.changedExistingRequests).toHaveLength(20);
     expect(taskComparison.changedExistingRequests.every((item) => !item.id.startsWith("chat-") && !item.id.startsWith("mode-"))).toBe(true);
-    expect(taskComparison.addedSourceFiles.sort()).toEqual(["lib/ai/taskPromptProfiles.ts", "lib/ai/modelUsage.ts", "lib/tools/sourceTools.ts", "lib/game/toolkit.ts"].sort());
+    expect(taskComparison.addedSourceFiles.sort()).toEqual(["lib/ai/taskPromptProfiles.ts", "lib/ai/modelUsage.ts", "lib/tools/sourceTools.ts", "lib/game/toolkit.ts", "lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts"].sort());
   });
 
   it("has at least five normal and one boundary case per family without changing runtime templates", () => {
@@ -97,9 +98,16 @@ describe("R3 offline prompt baselines", () => {
     }
     const comparison = comparePromptBaselines(tasks, promptBaselineSnapshot(result));
     expect(comparison).toMatchObject({ removedCases: [], changedExistingFixtures: [] });
-    expect(comparison.addedSourceFiles.sort()).toEqual(["lib/tools/sourceTools.ts", "lib/game/toolkit.ts"].sort());
+    expect(comparison.addedSourceFiles.sort()).toEqual(["lib/tools/sourceTools.ts", "lib/game/toolkit.ts", "lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts"].sort());
     expect(comparison.changedSourceFiles.length).toBeGreaterThan(0);
     expect(comparison.changedExistingRequests.length).toBeGreaterThan(0);
     expect(comparison.addedCases).toHaveLength(13);
+  });
+
+  it("preserves all R4 request and fixture hashes while adding the live memory read boundary", () => {
+    const comparison = comparePromptBaselines(tools, promptBaselineSnapshot(result));
+    expect(comparison).toMatchObject({ addedCases: [], removedCases: [], changedExistingRequests: [], changedExistingFixtures: [] });
+    expect(Object.keys(tools.sourceHashes).every((file) => file in result.sourceHashes)).toBe(true);
+    expect(comparison.addedSourceFiles.sort()).toEqual(["lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts"].sort());
   });
 });

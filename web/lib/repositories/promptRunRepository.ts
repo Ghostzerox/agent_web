@@ -12,6 +12,7 @@ import * as schema from "@/lib/db/schema";
 import type { PromptEnvelope } from "@/lib/ai/promptEnvelope";
 import type { RetrievedMemory } from "@/lib/memory/memoryRetrieval";
 import { LOCAL_USER_ID } from "@/lib/repositories/conversationRepository";
+import { MEMORY_DOMAIN_POLICIES, memoryModuleForConversationMode } from "@/lib/memory/domainPolicy";
 
 export class PromptRunRepositoryError extends Error {
   constructor(
@@ -51,7 +52,7 @@ export class PromptRunRepository<
   ): Promise<PromptRunRecord> {
     return this.database.transaction(async (transaction) => {
       const [conversation] = await transaction
-        .select({ activeLeafMessageId: conversations.activeLeafMessageId })
+        .select({ activeLeafMessageId: conversations.activeLeafMessageId, mode: conversations.mode })
         .from(conversations)
         .where(
           and(
@@ -66,6 +67,10 @@ export class PromptRunRepository<
           "CONVERSATION_NOT_FOUND",
           "Conversation was not found.",
         );
+      }
+      const memoryConsumer = memoryModuleForConversationMode(conversation.mode);
+      if (usedMemories.length > 0 && (!memoryConsumer || MEMORY_DOMAIN_POLICIES[memoryConsumer].personal.maxItems === 0)) {
+        throw new PromptRunRepositoryError("PROMPT_CONTEXT_CONFLICT", "Conversation mode no longer allows personal memory; refresh before retrying.");
       }
       if (
         envelope.trigger === "send" &&

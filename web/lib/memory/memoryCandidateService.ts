@@ -1,4 +1,5 @@
 import { extractMemoryCandidate } from "@/lib/memory/candidateExtractor";
+import { mayProposePersonalMemory } from "./domainPolicy";
 import type {
   CandidateProposal,
   MemoryCandidateRepositoryPort,
@@ -23,7 +24,7 @@ export function createMemoryCandidateService(
   return {
     async proposeFromMessage(conversationId, messageId, now) {
       const source = await repository.getSourceMessage(conversationId, messageId);
-      if (source.mode === "entertainment") {
+      if (!mayProposePersonalMemory(source.mode)) {
         return { candidate: null, created: false };
       }
       const draft = extractMemoryCandidate(source.content);

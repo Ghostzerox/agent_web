@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
   conversations,
@@ -11,6 +11,7 @@ import {
 import * as schema from "@/lib/db/schema";
 import type { RetrievedMemory } from "@/lib/memory/memoryRetrieval";
 import { rankMemories } from "@/lib/memory/memoryRetrieval";
+import { MEMORY_DOMAIN_POLICIES, memoryModuleForConversationMode, type MemoryModuleId } from "@/lib/memory/domainPolicy";
 import { LOCAL_USER_ID } from "@/lib/repositories/conversationRepository";
 
 export type UpdateMemoryInput = {
@@ -39,7 +40,7 @@ export class MemoryRepositoryError extends Error {
 
 export interface MemoryRepositoryPort {
   list(): Promise<MemoryItemView[]>;
-  retrieve(query: string, now: Date): Promise<RetrievedMemory[]>;
+  retrieve(query: string, now: Date, consumer?: MemoryModuleId): Promise<RetrievedMemory[]>;
   retrieveForMessage(
     conversationId: string,
     messageId: string,
@@ -64,19 +65,23 @@ export class MemoryRepository<TQueryResult extends PgQueryResultHKT>
     return rows.map(({ item, evidenceQuote }) => ({ ...item, evidenceQuote }));
   }
 
-  async retrieve(query: string, now: Date): Promise<RetrievedMemory[]> {
+  async retrieve(query: string, now: Date, consumer: MemoryModuleId = "professional"): Promise<RetrievedMemory[]> {
+    const policy = MEMORY_DOMAIN_POLICIES[consumer]?.personal;
+    if (!policy || policy.maxItems === 0 || policy.maxEstimatedTokens === 0) return [];
     const active = await this.database
       .select()
       .from(memoryItems)
       .where(
         and(
           eq(memoryItems.userId, LOCAL_USER_ID),
+          inArray(memoryItems.kind, [...policy.kinds]),
+          policy.sensitive ? undefined : inArray(memoryItems.sensitivity, ["low", "personal"]),
           or(isNull(memoryItems.validUntil), gt(memoryItems.validUntil, now)),
         ),
       )
       .orderBy(desc(memoryItems.pinned), desc(memoryItems.updatedAt))
       .limit(500);
-    return rankMemories(active, query, now);
+    return rankMemories(active, query, now, { limit: policy.maxItems, tokenBudget: policy.maxEstimatedTokens });
   }
 
   async retrieveForMessage(
@@ -85,7 +90,7 @@ export class MemoryRepository<TQueryResult extends PgQueryResultHKT>
     now: Date,
   ): Promise<RetrievedMemory[]> {
     const [source] = await this.database
-      .select({ content: messages.content, role: messages.role })
+      .select({ content: messages.content, role: messages.role, mode: conversations.mode })
       .from(messages)
       .innerJoin(conversations, eq(messages.conversationId, conversations.id))
       .where(
@@ -97,7 +102,8 @@ export class MemoryRepository<TQueryResult extends PgQueryResultHKT>
       )
       .limit(1);
     if (!source || source.role !== "user") return [];
-    return this.retrieve(source.content, now);
+    const consumer = memoryModuleForConversationMode(source.mode);
+    return consumer ? this.retrieve(source.content, now, consumer) : [];
   }
 
   async update(input: UpdateMemoryInput): Promise<MemoryItemRecord> {

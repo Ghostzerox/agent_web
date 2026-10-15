@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
 import {
   loadMigrations,
@@ -11,7 +11,7 @@ import {
   type MigrationSession,
 } from "@/lib/db/migrations";
 import { createMemoryCandidateService } from "@/lib/memory/memoryCandidateService";
-import { createConversationRepository } from "@/lib/repositories/conversationRepository";
+import { createConversationRepository, LOCAL_USER_ID } from "@/lib/repositories/conversationRepository";
 import { createMemoryCandidateRepository } from "@/lib/repositories/memoryCandidateRepository";
 import { createMemoryRepository } from "@/lib/repositories/memoryRepository";
 import { createPromptRunRepository } from "@/lib/repositories/promptRunRepository";
@@ -45,6 +45,52 @@ describe("MemoryRepository", () => {
   });
 
   afterEach(async () => pglite.close());
+
+  it("fences entertainment, foreign owners and changed/deleted sources before starting a model run", async () => {
+    const conversations = createConversationRepository(database);
+    const conversation = await conversations.createConversation({ title: "分域边界", mode: "professional" });
+    const appended = await conversations.appendMessage(conversation.id, { parentMessageId: null, role: "user", content: "我的长期目标是完成数学学习作品集", status: "complete", model: null, citations: [] });
+    const candidates = createMemoryCandidateRepository(database);
+    const proposal = await createMemoryCandidateService(candidates).proposeFromMessage(conversation.id, appended.message.id, new Date());
+    await candidates.confirm(proposal.candidate!.id, appended.message.content, 1, new Date());
+    const memories = createMemoryRepository(database);
+    const [item] = await memories.list();
+    const selected = await memories.retrieveForMessage(conversation.id, appended.message.id, new Date());
+    expect(selected.map((memory) => memory.id)).toEqual([item.id]);
+
+    const foreignId = "99999999-9999-4999-8999-999999999999";
+    await database.insert(schema.users).values({ id: foreignId, displayName: "Other user" });
+    const [foreignCandidate] = await database.insert(schema.memoryCandidates).values({ userId: foreignId, kind: "goal", content: appended.message.content, evidenceQuote: "not for local user", sensitivity: "low", confidence: 100, reason: "test", status: "confirmed", resolvedAt: new Date() }).returning();
+    await database.insert(schema.memoryItems).values({ userId: foreignId, candidateId: foreignCandidate.id, kind: "goal", content: appended.message.content });
+    expect((await memories.retrieve(appended.message.content, new Date())).map((memory) => memory.id)).toEqual([item.id]);
+    await database.update(schema.conversations).set({ userId: foreignId }).where(eq(schema.conversations.id, conversation.id));
+    expect(await memories.retrieveForMessage(conversation.id, appended.message.id, new Date())).toEqual([]);
+    await database.update(schema.conversations).set({ userId: LOCAL_USER_ID }).where(eq(schema.conversations.id, conversation.id));
+
+    const detail = await conversations.getConversation(conversation.id);
+    await conversations.updateConversation(conversation.id, { mode: "entertainment", expectedVersion: detail!.version });
+    expect(await memories.retrieveForMessage(conversation.id, appended.message.id, new Date())).toEqual([]);
+    const selectSpy = vi.spyOn(database, "select");
+    expect(await memories.retrieve(appended.message.content, new Date(), "game")).toEqual([]);
+    expect(selectSpy).not.toHaveBeenCalled();
+    selectSpy.mockRestore();
+    const runs = createPromptRunRepository(database);
+    const envelope = await createTestPromptEnvelope({ conversationId: conversation.id, activeLeafId: appended.message.id, createdAt: new Date().toISOString() });
+    await expect(runs.start(envelope, selected)).rejects.toMatchObject({ code: "PROMPT_CONTEXT_CONFLICT" });
+    expect(await database.select().from(schema.promptRuns)).toEqual([]);
+    expect(await database.select().from(schema.memoryUsages)).toEqual([]);
+
+    await database.update(schema.conversations).set({ mode: "professional" }).where(eq(schema.conversations.id, conversation.id));
+    const updated = await memories.update({ id: item.id, content: item.content, kind: item.kind, pinned: true, validUntil: null, expectedVersion: item.version, now: new Date() });
+    await expect(runs.start(envelope, selected)).rejects.toMatchObject({ code: "PROMPT_CONTEXT_CONFLICT" });
+    expect(await database.select().from(schema.promptRuns)).toEqual([]);
+    const current = await memories.retrieveForMessage(conversation.id, appended.message.id, new Date());
+    await memories.delete(item.id, updated.version);
+    await expect(runs.start(envelope, current)).rejects.toMatchObject({ code: "PROMPT_CONTEXT_CONFLICT" });
+    expect(await database.select().from(schema.promptRuns)).toEqual([]);
+    expect(await database.select().from(schema.memoryUsages)).toEqual([]);
+    expect(await memories.retrieveForMessage(conversation.id, appended.message.id, new Date())).toEqual([]);
+  });
 
   it("manages, retrieves and atomically audits confirmed memory usage", async () => {
     const conversations = createConversationRepository(database);
