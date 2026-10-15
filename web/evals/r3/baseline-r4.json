@@ -7,11 +7,12 @@
     "lib/ai/modelUsage.ts": "cede9cf0238eb1faa07b8f37ccbc0fd402c90c1e6aeef88771d2256e3d18a008",
     "lib/ai/promptEnvelope.ts": "7be711113988121c31d009f4186f455626bc5ab0479265c25318b6ce2e733927",
     "lib/ai/server/modelProvider.ts": "31bbca9d8a8aa0cd173f910de4a7c62ab6710743eecea38a15f86ac2b4e982c5",
-    "lib/ai/taskPromptProfiles.ts": "2cfde23643b0611fa3bfa35297fd0a87b057107dfeab45214fe9f692aa8eb879",
+    "lib/ai/taskPromptProfiles.ts": "676ca13bc9a7f0fd5f0d1a2d77648fd3797936ac9fbd6135ca113903dd1d6419",
     "lib/api/modelApi.ts": "1f2773b979ad888661985a013404f1848bd71192dec6d0a51c852f702d407985",
     "lib/api/promptExportApi.ts": "930c4ea4723acc3e51bdaea37d1f9ca5fe3fb5f2beab97c9feb3e6cdd4d2585a",
     "lib/game/gameNarrativeGenerator.ts": "972736f6a7b390e576e5a9771ea0dc0afa6dddc16c38b7b553529718c46094f4",
-    "lib/game/gameTurnService.ts": "0a674d00464c33341e4b625da6353fa7364cbe22d13ef79c7e228008b48337d0",
+    "lib/game/gameTurnService.ts": "9961b5e192572f1befe79eab7fa26f36d05752d2fd4ff566a63be4fbddd93de0",
+    "lib/game/toolkit.ts": "662f40a454c7ad2a5532d269dc9d108ef4e2d9e79c83f6f3ae401a0a2a691f6e",
     "lib/memory/memoryRetrieval.ts": "de72d07d886fa6f3aa3877908f230a7d3faa6cd79c9b926ac911f44fa3a6b9e3",
     "lib/persona/personaProfile.ts": "ef07b20c0c76c317bcedd07553145e7c63eecb72c3ef971d58bcf2c82dc240a3",
     "lib/plugins/hostCapabilityAdapters.ts": "d9c4ac6745b40eb501a9f5ac8730a07c594013f739f90880698187635ec46af3",
@@ -21,7 +22,8 @@
     "lib/tasks/bookRecommendationGenerator.ts": "e82c178bc035d1f77b33e4a66664bee7adda14727dbc4de1ddd2be6734862660",
     "lib/tasks/personalBriefingGenerator.ts": "eca9eefdf13e4c3daa1a9d8ae11875ccf1571822f853559f2dcbed47bf352447",
     "lib/tasks/reflectionQuestionGenerator.ts": "cac5e1fe7cf9e3fc52378ecb987bfeafff4d85401c4f2198c127caed6702efb9",
-    "lib/tasks/reminderWorker.ts": "ad13878f2bb2b855cce5e24941a9659df95fb4c05bb8f445ae89d84a0e121a55"
+    "lib/tasks/reminderWorker.ts": "ad13878f2bb2b855cce5e24941a9659df95fb4c05bb8f445ae89d84a0e121a55",
+    "lib/tools/sourceTools.ts": "877c8339a10ca32a57f4a2e94586713ef6c49b1f0b07ab6213510e0aa17b311f"
   },
   "snapshots": {
     "chat-auto": {
@@ -222,23 +224,23 @@
     },
     "game-roleplay": {
       "fixtureSha256": "bf0772956cc69ef851298f0e08a6cb6cf71b28a365a42c31b4f73eb17c59ffa1",
-      "requestSha256": "04abbd0f876f15370426afb3eece86d55eda0de98a6dc1a249805e1c4142cc00",
+      "requestSha256": "aa054bb326727c47793d4f10f91ec87d1e88dae32d581edbfc9062ef4c5c12e2",
       "messageCount": 3,
-      "inputTextCharacters": 1875,
+      "inputTextCharacters": 2064,
       "hasImage": false
     },
     "game-tabletop": {
       "fixtureSha256": "bf0772956cc69ef851298f0e08a6cb6cf71b28a365a42c31b4f73eb17c59ffa1",
-      "requestSha256": "98603900c1d4bc8a57d9281f156fe09d99a314751c5439e8f665b9e4daac1ac3",
+      "requestSha256": "51233d7309a78e8eb8eaa609c7fe1ffce346855f7e0cb3ece35d94cc765e3d0d",
       "messageCount": 3,
-      "inputTextCharacters": 1953,
+      "inputTextCharacters": 2142,
       "hasImage": false
     },
     "game-interactive-story": {
       "fixtureSha256": "bf0772956cc69ef851298f0e08a6cb6cf71b28a365a42c31b4f73eb17c59ffa1",
-      "requestSha256": "0fe717f73931009c1f917f59575e24cd13f4cca931fa7c15268fd29d2fc8d1db",
+      "requestSha256": "0ea50927026581655d159e6f6bae45be3d8499d7e442a7b427663ff238c316cc",
       "messageCount": 3,
-      "inputTextCharacters": 1884,
+      "inputTextCharacters": 2073,
       "hasImage": false
     },
     "mode-auto-fact": {
@@ -481,16 +483,16 @@
     },
     "task-probe-game-pending-check": {
       "fixtureSha256": "fa8d7c12316bf18c1dd6dcb6265b70444ba10e23e9134da4cadff7255669c18b",
-      "requestSha256": "03e0c8537a42d0c9422f68a1d82f134d4da74b0241a98868aeb330a82ff68ada",
+      "requestSha256": "8c0eb2c009005077603294ea144aec26227292852b68ffb93235c22de1c655fc",
       "messageCount": 3,
-      "inputTextCharacters": 1888,
+      "inputTextCharacters": 2077,
       "hasImage": false
     },
     "task-probe-game-absent-deck": {
       "fixtureSha256": "b63607ca051ba64536885d4eac9f034f18c2300115f4cf15af95c1f880efc078",
-      "requestSha256": "c98fe10c4c1b6b84e75389e8d67bf6615c250a24d144c8c78578227f8f0d4791",
+      "requestSha256": "a1ac90fab9a2019d6fa66185643f21c3837f1a457339354416d82acc2b548bb7",
       "messageCount": 3,
-      "inputTextCharacters": 1889,
+      "inputTextCharacters": 2078,
       "hasImage": false
     },
     "task-probe-task-prioritized-plan": {
@@ -579,9 +581,9 @@
     },
     "game-invalid-patch": {
       "fixtureSha256": "45ac4dc16f537a4c0bf3048d3349bd5c4bf0e078da7db8c1cd9d7f755dd22141",
-      "requestSha256": "b43be9538de93f951e169fbcb89d58e544c51e2adde5035d4e51b8d1bec81f86",
+      "requestSha256": "a6f0892baaa56262f17ec50736ec34a255ee9eecb3261a59f059bf8b1a351760",
       "messageCount": 3,
-      "inputTextCharacters": 1879,
+      "inputTextCharacters": 2068,
       "hasImage": false
     }
   }

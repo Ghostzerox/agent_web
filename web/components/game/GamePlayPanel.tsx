@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
+import { GameToolkitPanel } from "./GameToolkitPanel";
+import type { GameToolRequest } from "@/lib/game/toolkit";
 import { MarkdownMessage } from "@/components/chat/MarkdownMessage";
 import {
   createGameTurn,
@@ -107,6 +109,7 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
     ? branchSelection.parentTurnId
     : activeLeafTurnId;
   const [busy, setBusy] = useState(false);
+  const toolRetry = useRef<{ key: string; requestId: string } | null>(null);
   const [useDice, setUseDice] = useState(false);
   const [useCheck, setUseCheck] = useState(false);
   const [diceCount, setDiceCount] = useState(1);
@@ -255,8 +258,22 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
     }
   };
 
+  const runTool = async (toolRequest: GameToolRequest) => {
+    if (busy || detail.status !== "active") return;
+    setBusy(true); onError(null); onNotice(null);
+    const key = JSON.stringify({ session: detail.id, parentTurnId, version: detail.version, toolRequest });
+    if (toolRetry.current?.key !== key) toolRetry.current = { key, requestId: crypto.randomUUID() };
+    try {
+      const next = await createGameTurn(detail.id, `宿主工具：${toolRequest.action}`, parentTurnId, detail.version, [], null, { requestId: toolRetry.current.requestId, toolRequest, toolOnly: true });
+      onChange(next); setBranchSelection(null); toolRetry.current = null;
+      onNotice("工具回合已保存；没有调用 AI。可从任何已有节点开新分支，或通过检查点恢复。");
+    } catch (error) { onError(message(error)); await recoverConflict(error); }
+    finally { setBusy(false); }
+  };
+
   return (
     <section className="space-y-5 rounded-2xl border border-violet-200 bg-white p-5 shadow-sm sm:p-6 dark:border-violet-900 dark:bg-zinc-950">
+      <GameToolkitPanel toolkit={selectedState.toolkit} busy={busy} enabled={detail.status === "active"} onRun={runTool} onError={onError} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold">剧情回合</h3>

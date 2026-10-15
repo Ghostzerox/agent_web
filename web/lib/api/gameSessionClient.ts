@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api/clientRuntime";
+import type { GameToolRequest } from "@/lib/game/toolkit";
 import type {
   GameCharacterController,
   GameCharacterInput,
@@ -224,6 +225,7 @@ export function createGameTurn(
   expectedVersion: number,
   diceRequests: GameDiceRequest[] = [],
   checkRequest: GameRuleCheckRequest | null = null,
+  toolOptions: { requestId?: string; toolRequest?: GameToolRequest; toolOnly?: boolean } = {},
 ): Promise<GameSessionDetail> {
   return request(`/api/v1/game-sessions/${encodeURIComponent(sessionId)}/turns`, {
     method: "POST",
@@ -233,6 +235,7 @@ export function createGameTurn(
       expectedVersion,
       diceRequests,
       checkRequest,
+      ...toolOptions,
     }),
   });
 }

@@ -45,6 +45,11 @@ function mulberry32(seed: number): () => number {
   };
 }
 
+/** Reproducible tabletop randomness, not suitable for gambling or security tokens. */
+export function createGameRandom(seed: string): () => number {
+  return mulberry32(fnv1a(`${GAME_DICE_ALGORITHM}:${seed}`));
+}
+
 export function diceNotation(request: GameDiceRequest): string {
   const modifier = request.modifier === 0
     ? ""
@@ -60,7 +65,7 @@ export function rollGameDice(
 ): GameDiceRoll {
   const request = gameDiceRequestSchema.parse(rawRequest);
   const normalizedSeed = z.string().trim().min(1).max(200).parse(seed);
-  const random = mulberry32(fnv1a(`${GAME_DICE_ALGORITHM}:${normalizedSeed}`));
+  const random = createGameRandom(normalizedSeed);
   const results = Array.from(
     { length: request.count },
     () => Math.floor(random() * request.sides) + 1,

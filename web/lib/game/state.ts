@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { gameToolkitSchema } from "./toolkit";
 
 export const gameStateKeySchema = z
   .string()
@@ -67,6 +68,7 @@ export const gameStateSchema = z
     inventory: limitedRecord(stateCountSchema, 100),
     characters: limitedRecord(gameCharacterRuntimeSchema, 50),
     items: limitedRecord(gameItemDefinitionSchema, 100),
+    toolkit: gameToolkitSchema.optional(),
   })
   .strict();
 
@@ -308,6 +310,7 @@ export function applyGameStatePatch(
     inventory,
     characters,
     items,
+    ...(current.toolkit ? { toolkit: current.toolkit } : {}),
   });
   if (!result.success) {
     throw new GameStateValidationError(

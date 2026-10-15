@@ -2,6 +2,7 @@ import { z } from "zod";
 import { gameRuleCheckRequestSchema } from "@/lib/game/checks";
 import { gameDiceRequestSchema } from "@/lib/game/dice";
 import { gameCharacterAttributesSchema } from "@/lib/game/state";
+import { gameToolRequestSchema } from "./toolkit";
 
 export const GAME_SESSION_KINDS = [
   "roleplay",
@@ -100,8 +101,14 @@ export const createGameTurnSchema = z
     expectedVersion: z.number().int().positive(),
     diceRequests: z.array(gameDiceRequestSchema).max(5).default([]),
     checkRequest: gameRuleCheckRequestSchema.nullable().default(null),
+    requestId: z.uuid().optional(),
+    toolRequest: gameToolRequestSchema.optional(),
+    toolOnly: z.boolean().optional(),
   })
-  .strict();
+  .strict().superRefine((input, context) => {
+    if (input.toolRequest && !input.requestId) context.addIssue({ code: "custom", path: ["requestId"], message: "工具请求必须有幂等 ID。" });
+    if (input.toolOnly && (!input.toolRequest || input.diceRequests.length || input.checkRequest)) context.addIssue({ code: "custom", path: ["toolOnly"], message: "纯工具回合只运行一个已选牌堆/随机表工具。" });
+  });
 
 export const createGameCheckpointSchema = z
   .object({

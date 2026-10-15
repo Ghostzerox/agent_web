@@ -87,7 +87,7 @@ describe("R3 offline prompt baselines", () => {
     expect(taskComparison.addedCases).toHaveLength(29);
     expect(taskComparison.changedExistingRequests).toHaveLength(20);
     expect(taskComparison.changedExistingRequests.every((item) => !item.id.startsWith("chat-") && !item.id.startsWith("mode-"))).toBe(true);
-    expect(taskComparison.addedSourceFiles.sort()).toEqual(["lib/ai/taskPromptProfiles.ts", "lib/ai/modelUsage.ts"].sort());
+    expect(taskComparison.addedSourceFiles.sort()).toEqual(["lib/ai/taskPromptProfiles.ts", "lib/ai/modelUsage.ts", "lib/tools/sourceTools.ts", "lib/game/toolkit.ts"].sort());
   });
 
   it("has at least five normal and one boundary case per family without changing runtime templates", () => {
@@ -96,7 +96,8 @@ describe("R3 offline prompt baselines", () => {
       expect(result.cases.some((item) => item.entry === id && item.kind === "boundary"), id).toBe(true);
     }
     const comparison = comparePromptBaselines(tasks, promptBaselineSnapshot(result));
-    expect(comparison).toMatchObject({ addedSourceFiles: [], removedCases: [], changedExistingFixtures: [] });
+    expect(comparison).toMatchObject({ removedCases: [], changedExistingFixtures: [] });
+    expect(comparison.addedSourceFiles.sort()).toEqual(["lib/tools/sourceTools.ts", "lib/game/toolkit.ts"].sort());
     expect(comparison.changedSourceFiles.length).toBeGreaterThan(0);
     expect(comparison.changedExistingRequests.length).toBeGreaterThan(0);
     expect(comparison.addedCases).toHaveLength(13);

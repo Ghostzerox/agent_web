@@ -11,6 +11,7 @@ import {
   type MigrationSession,
 } from "@/lib/db/migrations";
 import { createGameSessionRepository } from "@/lib/repositories/gameSessionRepository";
+import { createGameTurnService } from "@/lib/game/gameTurnService";
 
 function session(database: Pick<PGlite, "query">): MigrationSession {
   return {
@@ -73,6 +74,35 @@ describe("GameSessionRepository", () => {
 
   afterEach(async () => {
     await pglite.close();
+  });
+
+  it("persists branch-local decks, idempotent receipts and checkpoint restoration without model access", async () => {
+    const now = new Date("2026-10-16T00:00:00Z");
+    let current = await repository.create({ title: "工具局", kind: "tabletop", world, initialCharacter: null, now });
+    current = await repository.updateStatus(current.id, { status: "active", expectedVersion: current.version, now });
+    const service = createGameTurnService(repository, { generate: async () => { throw new Error("No model call allowed"); } });
+    current = await service.create(current.id, { content: "创建牌堆", parentTurnId: null, expectedVersion: current.version, diceRequests: [], checkRequest: null, requestId: crypto.randomUUID(), toolOnly: true, toolRequest: { action: "deck-create", deckId: "牌", cards: ["A", "B", "C"] } });
+    const root = current.activeLeafTurnId!;
+    const checkpoint = await repository.createCheckpoint(current.id, { name: "抽牌前", note: "", expectedVersion: current.version, now });
+    const request = { content: "抽一张", parentTurnId: root, expectedVersion: checkpoint.version, diceRequests: [], checkRequest: null, requestId: crypto.randomUUID(), toolOnly: true, toolRequest: { action: "deck-draw" as const, deckId: "牌", count: 1 } };
+    const drawn = await service.create(current.id, request);
+    const replayed = await service.create(current.id, request);
+    expect(replayed.turns).toHaveLength(drawn.turns.length);
+    expect(replayed.version).toBe(drawn.version);
+    await expect(service.create(current.id, { ...request, content: "伪造重放" })).rejects.toMatchObject({ code: "GAME_STATE_INVALID" });
+    const branched = await service.create(current.id, { ...request, requestId: crypto.randomUUID(), expectedVersion: drawn.version, content: "另一支抽两张", toolRequest: { action: "deck-draw", deckId: "牌", count: 2 } });
+    const left = branched.turns.find((turn) => turn.id === drawn.activeLeafTurnId)!;
+    const right = branched.turns.find((turn) => turn.id === branched.activeLeafTurnId)!;
+    expect(left.stateSnapshot.toolkit?.decks.牌.hand).toHaveLength(1);
+    expect(right.stateSnapshot.toolkit?.decks.牌.hand).toHaveLength(2);
+    const restored = await repository.restoreCheckpoint(current.id, checkpoint.checkpoints[0].id, { expectedVersion: branched.version, now });
+    expect(restored.activeLeafTurnId).toBe(root);
+    expect(restored.turns.find((turn) => turn.id === root)?.stateSnapshot.toolkit?.decks.牌.drawPile).toHaveLength(3);
+    const raceBase = { ...request, requestId: crypto.randomUUID(), expectedVersion: restored.version, parentTurnId: root };
+    const results = await Promise.allSettled([service.create(current.id, raceBase), service.create(current.id, raceBase)]);
+    expect(results.filter((result) => result.status === "fulfilled").length).toBeGreaterThanOrEqual(1);
+    const persisted = await repository.get(current.id);
+    expect(persisted?.turns.filter((turn) => turn.stateSnapshot.toolkit?.receipt?.requestId === raceBase.requestId)).toHaveLength(1);
   });
 
   it("persists world and character state outside conversations and memories", async () => {

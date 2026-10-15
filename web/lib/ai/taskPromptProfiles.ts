@@ -12,7 +12,7 @@ export const TASK_PROMPT_PROFILES = {
 } as const;
 
 const neutralProfile = { version: "task-neutral/r3.3-v1", instruction: "直接完成本次指定的文本生成任务，遵守其输出契约，不声称执行未提供的工具或现实操作。" };
-export const GAME_PROMPT_VERSION = "game/r3.4-v2";
+export const GAME_PROMPT_VERSION = "game/r4-v1";
 
 export function taskPromptProfile(business: ModelBusiness) {
   return Object.hasOwn(TASK_PROMPT_PROFILES, business)

@@ -49,6 +49,7 @@ export const PROMPT_SOURCE_FILES = [...new Set([
   "lib/agent/promptBuilder.ts", "lib/agent/modeRegistry.ts", "lib/agent/policyLayer.ts",
   "lib/persona/personaProfile.ts", "lib/memory/memoryRetrieval.ts", "lib/search/webSearch.ts",
   "lib/proactivity/proactivityPolicy.ts", "lib/api/promptExportApi.ts",
+  "lib/tools/sourceTools.ts", "lib/game/toolkit.ts",
 ])].sort();
 
 export const QUALITY_DIMENSIONS = ["task-completion", "actionability", "facts-and-citations", "mode-fit", "tool-honesty", "naturalness", "continuity"] as const;
@@ -57,6 +58,6 @@ export const KNOWN_PROMPT_GAPS = [
   { id: "G2", target: "R3.3", finding: "News/books instructions now use exact validator headings; explanations are separate from heading lines.", status: "implemented-real-format-success-rate-not-measured" },
   { id: "G3", target: "R3.2/R4.5", finding: "Proactive contact currently uses deterministic templates, not a context-aware generation prompt.", status: "current-design-not-a-bug" },
   { id: "G4", target: "R3.2/R3.3", finding: "Eight task/game template versions now travel with real provider requests and optional usage metadata; old records remain valid.", status: "implemented-no-prompt-body-logged" },
-  { id: "G5", target: "R4.3", finding: "Memorization prompt allows meaning-preserving paraphrases; no separate strict verbatim/spelling task exists yet.", status: "missing-planned-capability" },
+  { id: "G5", target: "R4.3", finding: "Semantic recitation and explicit deterministic spelling mode are separate; spelling supports original-position insert/delete/replace differences.", status: "implemented-offline-regression-tested" },
   { id: "G6", target: "R5.4/R1.3", finding: "No validated branch-aware summary in current chat assembly; old head/tail compressor is not a semantic summary baseline.", status: "pending-existing-plan" },
 ] as const;
