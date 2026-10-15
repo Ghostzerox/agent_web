@@ -19,7 +19,7 @@
     "lib/proactivity/proactivityPolicy.ts": "afa0096a639de00de992ecafcd51dacecfd664245ab5eef2a20297df50caea7c",
     "lib/search/webSearch.ts": "799848445500396ab9162919e4ad8a4c4e9007ed1f143a53dba83560bb60209e",
     "lib/tasks/agentPromptGenerator.ts": "66a1c8e75a7d4069ff8229a7882ac775edc4b7a55edcfb938e3d5afe260134f8",
-    "lib/tasks/bookRecommendationGenerator.ts": "e82c178bc035d1f77b33e4a66664bee7adda14727dbc4de1ddd2be6734862660",
+    "lib/tasks/bookRecommendationGenerator.ts": "7a2a1e8e1c4dcbcdd8b664b5554e9309712fd7c537dca2e70498c209db7feac6",
     "lib/tasks/personalBriefingGenerator.ts": "eca9eefdf13e4c3daa1a9d8ae11875ccf1571822f853559f2dcbed47bf352447",
     "lib/tasks/reflectionQuestionGenerator.ts": "cac5e1fe7cf9e3fc52378ecb987bfeafff4d85401c4f2198c127caed6702efb9",
     "lib/tasks/reminderWorker.ts": "ad13878f2bb2b855cce5e24941a9659df95fb4c05bb8f445ae89d84a0e121a55",

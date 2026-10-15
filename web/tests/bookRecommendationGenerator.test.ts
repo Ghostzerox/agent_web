@@ -70,6 +70,7 @@ describe("book recommendation generator", () => {
     expect((await generate(validContent.replaceAll("[S1]", "[^S1]"))).content).not.toContain("[^S1]");
     await expect(generate(validContent.replaceAll("[S1]", "[^S99]"))).rejects.toMatchObject({ code: "BOOK_OUTPUT_INVALID" });
     await expect(generate(validContent.replaceAll("《正义之心》", "《侦察兵思维》"))).rejects.toMatchObject({ code: "BOOK_OUTPUT_INVALID" });
+    await expect(createBookRecommendationGenerator({ search: search(), agent: agent(), profiles: { get: async () => ({ ...profile, readBooks: ["侦察兵思维 — 朱莉娅·加利夫"] }) } }).generate("主题", new Date())).rejects.toMatchObject({ code: "BOOK_OUTPUT_INVALID" });
   });
   it("combines explicit reading preferences with cited bibliographic evidence", async () => {
     const searchProvider = search();

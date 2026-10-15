@@ -84,6 +84,11 @@ function gateway(options: { modelAvailable?: boolean; draftAvailable?: boolean }
 }
 
 describe("Phase 7.3 memorization service", () => {
+  it("rejects oversized material before a storage write instead of failing after an accepted draft", async () => {
+    const fake = gateway(); const service = createMemorizationService(fake.port);
+    await expect(service.create({ title: "过大", sourceText: "原文", units: Array.from({ length: 24 }, (_, index) => ({ cue: `单元${index}`, content: "汉".repeat(3000) })) })).rejects.toMatchObject({ code: "MATERIAL_TOO_LARGE" });
+    expect(fake.calls.some((call) => call.capabilityId === "storage.read-write" && (call.payload as { operation: string }).operation === "set")).toBe(false);
+  });
   it("runs strict spelling without model calls, persists review and offers a confirmation-only draft", async () => {
     const fake = gateway({ modelAvailable: true, draftAvailable: true });
     const service = createMemorizationService(fake.port);

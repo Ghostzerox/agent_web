@@ -47,6 +47,14 @@ async function main() {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= 360)).toBe(true);
     expect(writes).toBe(1);
     await menu.click();
+    await page.getByRole("dialog", { name: "模式与导航" }).getByRole("link", { name: "工具工作台" }).click();
+    await expect(page.locator("h1")).toHaveText("工具工作台");
+    await page.getByLabel("选择工具").selectOption("professional.calculate");
+    await page.getByLabel("工具输入").fill('{"expression":"2+3*4"}');
+    await page.getByRole("button", { name: "运行工具", exact: true }).click();
+    await expect(page.getByRole("status")).toContainText('"value": 14');
+    expect(writes).toBe(1);
+    await menu.click();
     await page.getByRole("dialog", { name: "模式与导航" }).getByRole("link", { name: "知伴" }).click();
     await expect(page.locator("h1")).toHaveText("AI 学习伴侣");
     console.log("Local React bundle UI smoke passed: hash mode intent, explicit update, draft cancellation, learning route, browser back, 360px width. No model calls.");

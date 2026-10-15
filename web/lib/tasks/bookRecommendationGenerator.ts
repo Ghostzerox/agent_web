@@ -152,7 +152,7 @@ function validateGeneratedContent(
   const recommendationSection = content.split("## 为什么现在推荐")[0] ?? "";
   const books = recommendationSection.match(/^###\s+《.+》\s*[—-]\s*.+$/gmu) ?? [];
   const titles = books.map((heading) => normalizeBookTitle(/^###\s+《(.+)》\s*[—-]/u.exec(heading)?.[1] ?? heading));
-  const excluded = [...profile.readBooks, ...profile.dislikedBooks].map(normalizeBookTitle);
+  const excluded = [...profile.readBooks, ...profile.dislikedBooks].map((entry) => normalizeBookTitle(/《([^》]+)》/u.exec(entry)?.[1] ?? entry.split(/\s+[—-]\s+/u)[0]));
   if (new Set(titles).size !== titles.length || titles.some((title) => excluded.includes(title))) {
     throw new BookRecommendationGenerationError("BOOK_OUTPUT_INVALID", "Book recommendations repeat a title or recommend an excluded book.", false);
   }

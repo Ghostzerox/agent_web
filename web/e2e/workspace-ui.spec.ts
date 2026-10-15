@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const routes = ["/", "/chat", "/study", "/study/memorization", "/study/problem-solving", "/entertainment", "/entertainment/quick-adventure", "/tasks", "/inbox", "/reading", "/reflection", "/memory", "/persona", "/voice", "/proactivity", "/plugins", "/notifications", "/api-key"];
+const routes = ["/", "/chat", "/tools", "/study", "/study/memorization", "/study/problem-solving", "/entertainment", "/entertainment/quick-adventure", "/tasks", "/inbox", "/reading", "/reflection", "/memory", "/persona", "/voice", "/proactivity", "/plugins", "/notifications", "/api-key"];
 for (const width of [360, 390, 1440]) {
   test(`all pages retain readable shells and recoverable offline states at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });

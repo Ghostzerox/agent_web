@@ -13,6 +13,7 @@ import { createBookRecommendationGenerator } from "@/lib/tasks/bookRecommendatio
 import { createReflectionQuestionGenerator } from "@/lib/tasks/reflectionQuestionGenerator";
 import { runReminderBatch } from "@/lib/tasks/reminderWorker";
 import { OpenAICompatibleProvider } from "@/lib/ai/server/modelProvider";
+import { taskPromptProfile } from "@/lib/ai/taskPromptProfiles";
 import type { ReflectionPreferenceRecord } from "@/lib/db/schema";
 
 const at = new Date("2026-10-15T01:00:00.000Z");
@@ -61,7 +62,9 @@ describe("R3 task → real generators → measured transport → durable result 
     expect(item.body).toContain("## 给你的思考问题");
     const calls = (await h.usage.list(new Date("2000-01-01"))).calls;
     expect(new Set(calls.map((call) => call.business))).toEqual(new Set(["news", "reflection"]));
-    expect(calls.every((call) => call.promptVersion?.endsWith("r3.3-v1"))).toBe(true);
+    expect(calls.every((call) => call.promptVersion === taskPromptProfile(call.business).version)).toBe(true);
+    expect(h.payloads[0]).not.toHaveProperty("response_format");
+    expect(h.payloads[1]).toHaveProperty("response_format", { type: "json_object" });
     expect(h.payloads.map((body) => body.max_tokens)).toEqual([3072, 2048]);
     expect(JSON.stringify(calls)).not.toMatch(/server-only-test-key|三次听力练习/u);
     expect(await h.batch()).toMatchObject({ claimed: 0 });

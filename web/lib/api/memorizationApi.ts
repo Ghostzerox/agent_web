@@ -25,6 +25,7 @@ function statusFor(error: unknown): number {
     ? String((error as Error & { code: unknown }).code)
     : "";
   if (code === "PLUGIN_NOT_FOUND" || code === "UNIT_NOT_FOUND") return 404;
+  if (code === "MATERIAL_TOO_LARGE") return 413;
   if (
     code === "PLUGIN_DISABLED" ||
     code === "CAPABILITY_NOT_GRANTED" ||

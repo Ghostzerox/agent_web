@@ -2,6 +2,12 @@ import { z } from "zod";
 import { verifyBasicArithmetic } from "@/lib/problemSolving/arithmeticVerifier";
 import { previewScheduleSchema, previewTaskSchedule, taskPreviewConflicts } from "./taskPreview";
 import { inspectSourceMetadata, normalizeBookTitle, normalizeIsbn } from "./sourceTools";
+import { previewMaterialImports } from "./importPreview";
+import { prepareSpeechText, splitSpeechText } from "@/lib/speech/speechPolicy";
+import { pluginManifestSchema, checkPluginCompatibility, HOST_PLUGIN_API_VERSION } from "@/lib/plugins/manifest";
+import { PLUGIN_CAPABILITY_CATALOG } from "@/lib/plugins/capabilityCatalog";
+import { FIRST_PARTY_PLUGIN_MANIFESTS } from "@/lib/plugins/firstPartyManifests";
+import { taskDraftResultSchema } from "@/lib/plugins/pluginApiV1";
 
 export type ToolDescriptor = {
   id: string; version: string; title: string; description: string;
@@ -28,6 +34,29 @@ const evidenceInput = z.object({ document: z.string().min(1).max(30_000), query:
 const evidenceOutput = z.object({ matches: z.array(z.object({ line: z.number().int(), start: z.number().int(), end: z.number().int(), excerpt: z.string().max(360) }).strict()).max(20), truncated: z.boolean(), note: z.string() }).strict();
 
 export const WORKBENCH_TOOLS: WorkbenchTool[] = [
+  tool({ id: "reflection.action-draft", title: "目标与行动草稿", description: "整理你明确填写的事实、假设和最小行动；不推断人格、不修改记忆、不自动创建提醒。", allowedScopes: ["reflection", "companion", "proactivity", "tasks"], effect: "draft" },
+    z.object({ goal: line, confirmedFacts: z.array(line).max(10), assumptions: z.array(line).max(10), after: z.string().datetime({ offset: true }), steps: z.array(z.object({ action: z.string().trim().min(1).max(120), doneWhen: line, runAt: z.string().datetime({ offset: true }).nullable() }).strict()).min(1).max(5) }).strict(),
+    z.object({ goal: z.string(), confirmedFacts: z.array(z.string()), assumptions: z.array(z.string()), checklist: z.array(z.string()), taskDrafts: z.array(taskDraftResultSchema), warnings: z.array(z.string()), saved: z.literal(false) }).strict(),
+    { goal: "一周试行英语学习方法", confirmedFacts: ["每周可用 90 分钟"], assumptions: ["十分钟练习比一次长练更容易坚持"], after: "2026-10-16T00:00:00Z", steps: [{ action: "完成一次十分钟听力练习", doneWhen: "记录听懂的三句话", runAt: "2026-10-17T12:00:00Z" }] },
+    ({ goal, confirmedFacts, assumptions, steps, after }) => {
+      const valid = steps.filter((step) => step.runAt && new Date(step.runAt) > new Date(after));
+      return { goal, confirmedFacts, assumptions, checklist: steps.map((step) => `${step.action}；完成标准：${step.doneWhen}`), taskDrafts: valid.map((step) => ({ title: step.action, kind: "reminder" as const, prompt: `目标：${goal}\n完成标准：${step.doneWhen}`, schedule: { type: "once" as const, runAt: new Date(step.runAt!).toISOString() } })), warnings: steps.some((step) => step.runAt && new Date(step.runAt) <= new Date(after)) ? ["已过期时间未生成提醒草稿，请重新选择未来时间。"] : [], saved: false as const };
+    }),
+  tool({ id: "voice.preview", title: "朗读文本与分段预览", description: "复用实际语音策略：省略代码/公式，展示分段和截断，不自动播放。", allowedScopes: ["voice", "companion", "reading"], effect: "compute" },
+    z.object({ markdown: z.string().min(1).max(20000) }).strict(),
+    z.object({ text: z.string(), truncated: z.boolean(), chunks: z.array(z.string()).max(100), provider: z.literal("system") }).strict(),
+    { markdown: "## 今天的小结\n练习了三次。公式 $x^2$ 可以回到原文查看。" },
+    ({ markdown }) => { const prepared = prepareSpeechText(markdown); return { ...prepared, chunks: splitSpeechText(prepared.text), provider: "system" as const }; }),
+  tool({ id: "plugins.inspect", title: "插件清单兼容性检查", description: "检查 manifest/API 兼容性和声明的宿主能力。不安装、不启用、不授权。", allowedScopes: ["plugins", "maintenance"], effect: "read" },
+    z.object({ manifest: pluginManifestSchema }).strict(),
+    z.object({ pluginId: z.string(), hostApi: z.string(), compatible: z.boolean(), reason: z.string().nullable(), capabilities: z.array(z.object({ id: z.string(), dailyLimit: z.number(), status: z.string() }).strict()), grantsChanged: z.literal(false) }).strict(),
+    { manifest: pluginManifestSchema.parse(FIRST_PARTY_PLUGIN_MANIFESTS[0]) },
+    ({ manifest }) => { const compatibility = checkPluginCompatibility(manifest); return { pluginId: manifest.id, hostApi: HOST_PLUGIN_API_VERSION, compatible: compatibility.compatible, reason: compatibility.compatible ? null : compatibility.reason, capabilities: manifest.requestedCapabilities.map((id) => ({ id, dailyLimit: PLUGIN_CAPABILITY_CATALOG[id].dailyLimit, status: "声明不等于实际授权，请到插件页查看" })), grantsChanged: false as const }; }),
+  tool({ id: "maintenance.import-preview", title: "学习备份导入预演", description: "校验材料格式、批次重复和同名冲突；仅报告，不恢复或覆盖数据库。全库恢复暂不开放。", allowedScopes: ["maintenance", "study"], effect: "read" },
+    z.object({ payloads: z.array(z.unknown()).max(12), existingTitles: z.array(line).max(100) }).strict(),
+    z.object({ items: z.array(z.object({ index: z.number(), valid: z.boolean(), title: z.string().nullable(), unitCount: z.number(), warnings: z.array(z.string()) }).strict()), writes: z.literal(0), restoreEnabled: z.literal(false) }).strict(),
+    { payloads: [{ format: "agent-web/memorization-v1", title: "示例", sourceText: "原文", units: [{ cue: "提示", content: "原文" }] }], existingTitles: [] },
+    ({ payloads, existingTitles }) => ({ items: previewMaterialImports(payloads, existingTitles), writes: 0 as const, restoreEnabled: false as const })),
   tool({ id: "tasks.preview", title: "任务时间与冲突预览", description: "上海时区未来 5 次运行；重名同刻提示可能重复，不自动阻止或保存。", allowedScopes: ["tasks", "proactivity", "study"], effect: "read" },
     z.object({ title: line, schedule: previewScheduleSchema, after: z.string().datetime({ offset: true }), existing: z.array(z.object({ title: line, schedule: previewScheduleSchema }).strict()).max(100) }).strict(),
     z.object({ timezone: z.literal("Asia/Shanghai"), instants: z.array(z.string()), conflicts: z.array(z.object({ index: z.number(), title: z.string(), kind: z.enum(["possible-duplicate", "same-minute"]), instants: z.array(z.string()) }).strict()) }).strict(),

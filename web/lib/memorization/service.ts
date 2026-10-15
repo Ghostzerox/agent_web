@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { PluginCapabilityGateway } from "@/lib/plugins/capabilityGateway";
 import { checkSpelling, spellingOptionsSchema, type SpellingResult } from "./learningTools";
+import { PLUGIN_STORAGE_MAX_VALUE_BYTES } from "@/lib/repositories/pluginStorageRepository";
 import {
   memorizationMaterialSchema,
   memorizationUnitInputSchema,
@@ -76,6 +77,12 @@ function deterministicFeedback(score: number): string {
   return "当前复述与原文重合较少，建议分句理解后尽快再复习。";
 }
 
+function fitMaterialHistory(material: MemorizationMaterial): MemorizationMaterial {
+  while (material.attempts.length > 1 && new TextEncoder().encode(JSON.stringify(material)).byteLength > PLUGIN_STORAGE_MAX_VALUE_BYTES) material.attempts.shift();
+  if (new TextEncoder().encode(JSON.stringify(material)).byteLength > PLUGIN_STORAGE_MAX_VALUE_BYTES) throw new MemorizationServiceError("MATERIAL_TOO_LARGE", "材料超过单条存储上限，请拆分后保存；原有记录未修改。");
+  return material;
+}
+
 export function createMemorizationService(
   gatewayOrFactory: MemorizationGatewayPort | (() => MemorizationGatewayPort),
   now: () => Date = () => new Date(),
@@ -138,7 +145,7 @@ export function createMemorizationService(
         return match >= 0 ? available.splice(match, 1)[0] : { ...unit, id: crypto.randomUUID(), reviewCount: 0, lastScore: null, nextReviewAt: null, weakPoints: [] };
       });
       const ids = new Set(units.map((unit) => unit.id));
-      const material = memorizationMaterialSchema.parse({ ...stored.material, title: input.title, sourceText: input.sourceText, units, attempts: stored.material.attempts.filter((attempt) => ids.has(attempt.unitId)), updatedAt: now().toISOString() });
+      const material = fitMaterialHistory(memorizationMaterialSchema.parse({ ...stored.material, title: input.title, sourceText: input.sourceText, units, attempts: stored.material.attempts.filter((attempt) => ids.has(attempt.unitId)), updatedAt: now().toISOString() }));
       const saved = pluginStorageEntrySchema.parse(await storage({ operation: "set", key: materialStorageKey(id), value: material, expectedVersion: input.expectedVersion }));
       return { material, storageVersion: saved.version };
     },
@@ -182,7 +189,7 @@ export function createMemorizationService(
       const saved = pluginStorageEntrySchema.parse(await storage({
         operation: "set",
         key: materialStorageKey(material.id),
-        value: memorizationMaterialSchema.parse(material),
+        value: fitMaterialHistory(memorizationMaterialSchema.parse(material)),
         expectedVersion: 0,
       }));
       return { material, storageVersion: saved.version };
@@ -269,6 +276,7 @@ export function createMemorizationService(
         attempts: [...stored.material.attempts, attempt].slice(-40),
         updatedAt: reviewedAt.toISOString(),
       });
+      fitMaterialHistory(material);
       const saved = pluginStorageEntrySchema.parse(await storage({
         operation: "set",
         key: materialStorageKey(material.id),
@@ -309,6 +317,7 @@ export class MemorizationServiceError extends Error {
   constructor(
     readonly code:
       | "MATERIAL_LIMIT_REACHED"
+      | "MATERIAL_TOO_LARGE"
       | "MATERIAL_VERSION_CONFLICT"
       | "UNIT_NOT_FOUND",
     message: string,

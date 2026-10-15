@@ -1,0 +1,28 @@
+{
+  "version": "r3.4/focused-retest-v2",
+  "date": "2026-10-16",
+  "candidateCommit": "0bd501c517493eddc48997790f6e0d6c31819611",
+  "scope": "13 synthetic scenarios, three repetitions, candidate only; not the historical 270-trial comparison",
+  "calls": 39,
+  "contractPassesBeforeSyntaxAdapter": 38,
+  "offlineReplayPassesAfterKnownSourceSyntaxAdapter": 39,
+  "offlineReplayPaidCalls": 0,
+  "groups": {
+    "books": { "trials": 9, "contractPasses": 8 },
+    "reflection": { "trials": 3, "contractPasses": 3 },
+    "memorization": { "trials": 15, "contractPasses": 15 },
+    "problem-solving": { "trials": 3, "contractPasses": 3 },
+    "game": { "trials": 9, "contractPasses": 9 }
+  },
+  "equivalentRecitationExampleScores": [100, 100, 100],
+  "upperAccountedCny": 0.115798566,
+  "futureTestsTotalBudgetCny": 3,
+  "remainingBudgetCny": 2.884201434,
+  "unknownUsageReservationsCny": 0,
+  "priceStatus": "verified peak-rate upper estimate, not account invoice",
+  "pricingSource": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+  "rawArtifact": "web/.r3-eval/focused-r3.4-v2.jsonl (local ignored artifact, not committed)",
+  "rawArtifactSha256": "0715554FB58848B695AD9F2E603BAAE27E13CC4861CC737B54E89543E792C3D5",
+  "humanReview": { "status": "awaiting-user-acceptance", "score": null },
+  "limitations": ["Contract success does not prove semantic correctness or naturalness.", "No private chats or real tasks were used.", "Existing answers were replayed, not regenerated or selectively replaced."]
+}
