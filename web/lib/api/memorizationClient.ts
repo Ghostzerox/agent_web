@@ -1,4 +1,6 @@
 import { apiFetch } from "@/lib/api/clientRuntime";
+import type { z } from "zod";
+import type { spellingOptionsSchema } from "@/lib/memorization/learningTools";
 import type {
   MemorizationMaterial,
   MemorizationMaterialSummary,
@@ -63,6 +65,10 @@ export function getMemorizationMaterial(id: string): Promise<{
   return request(`/api/v1/memorization/${encodeURIComponent(id)}`);
 }
 
+export function updateMemorizationMaterial(id: string, input: { title: string; sourceText: string; units: MemorizationUnitInput[]; expectedVersion: number }): Promise<{ material: MemorizationMaterial; storageVersion: number }> {
+  return request(`/api/v1/memorization/${encodeURIComponent(id)}`, { method: "PATCH", body: JSON.stringify(input) });
+}
+
 export function deleteMemorizationMaterial(
   id: string,
   expectedVersion: number,
@@ -75,7 +81,7 @@ export function deleteMemorizationMaterial(
 
 export function reviewMemorizationUnit(
   materialId: string,
-  input: { unitId: string; recitation: string; expectedVersion: number },
+  input: { unitId: string; recitation: string; expectedVersion: number; mode?: "semantic" | "verbatim"; spellingOptions?: z.input<typeof spellingOptionsSchema> },
 ): Promise<MemorizationReviewResult> {
   return request(`/api/v1/memorization/${encodeURIComponent(materialId)}/review`, {
     method: "POST",

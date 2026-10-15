@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { PluginCapabilityGateway } from "@/lib/plugins/capabilityGateway";
+import { checkSpelling, spellingOptionsSchema, type SpellingResult } from "./learningTools";
 import {
   memorizationMaterialSchema,
   memorizationUnitInputSchema,
@@ -37,8 +38,10 @@ export const createMemorizationMaterialInputSchema = z
 export const reviewMemorizationUnitInputSchema = z
   .object({
     unitId: z.string().uuid(),
-    recitation: z.string().trim().min(1).max(4_000),
+    recitation: z.string().min(1).max(4_000).refine((value) => value.trim().length > 0),
     expectedVersion: z.number().int().positive(),
+    mode: z.enum(["semantic", "verbatim"]).optional(),
+    spellingOptions: spellingOptionsSchema.optional(),
   })
   .strict();
 
@@ -58,6 +61,7 @@ export type MemorizationReviewResult = {
     feedback: string;
     missedPoints: string[];
     model: string | null;
+    spelling?: SpellingResult;
   };
   taskDraft: MemorizationTaskDraft | null;
   taskDraftUnavailable: boolean;
@@ -122,6 +126,23 @@ export function createMemorizationService(
       return readMaterial(id);
     },
 
+    async update(id: string, rawInput: unknown) {
+      const input = createMemorizationMaterialInputSchema.extend({ expectedVersion: z.number().int().positive() }).parse(rawInput);
+      const stored = await readMaterial(id);
+      if (!stored) return null;
+      if (stored.storageVersion !== input.expectedVersion) throw new MemorizationServiceError("MATERIAL_VERSION_CONFLICT", "材料已变化，请刷新。");
+      // Preserve review history only for unchanged content and cue. Changed units start fresh.
+      const available = [...stored.material.units];
+      const units = input.units.map((unit) => {
+        const match = available.findIndex((old) => old.content === unit.content && old.cue === unit.cue);
+        return match >= 0 ? available.splice(match, 1)[0] : { ...unit, id: crypto.randomUUID(), reviewCount: 0, lastScore: null, nextReviewAt: null, weakPoints: [] };
+      });
+      const ids = new Set(units.map((unit) => unit.id));
+      const material = memorizationMaterialSchema.parse({ ...stored.material, title: input.title, sourceText: input.sourceText, units, attempts: stored.material.attempts.filter((attempt) => ids.has(attempt.unitId)), updatedAt: now().toISOString() });
+      const saved = pluginStorageEntrySchema.parse(await storage({ operation: "set", key: materialStorageKey(id), value: material, expectedVersion: input.expectedVersion }));
+      return { material, storageVersion: saved.version };
+    },
+
     async delete(id: string, rawInput: unknown) {
       const input = deleteMemorizationMaterialInputSchema.parse(rawInput);
       return storage({
@@ -182,13 +203,14 @@ export function createMemorizationService(
         throw new MemorizationServiceError("UNIT_NOT_FOUND", "复习单元不存在。");
       }
 
-      const localScore = scoreRecitation(unit.content, input.recitation);
+      const spelling = input.mode === "verbatim" ? checkSpelling(unit.content, input.recitation, input.spellingOptions) : undefined;
+      const localScore = spelling?.score ?? scoreRecitation(unit.content, input.recitation);
       let score = localScore;
       let source: "model" | "deterministic" = "deterministic";
-      let feedback = `模型评价不可用；以下仅为字面覆盖参考，不代表语义正确率。${deterministicFeedback(score)}`;
-      let missedPoints = score >= 90 ? [] : ["请对照原文核对遗漏的关键词与逻辑关系。"];
+      let feedback = spelling ? `逐字检查：${spelling.distance} 处编辑差异${spelling.truncated ? "，仅显示前 60 处" : ""}；按所选大小写、标点和空白规则，不评价语义。` : `模型评价不可用；以下仅为字面覆盖参考，不代表语义正确率。${deterministicFeedback(score)}`;
+      let missedPoints = spelling ? [] : score >= 90 ? [] : ["请对照原文核对遗漏的关键词与逻辑关系。"];
       let model: string | null = null;
-      try {
+      if (!spelling) try {
         const result = await gateway().invoke({
           pluginId: MEMORIZATION_PLUGIN_ID,
           capabilityId: "model.generate",
@@ -224,6 +246,8 @@ export function createMemorizationService(
         score,
         localScore,
         source,
+        mode: input.mode ?? "semantic",
+        ...(spelling ? { spelling: { ...spelling, changes: spelling.changes.slice(0, 3), truncated: spelling.truncated || spelling.changes.length > 3 } } : {}),
         feedback,
         missedPoints,
         reviewedAt: reviewedAt.toISOString(),
@@ -273,7 +297,7 @@ export function createMemorizationService(
       return {
         material,
         storageVersion: saved.version,
-        evaluation: { score, localScore, source, feedback, missedPoints, model },
+        evaluation: { score, localScore, source, feedback, missedPoints, model, ...(spelling ? { spelling } : {}) },
         taskDraft,
         taskDraftUnavailable,
       };

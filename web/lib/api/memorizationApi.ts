@@ -104,6 +104,10 @@ export function createMemorizationApi(
               },
             }, 404);
       }),
+    update: (id: string, request: Request) => handle(async (requestId) => {
+      const result = await service.update(idSchema.parse(id), await body(request));
+      return result ? response(requestId, { data: result }) : response(requestId, { error: { code: "MATERIAL_NOT_FOUND", message: "背书材料不存在。", retryable: false, requestId } }, 404);
+    }),
     delete: (id: string, request: Request) =>
       handle(async (requestId) => {
         await service.delete(idSchema.parse(id), await body(request));

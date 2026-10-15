@@ -94,6 +94,7 @@ export function ProblemSolvingActivity() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [libraryQuery, setLibraryQuery] = useState("");
   useNavigationGuard(busy || Boolean(title.trim() || problemText.trim() || image || (userAnswer.trim() && userAnswer.trim() !== latestAttempt?.userAnswer)));
 
   const selectedStrategy = useMemo(
@@ -292,7 +293,8 @@ export function ProblemSolvingActivity() {
           <button type="button" onClick={resetForNew} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white">新题</button>
         </div>
         {cases.length === 0 && <p className="rounded-xl bg-zinc-50 p-3 text-xs leading-5 text-zinc-500 dark:bg-zinc-900">还没有题目。支持文字或经过本机压缩的题目图片。</p>}
-        {cases.map((item) => (
+        <input aria-label="搜索题库与错因" value={libraryQuery} onChange={(event) => setLibraryQuery(event.target.value)} placeholder="题目、学科、错因标签" className="min-h-11 w-full rounded-lg border bg-transparent px-3 text-sm" />
+        {cases.filter((item) => [item.title, item.subject ? SUBJECT_LABELS[item.subject] : "", ...item.latestErrorTags].join(" ").toLocaleLowerCase().includes(libraryQuery.trim().toLocaleLowerCase())).map((item) => (
           <button key={item.id} type="button" onClick={() => void openCase(item.id)} className={`w-full rounded-xl border p-3 text-left ${active?.id === item.id ? "border-blue-400 bg-blue-50 dark:bg-blue-950/30" : "border-zinc-200 dark:border-zinc-800"}`}>
             <span className="block truncate text-sm font-medium">{item.title}</span>
             <span className="mt-1 block text-xs text-zinc-500">{item.subject ? SUBJECT_LABELS[item.subject] : "待分类"} · {item.attemptCount} 次练习 · {item.reviewCardCount} 张卡</span>

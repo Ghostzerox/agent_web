@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { spellingResultSchema } from "./learningTools";
 
 export const MEMORIZATION_PLUGIN_ID = "study.memorization";
 export const MAX_MEMORIZATION_MATERIALS = 12;
@@ -18,6 +19,8 @@ export const memorizationAttemptSchema = z
     score: z.number().int().min(0).max(100),
     localScore: z.number().int().min(0).max(100),
     source: z.enum(["model", "deterministic"]),
+    mode: z.enum(["semantic", "verbatim"]).optional(),
+    spelling: spellingResultSchema.optional(),
     feedback: z.string().max(800),
     missedPoints: z.array(z.string().max(180)).max(6),
     reviewedAt: z.string().datetime(),

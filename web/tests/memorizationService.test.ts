@@ -84,6 +84,27 @@ function gateway(options: { modelAvailable?: boolean; draftAvailable?: boolean }
 }
 
 describe("Phase 7.3 memorization service", () => {
+  it("runs strict spelling without model calls, persists review and offers a confirmation-only draft", async () => {
+    const fake = gateway({ modelAvailable: true, draftAvailable: true });
+    const service = createMemorizationService(fake.port);
+    const saved = await service.create({ title: "English", sourceText: "Hello world", units: [{ cue: "问好", content: "Hello world" }] });
+    const result = await service.review(saved.material.id, { unitId: saved.material.units[0].id, recitation: "hello world", expectedVersion: 1, mode: "verbatim" });
+    expect(result).toMatchObject({ evaluation: { source: "deterministic", spelling: { exact: false, distance: 1 } }, taskDraft: { kind: "reminder" } });
+    expect(fake.calls.some((call) => call.capabilityId === "model.generate")).toBe(false);
+    expect((await service.get(saved.material.id))?.material.attempts[0]).toMatchObject({ mode: "verbatim" });
+    await expect(service.review(saved.material.id, { unitId: saved.material.units[0].id, recitation: "Hello world", expectedVersion: 1, mode: "verbatim" })).rejects.toMatchObject({ code: "MATERIAL_VERSION_CONFLICT" });
+  });
+  it("preserves unchanged unit history but resets changed units and checks stale edits", async () => {
+    const service = createMemorizationService(gateway().port);
+    const saved = await service.create({ title: "A", sourceText: "第一段", units: [{ cue: "一", content: "第一段" }] });
+    await service.review(saved.material.id, { unitId: saved.material.units[0].id, recitation: "第一段", expectedVersion: 1, mode: "verbatim" });
+    const unchanged = await service.update(saved.material.id, { title: "改名", sourceText: "第一段", units: [{ cue: "一", content: "第一段" }], expectedVersion: 2 });
+    expect(unchanged?.material.units[0]).toMatchObject({ id: saved.material.units[0].id, reviewCount: 1 });
+    const changed = await service.update(saved.material.id, { title: "改名", sourceText: "第二段", units: [{ cue: "二", content: "第二段" }], expectedVersion: 3 });
+    expect(changed?.material.units[0].id).not.toBe(saved.material.units[0].id);
+    expect(changed?.material.attempts).toEqual([]);
+    await expect(service.update(saved.material.id, { title: "覆盖", sourceText: "旧", units: [{ cue: "旧", content: "旧" }], expectedVersion: 3 })).rejects.toMatchObject({ code: "MATERIAL_VERSION_CONFLICT" });
+  });
   it("does not dilute semantic evaluation with a low lexical-overlap score", async () => {
     const service = createMemorizationService(gateway({ modelAvailable: true }).port);
     const saved = await service.create({ title: "蒸发", sourceText: "液态水变成水蒸气叫蒸发", units: [{ cue: "蒸发", content: "液态水变成水蒸气叫蒸发" }] });
