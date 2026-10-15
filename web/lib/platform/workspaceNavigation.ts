@@ -3,6 +3,7 @@ export const WORKSPACE_SECTIONS = [
     { href: "/chat", label: "对话空间", mark: "聊", description: "自动 · 专业 · 陪伴 · 反思" },
     { href: "/study", label: "学习模式", mark: "学", description: "背诵、解题与复习" },
     { href: "/entertainment", label: "娱乐模式", mark: "游", description: "角色扮演与 AI 跑团" },
+    { href: "/tools", label: "工具工作台", mark: "具", description: "计算、证据定位与草稿预览" },
   ] },
   { label: "日常与内容", items: [
     { href: "/tasks", label: "任务与提醒", mark: "时", description: "定时安排" },

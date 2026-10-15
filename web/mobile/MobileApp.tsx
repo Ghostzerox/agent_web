@@ -14,6 +14,7 @@ import { requestNavigationPermission } from "@/lib/platform/navigationGuard";
 type MobileRoute =
   | "/"
   | "/chat"
+  | "/tools"
   | "/study"
   | "/tasks"
   | "/inbox"
@@ -34,6 +35,7 @@ type MobileRoute =
 const ROUTES: Record<MobileRoute, LazyExoticComponent<ComponentType>> = {
   "/": lazy(() => import("@/app/page")),
   "/chat": lazy(() => import("@/app/chat/page")),
+  "/tools": lazy(() => import("@/app/tools/page")),
   "/study": lazy(() => import("@/app/study/page")),
   "/tasks": lazy(() => import("@/app/tasks/page")),
   "/inbox": lazy(() => import("@/app/inbox/page")),
