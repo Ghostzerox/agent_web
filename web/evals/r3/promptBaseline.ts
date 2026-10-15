@@ -23,6 +23,7 @@ import { BASELINE_SOURCE_COMMIT, KNOWN_PROMPT_GAPS, MODULE_PROMPT_COVERAGE, PROM
 import { MODE_QUALITY_SCENARIOS } from "./modeQualityScenarios";
 import { TASK_QUALITY_SCENARIOS } from "./taskQualityScenarios";
 import { GAME_PROMPT_VERSION, taskPromptProfile, taskSystemPrompt } from "@/lib/ai/taskPromptProfiles";
+import { parseGameModelTurn } from "@/lib/game/state";
 
 export const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 const date = new Date("2026-10-15T01:00:00.000Z");
@@ -174,6 +175,12 @@ export function promptBaselineCases(): PromptBaselineCase[] {
       },
     });
   }
+  cases.push({ id: "game-invalid-patch", entry: "game", kind: "boundary", input: "观察港口；模拟模型附加未授权字段。", criteria: ["结构化补丁无效时拒绝，不提交半个回合"], mockOutput: '{"narrative":"薄雾散开。","statePatch":{"arbitraryTool":"draw-card"}}', expectedError: "GAME_OUTPUT_INVALID",
+    async run(h) {
+      const result = await createGameNarrativeGenerator({ getConfig: () => config, createProvider: () => h.provider }).generate(gamePromptMessages(gameFixture(), null, this.input));
+      parseGameModelTurn(result.content);
+    },
+  });
   return cases;
 }
 

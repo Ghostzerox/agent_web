@@ -9,6 +9,10 @@ async function readProjectFile(relativePath: string) {
 }
 
 describe("single-user self-hosting artifacts", () => {
+  it("keeps generated live-evaluation artifacts out of Git and Docker build contexts", async () => {
+    expect(await readProjectFile(".gitignore")).toContain(".r3-eval/");
+    expect(await readProjectFile("web/.dockerignore")).toMatch(/^\.r3-eval$/mu);
+  });
   it("pins migration SQL to LF so Windows worktrees preserve applied checksums", async () => {
     expect(await readProjectFile(".gitattributes")).toMatch(/^\*\.sql text eol=lf$/mu);
     const entries = await readdir(path.join(projectRoot, "web/drizzle"), { recursive: true });

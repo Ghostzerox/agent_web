@@ -2,7 +2,7 @@
 
 - 状态：当前优先级的事实来源
 - 生效日期：2026-09-26
-- 最近修订：2026-10-15（R3.1–R3.3 已交付；质量/成本对照、工具/记忆增强及既有验收项保留）
+- 最近修订：2026-10-15（R3.4 真实受控对照/回归已交付；问题修正、人工语义验收与后续工具/记忆保留）
 - 适用范围：Sprint 排序、范围判断与阶段复盘
 - 详细架构：参见 `PRODUCT_TECHNICAL_ROADMAP.md`
 
@@ -52,7 +52,7 @@ Phase 0–2 已完成稳定聊天、服务端数据与可靠任务闭环。Core 
 | 5 | Phase 6 娱乐模式（已完成） | 独立 GameSession 支持角色扮演、跑团和规则包 Activity，不污染真实记忆 |
 | 6 | R1 Token 与缓存优化（首轮已实现，尚未封版） | 用量/费用记录、稳定前缀和输出预算已实现；真实对照与长对话摘要仍待完成，以总费用和回答质量共同验收 |
 | 7 | R2 全模式 UI 与导航优化（实现及自动验收交付，真机/视觉待确认） | 分组侧栏/手机抽屉、18 页面共享 UI、草稿保护、聊天/学习/娱乐入口；真机与用户视觉验收独立 |
-| 8 | R3 全模块提示词优化（R3.1–R3.3 已实现，R3.4 待开发） | 调用清单、对话/问候/八类任务模板、67 个离线样例与版本已交付；真实质量/成本对照保留 |
+| 8 | R3 全模块提示词优化（R3.1–R3.3 已实现，R3.4 收尾中） | 80 个离线样例、270 次受控对照、预算/用量/盲评与集成回归已交付；先修正评测发现的问题并完成语义验收 |
 | 9 | R4 全模块工具优化（待开发） | 复用搜索/骰子/算术/存储等基础，补齐抽卡、抽背/拼写、材料题库及各模块所需工具；每项有实际入口与测试 |
 | 10 | R5 分域记忆增强（待开发） | 个人记忆库、知识资料库、渐进 RAG、分支摘要、模块特化与记忆宫殿；可溯源、更正、删除和控制 |
 | 11 | 语音与移动发布完善 | 完成真机验收，并按实际需求接入 Huawei Push、签名与平台适配 |
@@ -63,7 +63,7 @@ Phase 5.6、Phase 6 与 Phase 7 的编号保留历史兼容，但实际顺序以
 
 R1/R2 是现有功能的收尾优化，不另建 Agent 框架或双端业务。实施拆分、技术边界和验收标准见 `EXPERIENCE_AND_COST_OPTIMIZATION_PLAN.md`。R1.1/R1.2 与 R1.3 首轮预算已实现，记录见 `TOKEN_COST_GUIDE.md`；真实费用/质量对照和长对话摘要尚未完成，不把确定性测试作为费用验收。此前按用户指令交付了 R2 的导航与共享 UI，规范见 `UI_NAVIGATION_GUIDE.md`，结果见 `reports/R2_UI_REPORT.md`；保留 R1 收益验收和华为真机/视觉确认。
 
-2026-10-15 按用户要求新增 R3/R4/R5，详见 [`CAPABILITY_ENHANCEMENT_PLAN.md`](./CAPABILITY_ENHANCEMENT_PLAN.md)。R3.1 清单与离线基线见 [`PROMPT_INVENTORY_AND_BASELINE.md`](./PROMPT_INVENTORY_AND_BASELINE.md)，R3.2 见 [`MODE_PROMPT_GUIDE.md`](./MODE_PROMPT_GUIDE.md)，R3.3 见 [`TASK_PROMPT_GUIDE.md`](./TASK_PROMPT_GUIDE.md)；下一步为 R3.4 质量/成本对照与集成回归，再按模块配对交付工具、逐步接入分域记忆，不要求先连续做三套框架。R5.4 承接 R1.3 未完成的分支摘要，只做一个实现、共用成本与质量验收。离线样例通过不等于真实模型质量已测，也不替代既有验收。
+2026-10-15 按用户要求新增 R3/R4/R5，详见 [`CAPABILITY_ENHANCEMENT_PLAN.md`](./CAPABILITY_ENHANCEMENT_PLAN.md)。R3.1 清单见 [`PROMPT_INVENTORY_AND_BASELINE.md`](./PROMPT_INVENTORY_AND_BASELINE.md)，R3.2/R3.3 模板见 [`MODE_PROMPT_GUIDE.md`](./MODE_PROMPT_GUIDE.md) 与 [`TASK_PROMPT_GUIDE.md`](./TASK_PROMPT_GUIDE.md)，R3.4 对照/待办见 [`PROMPT_QUALITY_AND_COST.md`](./PROMPT_QUALITY_AND_COST.md) 与 [`reports/R3_4_REPORT.md`](./reports/R3_4_REPORT.md)。下一步先做 R3.4 问题修正与人工语义验收，再按模块配对交付 R4 工具、逐步接入 R5 分域记忆，不要求先连续做三套框架。R5.4 承接 R1.3 分支摘要；受控格式/费用测量不等于生产净收益或人工体验已通过，也不替代既有验收。
 
 ## 4. Core 3.5 精简边界
 

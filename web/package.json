@@ -11,6 +11,8 @@
     "eval:core": "tsx scripts/core-quality-eval.ts",
     "eval:cost": "tsx scripts/token-cost-eval.ts",
     "eval:prompts": "tsx scripts/prompt-baseline.ts",
+    "eval:prompts:live": "tsx scripts/prompt-quality-live.ts",
+    "eval:prompts:report": "tsx scripts/prompt-quality-report.ts",
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
     "db:check": "drizzle-kit check",

@@ -1,0 +1,783 @@
+{
+  "version": "r3.4/quality-cost-v1",
+  "referenceCommit": "3f9e3afc92f4fa3bbd7f7ae3db2d58d9b1bc2f5a",
+  "candidateCommit": "e10487576d929f3bcc7b01ed683ed613d74cb932",
+  "evaluation": "controlled-non-thinking-synthetic-closed-world",
+  "expectedTrials": 270,
+  "trials": 270,
+  "complete": true,
+  "actualModels": [
+    "deepseek-flash"
+  ],
+  "price": {
+    "providerOrigin": "https://api.deepseek.com",
+    "model": "deepseek-flash",
+    "currency": "CNY",
+    "inputPerMillion": 2,
+    "cachedInputPerMillion": 0.04,
+    "outputPerMillion": 8,
+    "source": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+    "asOf": "2026-10-15"
+  },
+  "groups": [
+    {
+      "entry": "chat",
+      "variant": "reference",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 15,
+      "contractPassRate": 1,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 8244,
+      "outputTokens": 3375,
+      "cachedInputTokens": 5376,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.6521106259097526,
+      "peakRateUpperEstimatedCny": 0.03295104,
+      "accountedWithUnknownReservationsCny": 0.03295104,
+      "medianWallTimeMs": 5289,
+      "p95WallTimeMs": 6501,
+      "errors": []
+    },
+    {
+      "entry": "chat",
+      "variant": "candidate",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 15,
+      "contractPassRate": 1,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 8244,
+      "outputTokens": 3055,
+      "cachedInputTokens": 5376,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.6521106259097526,
+      "peakRateUpperEstimatedCny": 0.030391039999999998,
+      "accountedWithUnknownReservationsCny": 0.030391039999999998,
+      "medianWallTimeMs": 4925,
+      "p95WallTimeMs": 6551,
+      "errors": []
+    },
+    {
+      "entry": "agent-task",
+      "variant": "reference",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 15,
+      "contractPassRate": 1,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 933,
+      "outputTokens": 12332,
+      "cachedInputTokens": 0,
+      "reasoningTokens": null,
+      "cacheHitRate": 0,
+      "peakRateUpperEstimatedCny": 0.10052200000000001,
+      "accountedWithUnknownReservationsCny": 0.10052200000000001,
+      "medianWallTimeMs": 8401,
+      "p95WallTimeMs": 15033,
+      "errors": []
+    },
+    {
+      "entry": "agent-task",
+      "variant": "candidate",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 15,
+      "contractPassRate": 1,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 1578,
+      "outputTokens": 10356,
+      "cachedInputTokens": 0,
+      "reasoningTokens": null,
+      "cacheHitRate": 0,
+      "peakRateUpperEstimatedCny": 0.086004,
+      "accountedWithUnknownReservationsCny": 0.086004,
+      "medianWallTimeMs": 7277,
+      "p95WallTimeMs": 13866,
+      "errors": []
+    },
+    {
+      "entry": "news",
+      "variant": "reference",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 5,
+      "contractPassRate": 0.3333333333333333,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 4812,
+      "outputTokens": 2806,
+      "cachedInputTokens": 1920,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.39900249376558605,
+      "peakRateUpperEstimatedCny": 0.0283088,
+      "accountedWithUnknownReservationsCny": 0.0283088,
+      "medianWallTimeMs": 4429,
+      "p95WallTimeMs": 5126,
+      "errors": [
+        {
+          "caseId": "news-1",
+          "repetition": 1,
+          "observedError": "BRIEFING_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "news-1",
+          "repetition": 2,
+          "observedError": "BRIEFING_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "news-1",
+          "repetition": 3,
+          "observedError": "BRIEFING_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "news-2",
+          "repetition": 1,
+          "observedError": "BRIEFING_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "news-2",
+          "repetition": 3,
+          "observedError": "BRIEFING_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "news-3",
+          "repetition": 1,
+          "observedError": "BRIEFING_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "news-3",
+          "repetition": 2,
+          "observedError": "BRIEFING_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "news-3",
+          "repetition": 3,
+          "observedError": "BRIEFING_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "news-5",
+          "repetition": 2,
+          "observedError": "BRIEFING_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "news-5",
+          "repetition": 3,
+          "observedError": "BRIEFING_OUTPUT_INVALID"
+        }
+      ]
+    },
+    {
+      "entry": "news",
+      "variant": "candidate",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 15,
+      "contractPassRate": 1,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 6762,
+      "outputTokens": 3729,
+      "cachedInputTokens": 3840,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.5678793256433008,
+      "peakRateUpperEstimatedCny": 0.035829599999999996,
+      "accountedWithUnknownReservationsCny": 0.035829599999999996,
+      "medianWallTimeMs": 4855,
+      "p95WallTimeMs": 5921,
+      "errors": []
+    },
+    {
+      "entry": "books",
+      "variant": "reference",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 0,
+      "contractPassRate": 0,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 7812,
+      "outputTokens": 15668,
+      "cachedInputTokens": 5760,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.7373271889400922,
+      "peakRateUpperEstimatedCny": 0.1296784,
+      "accountedWithUnknownReservationsCny": 0.1296784,
+      "medianWallTimeMs": 9934,
+      "p95WallTimeMs": 12673,
+      "errors": [
+        {
+          "caseId": "books-1",
+          "repetition": 1,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-1",
+          "repetition": 2,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-1",
+          "repetition": 3,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-2",
+          "repetition": 1,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-2",
+          "repetition": 2,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-2",
+          "repetition": 3,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-3",
+          "repetition": 1,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-3",
+          "repetition": 2,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-3",
+          "repetition": 3,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-4",
+          "repetition": 1,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-4",
+          "repetition": 3,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-4",
+          "repetition": 2,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-5",
+          "repetition": 1,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-5",
+          "repetition": 2,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-5",
+          "repetition": 3,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        }
+      ]
+    },
+    {
+      "entry": "books",
+      "variant": "candidate",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 13,
+      "contractPassRate": 0.8666666666666667,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 9852,
+      "outputTokens": 12436,
+      "cachedInputTokens": 7680,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.7795371498172959,
+      "peakRateUpperEstimatedCny": 0.10413919999999999,
+      "accountedWithUnknownReservationsCny": 0.10413919999999999,
+      "medianWallTimeMs": 9287,
+      "p95WallTimeMs": 11712,
+      "errors": [
+        {
+          "caseId": "books-3",
+          "repetition": 2,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "books-4",
+          "repetition": 2,
+          "observedError": "BOOK_OUTPUT_INVALID"
+        }
+      ]
+    },
+    {
+      "entry": "reflection",
+      "variant": "reference",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 14,
+      "contractPassRate": 0.9333333333333333,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 4074,
+      "outputTokens": 4450,
+      "cachedInputTokens": 1920,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.47128129602356406,
+      "peakRateUpperEstimatedCny": 0.0399848,
+      "accountedWithUnknownReservationsCny": 0.0399848,
+      "medianWallTimeMs": 5580,
+      "p95WallTimeMs": 6149,
+      "errors": [
+        {
+          "caseId": "reflection-4",
+          "repetition": 1,
+          "observedError": "REFLECTION_OUTPUT_INVALID"
+        }
+      ]
+    },
+    {
+      "entry": "reflection",
+      "variant": "candidate",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 14,
+      "contractPassRate": 0.9333333333333333,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 7044,
+      "outputTokens": 4268,
+      "cachedInputTokens": 3840,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.545144804088586,
+      "peakRateUpperEstimatedCny": 0.040705599999999995,
+      "accountedWithUnknownReservationsCny": 0.040705599999999995,
+      "medianWallTimeMs": 5573,
+      "p95WallTimeMs": 6219,
+      "errors": [
+        {
+          "caseId": "reflection-5",
+          "repetition": 2,
+          "observedError": "REFLECTION_NO_QUALITY_CANDIDATES"
+        }
+      ]
+    },
+    {
+      "entry": "memorization",
+      "variant": "reference",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 15,
+      "contractPassRate": 1,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 2805,
+      "outputTokens": 1176,
+      "cachedInputTokens": 0,
+      "reasoningTokens": null,
+      "cacheHitRate": 0,
+      "peakRateUpperEstimatedCny": 0.015018,
+      "accountedWithUnknownReservationsCny": 0.015018,
+      "medianWallTimeMs": 3898,
+      "p95WallTimeMs": 5348,
+      "errors": []
+    },
+    {
+      "entry": "memorization",
+      "variant": "candidate",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 15,
+      "contractPassRate": 1,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 6240,
+      "outputTokens": 1551,
+      "cachedInputTokens": 3840,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.6153846153846154,
+      "peakRateUpperEstimatedCny": 0.0173616,
+      "accountedWithUnknownReservationsCny": 0.0173616,
+      "medianWallTimeMs": 4185,
+      "p95WallTimeMs": 5368,
+      "errors": []
+    },
+    {
+      "entry": "problem-solving",
+      "variant": "reference",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 13,
+      "contractPassRate": 0.8666666666666667,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": null,
+      "outputTokens": null,
+      "cachedInputTokens": null,
+      "reasoningTokens": null,
+      "cacheHitRate": null,
+      "peakRateUpperEstimatedCny": null,
+      "accountedWithUnknownReservationsCny": 0.07532784000000002,
+      "medianWallTimeMs": 4474,
+      "p95WallTimeMs": 6380,
+      "errors": [
+        {
+          "caseId": "problem-solving-2",
+          "repetition": 2,
+          "observedError": "PROVIDER_UNAVAILABLE"
+        },
+        {
+          "caseId": "problem-solving-5",
+          "repetition": 3,
+          "observedError": "OUTPUT_CONTRACT_FAILED"
+        }
+      ]
+    },
+    {
+      "entry": "problem-solving",
+      "variant": "candidate",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 14,
+      "contractPassRate": 0.9333333333333333,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 8823,
+      "outputTokens": 3156,
+      "cachedInputTokens": 3840,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.435226113566814,
+      "peakRateUpperEstimatedCny": 0.035367600000000006,
+      "accountedWithUnknownReservationsCny": 0.035367600000000006,
+      "medianWallTimeMs": 4248,
+      "p95WallTimeMs": 7524,
+      "errors": [
+        {
+          "caseId": "problem-solving-5",
+          "repetition": 3,
+          "observedError": "OUTPUT_CONTRACT_FAILED"
+        }
+      ]
+    },
+    {
+      "entry": "review-card",
+      "variant": "reference",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 15,
+      "contractPassRate": 1,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 2820,
+      "outputTokens": 2342,
+      "cachedInputTokens": 0,
+      "reasoningTokens": null,
+      "cacheHitRate": 0,
+      "peakRateUpperEstimatedCny": 0.024376,
+      "accountedWithUnknownReservationsCny": 0.024376,
+      "medianWallTimeMs": 4273,
+      "p95WallTimeMs": 4625,
+      "errors": []
+    },
+    {
+      "entry": "review-card",
+      "variant": "candidate",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 15,
+      "contractPassRate": 1,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 5835,
+      "outputTokens": 2264,
+      "cachedInputTokens": 3060,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.5244215938303342,
+      "peakRateUpperEstimatedCny": 0.0237844,
+      "accountedWithUnknownReservationsCny": 0.0237844,
+      "medianWallTimeMs": 4202,
+      "p95WallTimeMs": 5753,
+      "errors": []
+    },
+    {
+      "entry": "game",
+      "variant": "reference",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 13,
+      "contractPassRate": 0.8666666666666667,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 8217,
+      "outputTokens": 3941,
+      "cachedInputTokens": 4992,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.6075209930631618,
+      "peakRateUpperEstimatedCny": 0.03817767999999999,
+      "accountedWithUnknownReservationsCny": 0.03817767999999999,
+      "medianWallTimeMs": 5128,
+      "p95WallTimeMs": 7231,
+      "errors": [
+        {
+          "caseId": "game-2",
+          "repetition": 3,
+          "observedError": "GAME_OUTPUT_INVALID"
+        },
+        {
+          "caseId": "game-4",
+          "repetition": 3,
+          "observedError": "GAME_OUTPUT_INVALID"
+        }
+      ]
+    },
+    {
+      "entry": "game",
+      "variant": "candidate",
+      "cases": 5,
+      "trials": 15,
+      "expectedTrials": 15,
+      "contractPasses": 15,
+      "contractPassRate": 1,
+      "modelCalls": 15,
+      "transportAttempts": 15,
+      "inputTokens": 11607,
+      "outputTokens": 3539,
+      "cachedInputTokens": 7922,
+      "reasoningTokens": null,
+      "cacheHitRate": 0.6825191694667011,
+      "peakRateUpperEstimatedCny": 0.03599888,
+      "accountedWithUnknownReservationsCny": 0.03599888,
+      "medianWallTimeMs": 5094,
+      "p95WallTimeMs": 6879,
+      "errors": []
+    }
+  ],
+  "candidateContractPassRate": 0.9703703703703703,
+  "structuredCandidatePassRate": 0.9619047619047619,
+  "contractGate": "passed",
+  "candidateFamiliesBelow95": [
+    "books",
+    "reflection",
+    "problem-solving"
+  ],
+  "humanQualityStatus": "not-reviewed",
+  "semanticGate": "not-reviewed",
+  "caseScores": [
+    {
+      "caseId": "chat-1",
+      "mean": null
+    },
+    {
+      "caseId": "chat-2",
+      "mean": null
+    },
+    {
+      "caseId": "chat-3",
+      "mean": null
+    },
+    {
+      "caseId": "chat-4",
+      "mean": null
+    },
+    {
+      "caseId": "chat-5",
+      "mean": null
+    },
+    {
+      "caseId": "agent-task-1",
+      "mean": null
+    },
+    {
+      "caseId": "agent-task-2",
+      "mean": null
+    },
+    {
+      "caseId": "agent-task-3",
+      "mean": null
+    },
+    {
+      "caseId": "agent-task-4",
+      "mean": null
+    },
+    {
+      "caseId": "agent-task-5",
+      "mean": null
+    },
+    {
+      "caseId": "news-1",
+      "mean": null
+    },
+    {
+      "caseId": "news-2",
+      "mean": null
+    },
+    {
+      "caseId": "news-3",
+      "mean": null
+    },
+    {
+      "caseId": "news-4",
+      "mean": null
+    },
+    {
+      "caseId": "news-5",
+      "mean": null
+    },
+    {
+      "caseId": "books-1",
+      "mean": null
+    },
+    {
+      "caseId": "books-2",
+      "mean": null
+    },
+    {
+      "caseId": "books-3",
+      "mean": null
+    },
+    {
+      "caseId": "books-4",
+      "mean": null
+    },
+    {
+      "caseId": "books-5",
+      "mean": null
+    },
+    {
+      "caseId": "reflection-1",
+      "mean": null
+    },
+    {
+      "caseId": "reflection-2",
+      "mean": null
+    },
+    {
+      "caseId": "reflection-3",
+      "mean": null
+    },
+    {
+      "caseId": "reflection-4",
+      "mean": null
+    },
+    {
+      "caseId": "reflection-5",
+      "mean": null
+    },
+    {
+      "caseId": "memorization-1",
+      "mean": null
+    },
+    {
+      "caseId": "memorization-2",
+      "mean": null
+    },
+    {
+      "caseId": "memorization-3",
+      "mean": null
+    },
+    {
+      "caseId": "memorization-4",
+      "mean": null
+    },
+    {
+      "caseId": "memorization-5",
+      "mean": null
+    },
+    {
+      "caseId": "problem-solving-1",
+      "mean": null
+    },
+    {
+      "caseId": "problem-solving-2",
+      "mean": null
+    },
+    {
+      "caseId": "problem-solving-3",
+      "mean": null
+    },
+    {
+      "caseId": "problem-solving-4",
+      "mean": null
+    },
+    {
+      "caseId": "problem-solving-5",
+      "mean": null
+    },
+    {
+      "caseId": "review-card-1",
+      "mean": null
+    },
+    {
+      "caseId": "review-card-2",
+      "mean": null
+    },
+    {
+      "caseId": "review-card-3",
+      "mean": null
+    },
+    {
+      "caseId": "review-card-4",
+      "mean": null
+    },
+    {
+      "caseId": "review-card-5",
+      "mean": null
+    },
+    {
+      "caseId": "game-1",
+      "mean": null
+    },
+    {
+      "caseId": "game-2",
+      "mean": null
+    },
+    {
+      "caseId": "game-3",
+      "mean": null
+    },
+    {
+      "caseId": "game-4",
+      "mean": null
+    },
+    {
+      "caseId": "game-5",
+      "mean": null
+    }
+  ],
+  "dimensionRegressions": [],
+  "criticalFailures": null,
+  "peakRateUpperEstimatedCny": null,
+  "accountedWithUnknownReservationsCny": 0.8939264800000001,
+  "limitations": [
+    "Contract pass is not semantic correctness or a human score.",
+    "Closed-world synthetic sources do not validate live news, real book bibliographies, images, long-context continuity or provider-default thinking mode.",
+    "Reported prices use verified peak rates as an upper estimate; this is not an account invoice or a guarantee about future prices.",
+    "Raw answers remain in the local ignored .r3-eval folder; no private conversation or real user task is used.",
+    "Reasoning tokens are already part of output tokens, never charged twice."
+  ]
+}

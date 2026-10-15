@@ -1,4 +1,5 @@
 node_modules
+.r3-eval
 .next
 out
 coverage

@@ -3,7 +3,8 @@ import { resolve } from "node:path";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { comparePromptBaselines, promptBaselineCases, promptBaselineSnapshot, runPromptBaseline } from "@/evals/r3/promptBaseline";
 import { MODEL_CALLER_FILES, MODULE_PROMPT_COVERAGE, PROMPT_ENTRY_POINTS, PROMPT_SOURCE_FILES } from "@/evals/r3/promptInventory";
-import baseline from "@/evals/r3/baseline-r3.3.json";
+import baseline from "@/evals/r3/baseline-r3.4.json";
+import tasks from "@/evals/r3/baseline-r3.3.json";
 import previous from "@/evals/r3/baseline-r3.2.json";
 import original from "@/evals/r3/baseline.json";
 
@@ -28,10 +29,10 @@ describe("R3 offline prompt baselines", () => {
   });
 
   it("passes real assembly/validator fixtures without a Provider, search network or database", () => {
-    expect(result.total).toBe(67);
+    expect(result.total).toBe(80);
     expect(result.cases.filter((item) => !item.passed)).toEqual([]);
     expect(result.passed).toBe(result.total);
-    expect(result.cases.filter((item) => item.kind === "normal")).toHaveLength(54);
+    expect(result.cases.filter((item) => item.kind === "normal")).toHaveLength(66);
     expect(fetch).not.toHaveBeenCalled();
     expect(result.realModelCalls).toBe(0);
   });
@@ -47,7 +48,7 @@ describe("R3 offline prompt baselines", () => {
     expect(result.cases.find((item) => item.id === "problem-image")?.hasImage).toBe(true);
     const hashes = ["hint", "guided", "check", "explain"].map((strategy) => result.cases.find((item) => item.id === `problem-${strategy}`)?.requestSha256);
     expect(new Set(hashes).size).toBe(4);
-    expect(result.cases.filter((item) => item.id.startsWith("game-"))).toHaveLength(3);
+    expect(result.cases.filter((item) => item.id.startsWith("game-") && item.kind === "normal")).toHaveLength(3);
   });
 
   it("never claims manual quality, costs, tokens or latency from synthetic responses", () => {
@@ -78,14 +79,24 @@ describe("R3 offline prompt baselines", () => {
     expect(original.version).toBe("r3.1/inventory-v1");
     expect(comparison.removedCases).toEqual([]);
     expect(comparison.changedExistingFixtures).toEqual([]);
-    expect(comparison.addedCases).toHaveLength(36);
+    expect(comparison.addedCases).toHaveLength(49);
     const taskComparison = comparePromptBaselines(previous, promptBaselineSnapshot(result));
     expect(previous.version).toBe("r3.2/modes-v1");
     expect(taskComparison.removedCases).toEqual([]);
     expect(taskComparison.changedExistingFixtures).toEqual([]);
-    expect(taskComparison.addedCases).toHaveLength(16);
+    expect(taskComparison.addedCases).toHaveLength(29);
     expect(taskComparison.changedExistingRequests).toHaveLength(20);
     expect(taskComparison.changedExistingRequests.every((item) => !item.id.startsWith("chat-") && !item.id.startsWith("mode-"))).toBe(true);
     expect(taskComparison.addedSourceFiles.sort()).toEqual(["lib/ai/taskPromptProfiles.ts", "lib/ai/modelUsage.ts"].sort());
+  });
+
+  it("has at least five normal and one boundary case per family without changing runtime templates", () => {
+    for (const { id } of PROMPT_ENTRY_POINTS) {
+      expect(result.cases.filter((item) => item.entry === id && item.kind === "normal").length, id).toBeGreaterThanOrEqual(5);
+      expect(result.cases.some((item) => item.entry === id && item.kind === "boundary"), id).toBe(true);
+    }
+    const comparison = comparePromptBaselines(tasks, promptBaselineSnapshot(result));
+    expect(comparison).toMatchObject({ changedSourceFiles: [], addedSourceFiles: [], removedCases: [], changedExistingFixtures: [], changedExistingRequests: [] });
+    expect(comparison.addedCases).toHaveLength(13);
   });
 });

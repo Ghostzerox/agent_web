@@ -20,6 +20,7 @@ out/
 # Logs
 *.log
 backups/
+.r3-eval/
 
 # OS
 .DS_Store
