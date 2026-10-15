@@ -37,7 +37,9 @@ async function main() {
     return;
   }
   const budget = new EvaluationBudget(Number(argument("--budget-cny")));
-  if (new Date().toISOString().slice(0, 10) !== REVIEWED_PRICE.asOf) throw new Error("Pricing must be re-verified for today's live evaluation before spending");
+  const reviewedOn = argument("--pricing-reviewed-on") ?? REVIEWED_PRICE.asOf;
+  if (new Date().toISOString().slice(0, 10) !== reviewedOn) throw new Error("Pricing must be re-verified for today's live evaluation before spending");
+  const candidateCommit = argument("--candidate-commit") ?? QUALITY_CANDIDATE_COMMIT;
   const referenceDirectory = argument("--reference-dir");
   if (!referenceDirectory) throw new Error("Reference modules required");
   const referenceSources = ["lib/tasks/agentPromptGenerator.ts", "lib/tasks/personalBriefingGenerator.ts", "lib/tasks/bookRecommendationGenerator.ts", "lib/tasks/reflectionQuestionGenerator.ts", "lib/plugins/hostCapabilityAdapters.ts", "lib/game/gameTurnService.ts"];
@@ -50,7 +52,7 @@ async function main() {
   }
   const candidateSourceHashes: Record<string, string> = {};
   for (const source of PROMPT_SOURCE_FILES) {
-    const expected = execFileSync("git", ["show", `${QUALITY_CANDIDATE_COMMIT}:web/${source}`], { encoding: "utf8", windowsHide: true }).replaceAll("\r\n", "\n").trimEnd();
+    const expected = execFileSync("git", ["show", `${candidateCommit}:web/${source}`], { encoding: "utf8", windowsHide: true }).replaceAll("\r\n", "\n").trimEnd();
     const actual = readFileSync(resolve(source), "utf8").replaceAll("\r\n", "\n").trimEnd();
     if (expected !== actual) throw new Error("Candidate source does not match pinned Git commit");
     candidateSourceHashes[source] = hash(actual);
@@ -66,14 +68,19 @@ async function main() {
   };
   const reference = await loadReferenceModules(referenceDirectory);
   const family = argument("--family");
-  const selected = family ? workflows.filter((item) => item.entry === family) : workflows;
+  const focus = argument("--cases")?.split(",");
+  const selected = workflows.filter((item) => (!family || item.entry === family) && (!focus || focus.includes(item.id)));
   if (!selected.length) throw new Error("No selected workflows");
   const resumeInput = argument("--resume-input");
+  if (resumeInput && candidateCommit !== QUALITY_CANDIDATE_COMMIT) throw new Error("Focused retests cannot inherit historical candidates");
   const inherited = resumeInput ? parseQualityRun(readFileSync(resumeInput, "utf8")).trials : [];
   const inheritedKeys = new Set(inherited.map((row) => `${row.caseId}/${row.variant}/${row.repetition}`));
-  const queue = selected.flatMap((workflow) => Array.from({ length: 3 }, (_, index) => ["reference", "candidate"].map((variant) => ({ workflow, repetition: index + 1, variant })))).flat().filter((job) => !inheritedKeys.has(`${job.workflow.id}/${job.variant}/${job.repetition}`));
+  const repetitions = Number(argument("--repetitions") ?? 3);
+  if (!Number.isInteger(repetitions) || repetitions < 1 || repetitions > 3) throw new Error("Invalid repetitions");
+  const variants = process.argv.includes("--candidate-only") ? ["candidate"] : ["reference", "candidate"];
+  const queue = selected.flatMap((workflow) => Array.from({ length: repetitions }, (_, index) => variants.map((variant) => ({ workflow, repetition: index + 1, variant })))).flat().filter((job) => !inheritedKeys.has(`${job.workflow.id}/${job.variant}/${job.repetition}`));
   const records: Array<Record<string, unknown>> = [...inherited];
-  emit({ event: "start", referenceCommit: QUALITY_REFERENCE_COMMIT, candidateCommit: QUALITY_CANDIDATE_COMMIT, referenceSourceHashes, candidateSourceHashes, plannedNewTrials: queue.length, inheritedTrials: inherited.length, inheritedArtifactSha256: resumeInput ? hash(readFileSync(resumeInput, "utf8")) : null, budgetCny: budget.limitCny, price: REVIEWED_PRICE, dnsFallback: argument("--resolved-address") ? "host-resolved-IPv4-with-normal-TLS-verification" : null, settings: QUALITY_EVALUATION_SETTINGS });
+  emit({ event: "start", referenceCommit: QUALITY_REFERENCE_COMMIT, candidateCommit, referenceSourceHashes, candidateSourceHashes, plannedNewTrials: queue.length, inheritedTrials: inherited.length, inheritedArtifactSha256: resumeInput ? hash(readFileSync(resumeInput, "utf8")) : null, budgetCny: budget.limitCny, price: { ...REVIEWED_PRICE, asOf: reviewedOn }, dnsFallback: argument("--resolved-address") ? "host-resolved-IPv4-with-normal-TLS-verification" : null, settings: QUALITY_EVALUATION_SETTINGS, scope: focus || variants.length === 1 || repetitions !== 3 ? "focused-retest-not-canonical-comparison" : "canonical" });
   for (const trial of inherited) writeSync(artifact, `${JSON.stringify(trial)}\n`);
   async function worker() {
     while (queue.length) {

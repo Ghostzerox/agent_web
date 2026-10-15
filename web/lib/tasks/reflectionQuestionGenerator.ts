@@ -174,7 +174,9 @@ export function selectReflectionQuestions(
   preferences: ReflectionPreferenceRecord,
   history: readonly ReflectionQuestionSignal[],
 ): ReflectionQuestionSignal[] {
-  const target = [topic, ...preferences.goals].join("\n");
+  // Negative instructions are boundaries, not positive relevance targets.
+  const positiveTopic = topic.replace(/(?:不谈|不讨论|不要涉及|不要谈|避免)[^，。；;\n]*/gu, "");
+  const target = [positiveTopic, ...preferences.goals].join("\n");
   const scored = candidates
     .filter((candidate) => candidateAllowed(candidate, preferences))
     .map((candidate) => scoreCandidate(candidate, target, history, candidates.length))
@@ -213,7 +215,7 @@ function promptFor(
     "不要使用空泛的“你怎么看”；不要假定用户情绪、经历或人格；emotionalLoad 用 1（低）到 5（高）表示潜在审问感或情绪负担。",
     "每题 12–120 字，恰好一个问号且以？结尾，一题只问一个核心问题，不用“是否/能否/是不是”等是非问开头，不堆叠多个追问。候选应有不同切入点，不只是同一句话的改写。",
     "why 不超过 300 字，简短说明该题能帮助检验什么，而非替用户回答或作心理诊断。type 只选与实际问法相符的一项；温和 gentle 风格的 emotionalLoad 应不高于 3，balanced 可适度挑战，challenging 可直接质疑前提但不羞辱、不强迫披露禁区。",
-    "可用一个小行动或可观察证据使问题落地；材料不足时围绕已知主题提问，不虚构用户过往、隐藏动机或历史提问记录。",
+    "可用一个小行动或可观察证据使问题落地；材料不足时围绕已知主题提问，不虚构用户过往、隐藏动机或历史提问记录。禁区只用于避开，不在 question 或 why 中重述、解释或影射禁区，即使是说明‘不讨论’也不要写进去。",
     "只输出一个 JSON 对象，不要 Markdown、代码围栏或额外说明。格式：",
     '{"candidates":[{"question":"以？结尾的一个问题","type":"assumption|evidence|tradeoff|alternative|future|action","why":"为什么值得思考","emotionalLoad":1}]}',
     `用户本次想反思的主题：${topic}`,

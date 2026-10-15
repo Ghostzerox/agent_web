@@ -185,7 +185,7 @@ export function createMemorizationService(
       const localScore = scoreRecitation(unit.content, input.recitation);
       let score = localScore;
       let source: "model" | "deterministic" = "deterministic";
-      let feedback = deterministicFeedback(score);
+      let feedback = `模型评价不可用；以下仅为字面覆盖参考，不代表语义正确率。${deterministicFeedback(score)}`;
       let missedPoints = score >= 90 ? [] : ["请对照原文核对遗漏的关键词与逻辑关系。"];
       let model: string | null = null;
       try {
@@ -205,7 +205,8 @@ export function createMemorizationService(
           context: USER_INITIATED_PLUGIN_CONTEXT,
         });
         const evaluation = modelEvaluationSchema.parse(result.data);
-        score = Math.round(localScore * 0.45 + evaluation.score * 0.55);
+        // Lexical overlap is a fallback, not evidence against equivalent paraphrases.
+        score = evaluation.score;
         source = "model";
         feedback = evaluation.feedback;
         missedPoints = evaluation.missedPoints;

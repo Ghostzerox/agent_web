@@ -45,6 +45,11 @@ const candidates = [
 ];
 
 describe("reflection question generator", () => {
+  it("does not treat a negative topic boundary as a relevance requirement", () => {
+    const selected = selectReflectionQuestions([{ question: "本周可以用哪项英语练习记录验证投入是否值得？", type: "evidence", why: "比较英语练习证据。", emotionalLoad: 1 }], "只讨论英语练习证据，不谈家庭隐私。", preferences, []);
+    expect(selected).toHaveLength(1);
+    expect(selectReflectionQuestions([{ question: "英语练习之外家庭隐私的影响具体是什么？", type: "evidence", why: "家庭隐私", emotionalLoad: 1 }], "英语练习", preferences, [])).toEqual([]);
+  });
   it("filters generic and avoided candidates, then selects the strongest diverse question", () => {
     const selected = selectReflectionQuestions(
       candidates,

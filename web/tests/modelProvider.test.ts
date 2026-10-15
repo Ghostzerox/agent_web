@@ -69,6 +69,15 @@ describe("server model configuration", () => {
 });
 
 describe("OpenAICompatibleProvider", () => {
+  it.each(["reflection", "memorization", "problem-solving", "review-card", "game"] as const)("requests verified JSON mode for %s on official DeepSeek only", async (business) => {
+    const fetcher = vi.fn().mockImplementation(async () => Response.json({ choices: [{ message: { content: "{}" }, finish_reason: "stop" }] }));
+    vi.stubGlobal("fetch", fetcher);
+    for (const baseUrl of ["https://api.deepseek.com", "https://compatible.example/v1"]) {
+      for await (const event of new OpenAICompatibleProvider({ apiKey: "test", baseUrl, model: "test" }).stream({ business, messages: [{ role: "user", content: "JSON {}" }] })) void event;
+    }
+    expect(JSON.parse(fetcher.mock.calls[0][1].body)).toHaveProperty("response_format", { type: "json_object" });
+    expect(JSON.parse(fetcher.mock.calls[1][1].body)).not.toHaveProperty("response_format");
+  });
   it("captures usage-only chunks, official stream options and a privacy-safe call record", async () => {
     const record = vi.fn().mockResolvedValue(undefined);
     const fetcher = vi.fn().mockResolvedValue(new Response([

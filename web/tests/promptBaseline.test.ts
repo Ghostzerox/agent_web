@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { comparePromptBaselines, promptBaselineCases, promptBaselineSnapshot, runPromptBaseline } from "@/evals/r3/promptBaseline";
 import { MODEL_CALLER_FILES, MODULE_PROMPT_COVERAGE, PROMPT_ENTRY_POINTS, PROMPT_SOURCE_FILES } from "@/evals/r3/promptInventory";
-import baseline from "@/evals/r3/baseline-r3.4.json";
+import baseline from "@/evals/r3/baseline-r3.4-v2.json";
 import tasks from "@/evals/r3/baseline-r3.3.json";
 import previous from "@/evals/r3/baseline-r3.2.json";
 import original from "@/evals/r3/baseline.json";
@@ -96,7 +96,9 @@ describe("R3 offline prompt baselines", () => {
       expect(result.cases.some((item) => item.entry === id && item.kind === "boundary"), id).toBe(true);
     }
     const comparison = comparePromptBaselines(tasks, promptBaselineSnapshot(result));
-    expect(comparison).toMatchObject({ changedSourceFiles: [], addedSourceFiles: [], removedCases: [], changedExistingFixtures: [], changedExistingRequests: [] });
+    expect(comparison).toMatchObject({ addedSourceFiles: [], removedCases: [], changedExistingFixtures: [] });
+    expect(comparison.changedSourceFiles.length).toBeGreaterThan(0);
+    expect(comparison.changedExistingRequests.length).toBeGreaterThan(0);
     expect(comparison.addedCases).toHaveLength(13);
   });
 });

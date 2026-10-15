@@ -84,6 +84,13 @@ function gateway(options: { modelAvailable?: boolean; draftAvailable?: boolean }
 }
 
 describe("Phase 7.3 memorization service", () => {
+  it("does not dilute semantic evaluation with a low lexical-overlap score", async () => {
+    const service = createMemorizationService(gateway({ modelAvailable: true }).port);
+    const saved = await service.create({ title: "蒸发", sourceText: "液态水变成水蒸气叫蒸发", units: [{ cue: "蒸发", content: "液态水变成水蒸气叫蒸发" }] });
+    const reviewed = await service.review(saved.material.id, { unitId: saved.material.units[0].id, recitation: "水由液体变为水蒸气，这个过程叫蒸发。", expectedVersion: saved.storageVersion });
+    expect(reviewed?.evaluation.score).toBe(92);
+    expect(reviewed?.evaluation.localScore).toBeLessThan(92);
+  });
   it("forms material, review, learning record and task-draft loop through the gateway", async () => {
     const fake = gateway({ modelAvailable: true, draftAvailable: true });
     const service = createMemorizationService(
