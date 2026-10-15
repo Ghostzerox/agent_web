@@ -2,12 +2,14 @@
 
 - 创建日期：2026-09-30
 - 状态：R1 首轮已交付，摘要与真实收益验收保留；R2 导航/全页面共享 UI 与跨端自动验证已交付，真机/视觉偏好待用户验收
-- 最近更新：2026-10-02；R1 实施与使用记录见 `TOKEN_COST_GUIDE.md`，R2 见 `UI_NAVIGATION_GUIDE.md`
-- 顺序：R1 → R2 → 语音/移动发布验收 → Phase 5.6 → Phase 8
+- 最近更新：2026-10-15；R1 实施与使用记录见 `TOKEN_COST_GUIDE.md`，R2 见 `UI_NAVIGATION_GUIDE.md`
+- 原定顺序：R1 → R2 → 语音/移动发布验收 → Phase 5.6 → Phase 8；新增能力阶段及实际优先级见主线指导
 - 优先级事实来源：`PRODUCT_MAINLINE_GUIDE.md`
 - 范围：优化现有产品，不重写 Agent Loop、Plugin API 或双端业务
 
 R2 实现规范、导航草图与改前/改后证据见 `UI_NAVIGATION_GUIDE.md`。进入 R2 不代表 R1 已整体封版，也不删除其待验收项。
+
+2026-10-15 新增待开发 R3 提示词优化、R4 全模块工具优化和 R5 分域记忆增强，详细矩阵与 Sprint 见 [`CAPABILITY_ENHANCEMENT_PLAN.md`](./CAPABILITY_ENHANCEMENT_PLAN.md)。它们不是已完成的 R1/R2 子项；R5.4 与 R1.3 共用分支摘要实现及成本验收，避免两套压缩逻辑。
 
 ## 1. 目标与边界
 
@@ -105,4 +107,4 @@ R2 实现规范、导航草图与改前/改后证据见 `UI_NAVIGATION_GUIDE.md`
 
 本轮结果见 `reports/R2_UI_REPORT.md`：430 项单元/集成测试、32 项部署版本浏览器回归、本地 React Bundle 冒烟与 Debug APK 构建通过。R2.3 仍保留华为真机的软键盘/返回/滚轮/通知点击，以及用户对视觉效果的确认。
 
-R1 交付基线/优化报告和缓存限制；R2 交付导航/视觉说明、截图与跨端验收表。完成后回到现有移动/语音测试、Phase 5.6 和 Phase 8；Huawei Push、定制音色、第三方插件市场仍按真实需求另立任务，不被本次优化自动包含。
+R1 交付基线/优化报告和缓存限制；R2 交付导航/视觉说明、截图与跨端验收表。后续先按用户新增需求推进 R3/R4/R5 能力增强，同时保留已有成本、视觉与真机待验收项，再回到移动/语音发布、Phase 5.6 和 Phase 8；Huawei Push、定制音色、第三方插件市场仍按真实需求另立任务，不被本次优化自动包含。
