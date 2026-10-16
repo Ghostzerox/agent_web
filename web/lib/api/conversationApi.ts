@@ -1,6 +1,7 @@
 import { z, ZodError, type ZodType } from "zod";
 import { CORE_MODE_IDS } from "@/lib/agent/modeRegistry";
 import { getDatabase } from "@/lib/db/client";
+import { isLocalKnowledgeUrl, knowledgeCitationMetadataSchema, knowledgeCitationUrl } from "@/lib/knowledge/citations";
 import {
   createConversationRepository,
   RepositoryError,
@@ -87,15 +88,14 @@ const appendMessageSchema = z
           .object({
             id: z.string().regex(/^S[1-9]\d*$/u).optional(),
             title: z.string().trim().min(1).max(500),
-            url: z
-              .url()
-              .refine((value) => ["http:", "https:"].includes(new URL(value).protocol)),
+            url: z.string().max(3000).refine((value) => { if (isLocalKnowledgeUrl(value)) return true; try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; } }),
+            knowledge: knowledgeCitationMetadataSchema.optional(),
             snippet: z.string().trim().max(2_000).optional(),
             source: z.string().trim().min(1).max(255).optional(),
             publishedAt: z.iso.datetime().nullable().optional(),
             fetchedAt: z.iso.datetime().optional(),
           })
-          .strict(),
+          .strict().refine((citation) => citation.knowledge ? citation.url === knowledgeCitationUrl(citation.knowledge) && !citation.snippet : !isLocalKnowledgeUrl(citation.url), { message: "Local references must carry matching source metadata without a private excerpt." }),
       )
       .max(100)
       .default([]),

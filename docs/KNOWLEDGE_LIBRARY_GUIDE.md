@@ -4,9 +4,11 @@
 - 页面：`/memory`，Web 与本地 React APK 共用组件。
 - 关联：[分域规范](MEMORY_DOMAIN_AND_SOURCE_GUIDE.md)、[ADR-065](adr/ADR-065-knowledge-library-and-source-deletion.md)、[交付报告](reports/R5_2_REPORT.md)。
 
+> R5.3 更新：现在可在资料页手动检索，在聊天中显式选定同模式集合后使用来源引用；不会仅因导入而自动发送。使用、版本失效与限制见 [检索指南](KNOWLEDGE_RETRIEVAL_GUIDE.md)。本文件迁移/备份段保留 R5.2 历史；当前共有 30 份迁移。
+
 ## 1. 现在能做什么
 
-“记忆”页同时提供知识资料库、已确认个人记忆和候选审核。资料不是个人事实，也不会作为 System 指令。**当前只负责资料组织与生命周期，没有自动把文档发给模型；按任务选资料、RAG 查询与引用在 R5.3 接入。**
+“记忆”页同时提供知识资料库、已确认个人记忆和候选审核。资料不是个人事实，也不是高优先级指令。R5.3 已接入手动检索与聊天显式选资料：导入本身不调用模型，选择集合并发送问题才把命中片段交给配置的 Provider。
 
 ### 知识资料库
 
@@ -60,6 +62,9 @@ knowledge_collections (owner, module, version)
 | `/collections/:id` | PATCH / DELETE | 修改标题说明 / 删除集合，带 expectedVersion |
 | `/collections/:id/documents` | GET / POST | 文档元数据列表 / 显式导入 |
 | `/documents/:id` | GET / PATCH / DELETE | 原文与定位 / 版本更正 / 删除 |
+| `/search` | POST | consumer/集合/查询，经 owner 与模式校验的词项检索，不调用模型 |
+
+原文 GET 可带 `?version=N`；版本不存在时返回 404，不读取最新版正文冒充旧来源。
 
 既有 `PATCH /memories/:id` 增加可选 `clearSourceEvidence`。既有 `DELETE /conversations/:id` 支持可选 JSON `{deleteRelatedMemories:true}`；无请求体继续兼容旧客户端，保留确认事实但清除该次来源的证据副本。
 
@@ -79,7 +84,7 @@ knowledge_collections (owner, module, version)
 
 ## 4. 明确保留的后续工作
 
-- R5.3：按宿主授权解析集合，接入中文词项检索、源版本校验、引用及无答案评测，再按实际收益评估可选 Embedding。
+- R5.3 首期词项检索/引用已实现；Embedding/混合召回待开发，四个隐含改写漏检保留在报告，不声称已解决任意语义查询。
 - R5.4：与 R1.3 共用分支摘要；R5.5：模块特化、关联与记忆宫殿；R5.6：更完整控制、跨端刷新/导入/重建验收。
 - 背书/解题知识集合目前不自动复制为插件材料；游戏规则集合也不自动进入剧情，后续通过明确宿主流程连接。
 - 目前仅文本/Markdown；不支持 PDF/OCR、Office、自动网页下载、图片解析或任意文件。失败原因可见，不伪造导入成功。

@@ -22,7 +22,7 @@ export type PromptExportDocument = {
   privacy: {
     exactRequestContent: boolean;
     memoryIncluded: boolean;
-    redactedSources: Array<"memory">;
+    redactedSources: Array<"memory" | "knowledge">;
     alwaysExcluded: string[];
   };
   integrity: {
@@ -40,7 +40,7 @@ function exportedPrompt(
   includeMemory: boolean,
 ): PromptEnvelope["promptLayers"] {
   return prompt.map((message) =>
-    message.source === "memory" && !includeMemory
+    (message.source === "memory" || message.source === "knowledge") && !includeMemory
       ? { ...message, content: REDACTED_MEMORY }
       : { ...message },
   );
@@ -113,7 +113,7 @@ export async function createPromptExportDocument(
     privacy: {
       exactRequestContent: !hasMemory || options.includeMemory,
       memoryIncluded: hasMemory && options.includeMemory,
-      redactedSources: hasMemory && !options.includeMemory ? ["memory"] : [],
+      redactedSources: hasMemory && !options.includeMemory ? [...new Set(envelope.promptLayers.filter((layer) => layer.source === "memory" || layer.source === "knowledge").map((layer) => layer.source as "memory" | "knowledge"))] : [],
       alwaysExcluded: [
         "model API key",
         "database credentials",

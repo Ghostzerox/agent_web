@@ -18,6 +18,7 @@ const sourceSchema = z.enum([
   "persona",
   "memory",
   "web-search",
+  "knowledge",
   "conversation",
 ]);
 const promptLayerSchema = z
@@ -46,7 +47,7 @@ const envelopeSchema = z
       .strict(),
     composer: z
       .object({
-        version: z.enum(["phase-5.2/v1", "phase-5.3/v1", "r1/cache-friendly-v1", "r3.2/mode-prompts-v1"]),
+        version: z.enum(["phase-5.2/v1", "phase-5.3/v1", "r1/cache-friendly-v1", "r3.2/mode-prompts-v1", "r5.3/knowledge-context-v1"]),
         layerOrder: z.array(sourceSchema).min(1).max(500),
       })
       .strict(),

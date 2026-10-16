@@ -1,0 +1,1561 @@
+{
+  "version": "lexical/r5.3-v1",
+  "corpusVersion": "synthetic/r5.3-v1",
+  "measurement": "pure-scorer-plus-equivalent-prefilter-not-database-or-network",
+  "environment": {
+    "node": "v24.15.0",
+    "platform": "win32",
+    "arch": "x64",
+    "cpu": "Intel(R) Core(TM) i9-14900HX"
+  },
+  "documents": 1000,
+  "chunks": 10000,
+  "eligibleChunks": 9800,
+  "queries": 80,
+  "summary": {
+    "recallAt5": 0.9090909090909091,
+    "referenceMemoryAlgorithmRecall": 0.6818181818181818,
+    "noAnswerFalseRetrievals": 0,
+    "noAnswerCount": 12,
+    "isolationLeaks": 0,
+    "staleDeletedHits": 0,
+    "locatorFailures": 0,
+    "firstQueryMs": 15.741900000000015,
+    "p50Ms": 5.419300000000021,
+    "p95Ms": 9.962199999999939,
+    "maxEstimatedTokens": 752,
+    "modelCalls": 0,
+    "embeddingCalls": 0,
+    "modelCostCny": 0
+  },
+  "groups": [
+    {
+      "group": "direct",
+      "total": 16,
+      "recallAt5": 1,
+      "falseRetrievals": 0
+    },
+    {
+      "group": "paraphrase",
+      "total": 12,
+      "recallAt5": 0.6666666666666666,
+      "falseRetrievals": 0
+    },
+    {
+      "group": "bilingual",
+      "total": 8,
+      "recallAt5": 1,
+      "falseRetrievals": 0
+    },
+    {
+      "group": "multi-source",
+      "total": 8,
+      "recallAt5": 1,
+      "falseRetrievals": 0
+    },
+    {
+      "group": "no-answer",
+      "total": 12,
+      "recallAt5": null,
+      "falseRetrievals": 0
+    },
+    {
+      "group": "stale-deleted",
+      "total": 8,
+      "recallAt5": null,
+      "falseRetrievals": 0
+    },
+    {
+      "group": "isolation",
+      "total": 16,
+      "recallAt5": null,
+      "falseRetrievals": 0
+    }
+  ],
+  "cases": [
+    {
+      "id": "direct-1",
+      "group": "direct",
+      "query": "缓存有效期是多久",
+      "gold": [
+        "00000000-0000-4000-8000-000000010000"
+      ],
+      "split": "development",
+      "selected": [
+        "00000000-0000-4000-8000-000000010000",
+        "00000000-0000-4000-8000-000000010001",
+        "00000000-0000-4000-8000-000000010002",
+        "00000000-0000-4000-8000-000000010003",
+        "00000000-0000-4000-8000-000000010004"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 740,
+      "durationMs": 15.741900000000015
+    },
+    {
+      "id": "direct-2",
+      "group": "direct",
+      "query": "增量备份保存什么",
+      "gold": [
+        "00000000-0000-4000-8000-000000010010"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010010",
+        "00000000-0000-4000-8000-000000010011",
+        "00000000-0000-4000-8000-000000010012",
+        "00000000-0000-4000-8000-000000010013",
+        "00000000-0000-4000-8000-000000010014"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 735,
+      "durationMs": 8.494599999999991
+    },
+    {
+      "id": "direct-3",
+      "group": "direct",
+      "query": "回滚规则是什么",
+      "gold": [
+        "00000000-0000-4000-8000-000000010020"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010020",
+        "00000000-0000-4000-8000-000000010021",
+        "00000000-0000-4000-8000-000000010022",
+        "00000000-0000-4000-8000-000000010023",
+        "00000000-0000-4000-8000-000000010024"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 737,
+      "durationMs": 11.053100000000086
+    },
+    {
+      "id": "direct-4",
+      "group": "direct",
+      "query": "任务延期需要保留什么",
+      "gold": [
+        "00000000-0000-4000-8000-000000010030"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010030",
+        "00000000-0000-4000-8000-000000010031",
+        "00000000-0000-4000-8000-000000010032",
+        "00000000-0000-4000-8000-000000010033",
+        "00000000-0000-4000-8000-000000010034"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 736,
+      "durationMs": 9.351100000000088
+    },
+    {
+      "id": "direct-5",
+      "group": "direct",
+      "query": "费用预算怎样分类",
+      "gold": [
+        "00000000-0000-4000-8000-000000010040"
+      ],
+      "split": "development",
+      "selected": [
+        "00000000-0000-4000-8000-000000010040",
+        "00000000-0000-4000-8000-000000010041",
+        "00000000-0000-4000-8000-000000010042",
+        "00000000-0000-4000-8000-000000010043",
+        "00000000-0000-4000-8000-000000010044"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 732,
+      "durationMs": 8.411699999999996
+    },
+    {
+      "id": "direct-6",
+      "group": "direct",
+      "query": "背诵训练先做什么",
+      "gold": [
+        "00000000-0000-4000-8000-000000010050"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010050"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 142,
+      "durationMs": 7.260300000000029
+    },
+    {
+      "id": "direct-7",
+      "group": "direct",
+      "query": "通货膨胀影响购买力吗",
+      "gold": [
+        "00000000-0000-4000-8000-000000010060"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010060"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 141,
+      "durationMs": 6.498299999999972
+    },
+    {
+      "id": "direct-8",
+      "group": "direct",
+      "query": "检索增强生成的步骤",
+      "gold": [
+        "00000000-0000-4000-8000-000000010070"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010070",
+        "00000000-0000-4000-8000-000000010071",
+        "00000000-0000-4000-8000-000000010072",
+        "00000000-0000-4000-8000-000000010073",
+        "00000000-0000-4000-8000-000000010074"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 751,
+      "durationMs": 8.726699999999937
+    },
+    {
+      "id": "direct-9",
+      "group": "direct",
+      "query": "应用程序接口约定什么",
+      "gold": [
+        "00000000-0000-4000-8000-000000010080"
+      ],
+      "split": "development",
+      "selected": [
+        "00000000-0000-4000-8000-000000010080"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 148,
+      "durationMs": 6.058099999999968
+    },
+    {
+      "id": "direct-10",
+      "group": "direct",
+      "query": "中央处理器负责什么",
+      "gold": [
+        "00000000-0000-4000-8000-000000010090"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010090",
+        "00000000-0000-4000-8000-000000010091",
+        "00000000-0000-4000-8000-000000010092",
+        "00000000-0000-4000-8000-000000010093",
+        "00000000-0000-4000-8000-000000010094"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 737,
+      "durationMs": 7.522299999999859
+    },
+    {
+      "id": "direct-11",
+      "group": "direct",
+      "query": "随机存取存储器断电",
+      "gold": [
+        "00000000-0000-4000-8000-000000010100"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010100"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 146,
+      "durationMs": 4.816600000000108
+    },
+    {
+      "id": "direct-12",
+      "group": "direct",
+      "query": "图形处理器适合何种执行",
+      "gold": [
+        "00000000-0000-4000-8000-000000010110"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010110"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 142,
+      "durationMs": 6.889699999999948
+    },
+    {
+      "id": "direct-13",
+      "group": "direct",
+      "query": "二氧化碳与温室气体",
+      "gold": [
+        "00000000-0000-4000-8000-000000010120"
+      ],
+      "split": "development",
+      "selected": [
+        "00000000-0000-4000-8000-000000010120"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 145,
+      "durationMs": 5.679899999999861
+    },
+    {
+      "id": "direct-14",
+      "group": "direct",
+      "query": "北京时间是哪个时区",
+      "gold": [
+        "00000000-0000-4000-8000-000000010130"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010130"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 138,
+      "durationMs": 7.139099999999871
+    },
+    {
+      "id": "direct-15",
+      "group": "direct",
+      "query": "同比统计怎样比较",
+      "gold": [
+        "00000000-0000-4000-8000-000000010140"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010140",
+        "00000000-0000-4000-8000-000000010141",
+        "00000000-0000-4000-8000-000000010142",
+        "00000000-0000-4000-8000-000000010143",
+        "00000000-0000-4000-8000-000000010144"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 737,
+      "durationMs": 8.669199999999819
+    },
+    {
+      "id": "direct-16",
+      "group": "direct",
+      "query": "资料删除涉及哪些内容",
+      "gold": [
+        "00000000-0000-4000-8000-000000010150"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010150",
+        "00000000-0000-4000-8000-000000010151",
+        "00000000-0000-4000-8000-000000010152",
+        "00000000-0000-4000-8000-000000010153",
+        "00000000-0000-4000-8000-000000010154"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 731,
+      "durationMs": 8.064899999999852
+    },
+    {
+      "id": "paraphrase-1",
+      "group": "paraphrase",
+      "query": "cache 的生存时间",
+      "gold": [
+        "00000000-0000-4000-8000-000000010000"
+      ],
+      "split": "development",
+      "selected": [
+        "00000000-0000-4000-8000-000000010000",
+        "00000000-0000-4000-8000-000000010001",
+        "00000000-0000-4000-8000-000000010002",
+        "00000000-0000-4000-8000-000000010003",
+        "00000000-0000-4000-8000-000000010004"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 740,
+      "durationMs": 7.678600000000188
+    },
+    {
+      "id": "paraphrase-2",
+      "group": "paraphrase",
+      "query": "数据副本只记录发生变化的数据",
+      "gold": [
+        "00000000-0000-4000-8000-000000010010"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010010"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 142,
+      "durationMs": 6.332300000000032
+    },
+    {
+      "id": "paraphrase-3",
+      "group": "paraphrase",
+      "query": "恢复旧版本时需要校验什么",
+      "gold": [
+        "00000000-0000-4000-8000-000000010020"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010020"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 144,
+      "durationMs": 5.419300000000021
+    },
+    {
+      "id": "paraphrase-4",
+      "group": "paraphrase",
+      "query": "任务延后要记录什么",
+      "gold": [
+        "00000000-0000-4000-8000-000000010030"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010030",
+        "00000000-0000-4000-8000-000000010031",
+        "00000000-0000-4000-8000-000000010032",
+        "00000000-0000-4000-8000-000000010033",
+        "00000000-0000-4000-8000-000000010034"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 736,
+      "durationMs": 10.398699999999735
+    },
+    {
+      "id": "paraphrase-5",
+      "group": "paraphrase",
+      "query": "每月开销包含哪几部分",
+      "gold": [
+        "00000000-0000-4000-8000-000000010040"
+      ],
+      "split": "development",
+      "selected": [
+        "00000000-0000-4000-8000-000000010040"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 139,
+      "durationMs": 5.272199999999884
+    },
+    {
+      "id": "paraphrase-6",
+      "group": "paraphrase",
+      "query": "背书应先主动回忆还是先看原文",
+      "gold": [
+        "00000000-0000-4000-8000-000000010050"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010050"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 142,
+      "durationMs": 6.295599999999922
+    },
+    {
+      "id": "paraphrase-7",
+      "group": "paraphrase",
+      "query": "物价上涨对实际购买力有什么影响",
+      "gold": [
+        "00000000-0000-4000-8000-000000010060"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010060"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 141,
+      "durationMs": 5.750300000000152
+    },
+    {
+      "id": "paraphrase-8",
+      "group": "paraphrase",
+      "query": "移除文档时需要处理派生分段吗",
+      "gold": [
+        "00000000-0000-4000-8000-000000010150"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010150"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 137,
+      "durationMs": 7.817500000000109
+    },
+    {
+      "id": "paraphrase-9",
+      "group": "paraphrase",
+      "query": "最长的那条边怎样根据短的两条边算出长度",
+      "gold": [
+        "00000000-0000-4000-8000-000000010160"
+      ],
+      "split": "development",
+      "selected": [],
+      "status": "no-match",
+      "recall": 0,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 5.824999999999818
+    },
+    {
+      "id": "paraphrase-10",
+      "group": "paraphrase",
+      "query": "做了这个选择，最好的另一个选择的收益叫什么",
+      "gold": [
+        "00000000-0000-4000-8000-000000010170"
+      ],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": 0,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 5.692399999999907
+    },
+    {
+      "id": "paraphrase-11",
+      "group": "paraphrase",
+      "query": "今天背一点，过几天再练是否更划算",
+      "gold": [
+        "00000000-0000-4000-8000-000000010180"
+      ],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": 0,
+      "referenceMemoryAlgorithmRecall": 0,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 8.613299999999981
+    },
+    {
+      "id": "paraphrase-12",
+      "group": "paraphrase",
+      "query": "没有人推也没有摩擦，东西会自己慢下来吗",
+      "gold": [
+        "00000000-0000-4000-8000-000000010190"
+      ],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": 0,
+      "referenceMemoryAlgorithmRecall": 0,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 5.195999999999913
+    },
+    {
+      "id": "bilingual-1",
+      "group": "bilingual",
+      "query": "TTL",
+      "gold": [
+        "00000000-0000-4000-8000-000000010000"
+      ],
+      "split": "development",
+      "selected": [
+        "00000000-0000-4000-8000-000000010000",
+        "00000000-0000-4000-8000-000000010001",
+        "00000000-0000-4000-8000-000000010002",
+        "00000000-0000-4000-8000-000000010003",
+        "00000000-0000-4000-8000-000000010004"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 740,
+      "durationMs": 7.227200000000266
+    },
+    {
+      "id": "bilingual-2",
+      "group": "bilingual",
+      "query": "RAG",
+      "gold": [
+        "00000000-0000-4000-8000-000000010070"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010070",
+        "00000000-0000-4000-8000-000000010071",
+        "00000000-0000-4000-8000-000000010072",
+        "00000000-0000-4000-8000-000000010073",
+        "00000000-0000-4000-8000-000000010074"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 751,
+      "durationMs": 6.380900000000111
+    },
+    {
+      "id": "bilingual-3",
+      "group": "bilingual",
+      "query": "API",
+      "gold": [
+        "00000000-0000-4000-8000-000000010080"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010080",
+        "00000000-0000-4000-8000-000000010081",
+        "00000000-0000-4000-8000-000000010082",
+        "00000000-0000-4000-8000-000000010083",
+        "00000000-0000-4000-8000-000000010084"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 749,
+      "durationMs": 6.9328999999997905
+    },
+    {
+      "id": "bilingual-4",
+      "group": "bilingual",
+      "query": "CPU",
+      "gold": [
+        "00000000-0000-4000-8000-000000010090"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010090",
+        "00000000-0000-4000-8000-000000010091",
+        "00000000-0000-4000-8000-000000010092",
+        "00000000-0000-4000-8000-000000010093",
+        "00000000-0000-4000-8000-000000010094"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 737,
+      "durationMs": 8.33179999999993
+    },
+    {
+      "id": "bilingual-5",
+      "group": "bilingual",
+      "query": "RAM",
+      "gold": [
+        "00000000-0000-4000-8000-000000010100"
+      ],
+      "split": "development",
+      "selected": [
+        "00000000-0000-4000-8000-000000010100",
+        "00000000-0000-4000-8000-000000010101",
+        "00000000-0000-4000-8000-000000010102",
+        "00000000-0000-4000-8000-000000010103",
+        "00000000-0000-4000-8000-000000010104"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 752,
+      "durationMs": 6.63340000000062
+    },
+    {
+      "id": "bilingual-6",
+      "group": "bilingual",
+      "query": "GPU",
+      "gold": [
+        "00000000-0000-4000-8000-000000010110"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010110",
+        "00000000-0000-4000-8000-000000010111",
+        "00000000-0000-4000-8000-000000010112",
+        "00000000-0000-4000-8000-000000010113",
+        "00000000-0000-4000-8000-000000010114"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 740,
+      "durationMs": 5.997199999999793
+    },
+    {
+      "id": "bilingual-7",
+      "group": "bilingual",
+      "query": "CO2",
+      "gold": [
+        "00000000-0000-4000-8000-000000010120"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010120",
+        "00000000-0000-4000-8000-000000010121",
+        "00000000-0000-4000-8000-000000010122",
+        "00000000-0000-4000-8000-000000010123",
+        "00000000-0000-4000-8000-000000010124"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 739,
+      "durationMs": 6.281299999999646
+    },
+    {
+      "id": "bilingual-8",
+      "group": "bilingual",
+      "query": "中国标准时间",
+      "gold": [
+        "00000000-0000-4000-8000-000000010130"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010130",
+        "00000000-0000-4000-8000-000000010131",
+        "00000000-0000-4000-8000-000000010132",
+        "00000000-0000-4000-8000-000000010133",
+        "00000000-0000-4000-8000-000000010134"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 1,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 732,
+      "durationMs": 5.9385999999994965
+    },
+    {
+      "id": "multi-1",
+      "group": "multi-source",
+      "query": "缓存有效期和增量备份",
+      "gold": [
+        "00000000-0000-4000-8000-000000010000",
+        "00000000-0000-4000-8000-000000010010"
+      ],
+      "split": "development",
+      "selected": [
+        "00000000-0000-4000-8000-000000010000",
+        "00000000-0000-4000-8000-000000010010",
+        "00000000-0000-4000-8000-000000010001",
+        "00000000-0000-4000-8000-000000010002",
+        "00000000-0000-4000-8000-000000010003"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0.5,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 732,
+      "durationMs": 9.640699999999924
+    },
+    {
+      "id": "multi-2",
+      "group": "multi-source",
+      "query": "回滚规则和任务延期",
+      "gold": [
+        "00000000-0000-4000-8000-000000010020",
+        "00000000-0000-4000-8000-000000010030"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010020",
+        "00000000-0000-4000-8000-000000010030",
+        "00000000-0000-4000-8000-000000010021",
+        "00000000-0000-4000-8000-000000010022",
+        "00000000-0000-4000-8000-000000010023"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0.5,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 730,
+      "durationMs": 9.595999999999549
+    },
+    {
+      "id": "multi-3",
+      "group": "multi-source",
+      "query": "费用预算和背诵训练",
+      "gold": [
+        "00000000-0000-4000-8000-000000010040",
+        "00000000-0000-4000-8000-000000010050"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010040",
+        "00000000-0000-4000-8000-000000010050",
+        "00000000-0000-4000-8000-000000010041",
+        "00000000-0000-4000-8000-000000010042",
+        "00000000-0000-4000-8000-000000010043"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0.5,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 725,
+      "durationMs": 9.793899999999667
+    },
+    {
+      "id": "multi-4",
+      "group": "multi-source",
+      "query": "通货膨胀和检索增强生成",
+      "gold": [
+        "00000000-0000-4000-8000-000000010060",
+        "00000000-0000-4000-8000-000000010070"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010060",
+        "00000000-0000-4000-8000-000000010070",
+        "00000000-0000-4000-8000-000000010061",
+        "00000000-0000-4000-8000-000000010062",
+        "00000000-0000-4000-8000-000000010063"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0.5,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 735,
+      "durationMs": 8.955199999999422
+    },
+    {
+      "id": "multi-5",
+      "group": "multi-source",
+      "query": "应用程序接口和中央处理器",
+      "gold": [
+        "00000000-0000-4000-8000-000000010080",
+        "00000000-0000-4000-8000-000000010090"
+      ],
+      "split": "development",
+      "selected": [
+        "00000000-0000-4000-8000-000000010080",
+        "00000000-0000-4000-8000-000000010090",
+        "00000000-0000-4000-8000-000000010081",
+        "00000000-0000-4000-8000-000000010082",
+        "00000000-0000-4000-8000-000000010083"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0.5,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 738,
+      "durationMs": 9.962199999999939
+    },
+    {
+      "id": "multi-6",
+      "group": "multi-source",
+      "query": "随机存取存储器和图形处理器",
+      "gold": [
+        "00000000-0000-4000-8000-000000010100",
+        "00000000-0000-4000-8000-000000010110"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010100",
+        "00000000-0000-4000-8000-000000010110",
+        "00000000-0000-4000-8000-000000010101",
+        "00000000-0000-4000-8000-000000010102",
+        "00000000-0000-4000-8000-000000010103"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0.5,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 743,
+      "durationMs": 8.770400000000336
+    },
+    {
+      "id": "multi-7",
+      "group": "multi-source",
+      "query": "二氧化碳和北京时间",
+      "gold": [
+        "00000000-0000-4000-8000-000000010120",
+        "00000000-0000-4000-8000-000000010130"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010130",
+        "00000000-0000-4000-8000-000000010120",
+        "00000000-0000-4000-8000-000000010131",
+        "00000000-0000-4000-8000-000000010132",
+        "00000000-0000-4000-8000-000000010133"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0.5,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 728,
+      "durationMs": 9.501199999999699
+    },
+    {
+      "id": "multi-8",
+      "group": "multi-source",
+      "query": "同比统计和资料删除",
+      "gold": [
+        "00000000-0000-4000-8000-000000010140",
+        "00000000-0000-4000-8000-000000010150"
+      ],
+      "split": "acceptance",
+      "selected": [
+        "00000000-0000-4000-8000-000000010140",
+        "00000000-0000-4000-8000-000000010150",
+        "00000000-0000-4000-8000-000000010141",
+        "00000000-0000-4000-8000-000000010142",
+        "00000000-0000-4000-8000-000000010143"
+      ],
+      "status": "completed",
+      "recall": 1,
+      "referenceMemoryAlgorithmRecall": 0.5,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 725,
+      "durationMs": 11.252999999999702
+    },
+    {
+      "id": "no-answer-1",
+      "group": "no-answer",
+      "query": "木星卫星数量",
+      "gold": [],
+      "split": "development",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.9056000000000495
+    },
+    {
+      "id": "no-answer-2",
+      "group": "no-answer",
+      "query": "玻璃熔点",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.6952000000001135
+    },
+    {
+      "id": "no-answer-3",
+      "group": "no-answer",
+      "query": "火星人口",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.291400000000067
+    },
+    {
+      "id": "no-answer-4",
+      "group": "no-answer",
+      "query": "远古恐龙灭绝日期",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.8072999999994863
+    },
+    {
+      "id": "no-answer-5",
+      "group": "no-answer",
+      "query": "深海鲸鱼迁徙路线",
+      "gold": [],
+      "split": "development",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 4.180600000000595
+    },
+    {
+      "id": "no-answer-6",
+      "group": "no-answer",
+      "query": "张教授的私人电话",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 4.538800000000265
+    },
+    {
+      "id": "no-answer-7",
+      "group": "no-answer",
+      "query": "紫色蘑菇识别",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 4.6215000000001965
+    },
+    {
+      "id": "no-answer-8",
+      "group": "no-answer",
+      "query": "猫咪疫苗预约地址",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.8635000000003856
+    },
+    {
+      "id": "no-answer-9",
+      "group": "no-answer",
+      "query": "铀矿储量",
+      "gold": [],
+      "split": "development",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.9272000000000844
+    },
+    {
+      "id": "no-answer-10",
+      "group": "no-answer",
+      "query": "月球旅馆房价",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 4.6952000000001135
+    },
+    {
+      "id": "no-answer-11",
+      "group": "no-answer",
+      "query": "白垩纪珊瑚化石",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.8856000000005224
+    },
+    {
+      "id": "no-answer-12",
+      "group": "no-answer",
+      "query": "量子纠缠实验装置",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.953700000000026
+    },
+    {
+      "id": "stale-80",
+      "group": "stale-deleted",
+      "query": "oldproof80",
+      "gold": [],
+      "split": "development",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.355100000000675
+    },
+    {
+      "id": "stale-81",
+      "group": "stale-deleted",
+      "query": "oldproof81",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.371100000000297
+    },
+    {
+      "id": "stale-82",
+      "group": "stale-deleted",
+      "query": "oldproof82",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.3786999999992986
+    },
+    {
+      "id": "stale-83",
+      "group": "stale-deleted",
+      "query": "oldproof83",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 4.059699999999793
+    },
+    {
+      "id": "stale-84",
+      "group": "stale-deleted",
+      "query": "oldproof84",
+      "gold": [],
+      "split": "development",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.3557999999993626
+    },
+    {
+      "id": "stale-85",
+      "group": "stale-deleted",
+      "query": "oldproof85",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.606100000000879
+    },
+    {
+      "id": "stale-86",
+      "group": "stale-deleted",
+      "query": "oldproof86",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.192599999999402
+    },
+    {
+      "id": "stale-87",
+      "group": "stale-deleted",
+      "query": "oldproof87",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.402299999999741
+    },
+    {
+      "id": "isolation-88",
+      "group": "isolation",
+      "query": "ownersecret88",
+      "gold": [],
+      "split": "development",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.58679999999913
+    },
+    {
+      "id": "isolation-89",
+      "group": "isolation",
+      "query": "ownersecret89",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.5357999999996537
+    },
+    {
+      "id": "isolation-90",
+      "group": "isolation",
+      "query": "ownersecret90",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.5015000000003056
+    },
+    {
+      "id": "isolation-91",
+      "group": "isolation",
+      "query": "ownersecret91",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.321700000000419
+    },
+    {
+      "id": "isolation-92",
+      "group": "isolation",
+      "query": "collectionsecret92",
+      "gold": [],
+      "split": "development",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.424300000000585
+    },
+    {
+      "id": "isolation-93",
+      "group": "isolation",
+      "query": "collectionsecret93",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.5622000000003027
+    },
+    {
+      "id": "isolation-94",
+      "group": "isolation",
+      "query": "collectionsecret94",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.5082000000002154
+    },
+    {
+      "id": "isolation-95",
+      "group": "isolation",
+      "query": "collectionsecret95",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.961199999999735
+    },
+    {
+      "id": "isolation-96-exact",
+      "group": "isolation",
+      "query": "gamesecret96 ",
+      "gold": [],
+      "split": "development",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.3333999999995285
+    },
+    {
+      "id": "isolation-96-隐私",
+      "group": "isolation",
+      "query": "gamesecret96 隐私",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.7591000000011263
+    },
+    {
+      "id": "isolation-97-exact",
+      "group": "isolation",
+      "query": "gamesecret97 ",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.276400000000649
+    },
+    {
+      "id": "isolation-97-隐私",
+      "group": "isolation",
+      "query": "gamesecret97 隐私",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.8202999999994063
+    },
+    {
+      "id": "isolation-98-exact",
+      "group": "isolation",
+      "query": "branchsecret98 ",
+      "gold": [],
+      "split": "development",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.239000000001397
+    },
+    {
+      "id": "isolation-98-隐私",
+      "group": "isolation",
+      "query": "branchsecret98 隐私",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.6141999999999825
+    },
+    {
+      "id": "isolation-99-exact",
+      "group": "isolation",
+      "query": "branchsecret99 ",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.1794000000008964
+    },
+    {
+      "id": "isolation-99-隐私",
+      "group": "isolation",
+      "query": "branchsecret99 隐私",
+      "gold": [],
+      "split": "acceptance",
+      "selected": [],
+      "status": "no-match",
+      "recall": null,
+      "referenceMemoryAlgorithmRecall": null,
+      "falseRetrieval": false,
+      "locatorCorrect": true,
+      "estimatedTokens": 0,
+      "durationMs": 3.631099999998696
+    }
+  ]
+}

@@ -3,6 +3,7 @@
  * 系统指令、记忆上下文和工具过程不得写入这个类型。
  */
 export type MessageCitation = {
+  knowledge?: import("@/lib/knowledge/citations").KnowledgeCitationMetadata;
   id?: string;
   title: string;
   url: string;
@@ -61,7 +62,7 @@ export type PromptMessage =
     }
   | {
       kind: "context";
-      source: "memory" | "web-search";
+      source: "memory" | "web-search" | "knowledge";
       role: "system";
       content: string;
     }

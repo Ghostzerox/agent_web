@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, or, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
   conversations,
@@ -6,6 +6,9 @@ import {
   memoryUsages,
   messages,
   promptRuns,
+  knowledgeCollections,
+  knowledgeDocuments,
+  knowledgeChunks,
   type PromptRunRecord,
 } from "@/lib/db/schema";
 import * as schema from "@/lib/db/schema";
@@ -13,6 +16,8 @@ import type { PromptEnvelope } from "@/lib/ai/promptEnvelope";
 import type { RetrievedMemory } from "@/lib/memory/memoryRetrieval";
 import { LOCAL_USER_ID } from "@/lib/repositories/conversationRepository";
 import { MEMORY_DOMAIN_POLICIES, memoryModuleForConversationMode } from "@/lib/memory/domainPolicy";
+import { knowledgeAudit, type KnowledgeRunContext } from "@/lib/knowledge/audit";
+import { assessMemorySourceRevision, type MemoryReadContext } from "@/lib/memory/sourceReference";
 
 export class PromptRunRepositoryError extends Error {
   constructor(
@@ -30,6 +35,7 @@ export interface PromptRunRepositoryPort {
   start(
     envelope: PromptEnvelope,
     usedMemories?: readonly RetrievedMemory[],
+    knowledge?: KnowledgeRunContext,
   ): Promise<PromptRunRecord>;
   finish(
     id: string,
@@ -49,6 +55,7 @@ export class PromptRunRepository<
   start(
     envelope: PromptEnvelope,
     usedMemories: readonly RetrievedMemory[] = [],
+    knowledge?: KnowledgeRunContext,
   ): Promise<PromptRunRecord> {
     return this.database.transaction(async (transaction) => {
       const [conversation] = await transaction
@@ -71,6 +78,18 @@ export class PromptRunRepository<
       const memoryConsumer = memoryModuleForConversationMode(conversation.mode);
       if (usedMemories.length > 0 && (!memoryConsumer || MEMORY_DOMAIN_POLICIES[memoryConsumer].personal.maxItems === 0)) {
         throw new PromptRunRepositoryError("PROMPT_CONTEXT_CONFLICT", "Conversation mode no longer allows personal memory; refresh before retrying.");
+      }
+      if (knowledge) {
+        if (memoryConsumer !== knowledge.consumer || !memoryConsumer) throw new PromptRunRepositoryError("PROMPT_CONTEXT_CONFLICT", "资料模式已变更，请重新选择集合。");
+        const policy = MEMORY_DOMAIN_POLICIES[memoryConsumer];
+        const selected = await transaction.select().from(knowledgeCollections).where(and(eq(knowledgeCollections.userId, LOCAL_USER_ID), inArray(knowledgeCollections.id, knowledge.collectionIds))).orderBy(asc(knowledgeCollections.id)).for("share");
+        if (!policy.knowledge.maxItems || selected.length !== knowledge.collectionIds.length || selected.some((value) => !policy.collectionModules.includes(value.module)) || knowledge.result.hits.length > policy.knowledge.maxItems || knowledge.result.estimatedTokens > policy.knowledge.maxEstimatedTokens) throw new PromptRunRepositoryError("PROMPT_CONTEXT_CONFLICT", "所选资料范围或预算已变更，请重新选择。");
+        const context: MemoryReadContext = { ownerId: LOCAL_USER_ID, consumer: memoryConsumer, collections: selected.map((value) => ({ module: value.module, collectionId: value.id })), datasets: [], conversation: null, game: null };
+        for (const hit of knowledge.result.hits) {
+          const [live] = await transaction.select({ id: knowledgeDocuments.id, version: knowledgeDocuments.version, contentHash: knowledgeDocuments.contentHash, chunkHash: knowledgeChunks.contentHash, collectionId: knowledgeDocuments.collectionId }).from(knowledgeDocuments).innerJoin(knowledgeChunks, and(eq(knowledgeChunks.documentId, knowledgeDocuments.id), eq(knowledgeChunks.documentVersion, knowledgeDocuments.version))).where(and(eq(knowledgeDocuments.userId, LOCAL_USER_ID), eq(knowledgeDocuments.id, hit.documentId), eq(knowledgeChunks.id, hit.chunkId), eq(knowledgeDocuments.collectionId, hit.collectionId))).limit(1);
+          const liveReference = live ? { ...hit.reference, ownerId: LOCAL_USER_ID, sourceId: live.id, revision: { version: live.version, contentHash: live.contentHash } } : null;
+          if (!assessMemorySourceRevision(context, hit.reference, liveReference, new Date()).allowed || live?.chunkHash !== hit.chunkHash) throw new PromptRunRepositoryError("PROMPT_CONTEXT_CONFLICT", "资料已更正或删除，本次尚未调用模型，请重试。");
+        }
       }
       if (
         envelope.trigger === "send" &&
@@ -120,6 +139,7 @@ export class PromptRunRepository<
           messageCount: envelope.request.messages.length,
           containsMemory: envelope.privacy.containsMemory,
           status: "started",
+          ...(knowledge ? { knowledgeRetrieval: knowledgeAudit(knowledge) } : {}),
           createdAt: new Date(envelope.createdAt),
         })
         .returning();

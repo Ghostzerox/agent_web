@@ -1,0 +1,92 @@
+import { PGlite } from "@electric-sql/pglite";
+import { drizzle } from "drizzle-orm/pglite";
+import { eq } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as schema from "@/lib/db/schema";
+import { loadMigrations, migrateDatabase, type MigrationSession, type MigrationRow } from "@/lib/db/migrations";
+import { createKnowledgeRepository } from "@/lib/repositories/knowledgeRepository";
+import { createKnowledgeRetrievalRepository } from "@/lib/repositories/knowledgeRetrievalRepository";
+import { createPromptRunRepository } from "@/lib/repositories/promptRunRepository";
+import { createConversationRepository } from "@/lib/repositories/conversationRepository";
+import { createModelApi } from "@/lib/api/modelApi";
+import { createConversationApi } from "@/lib/api/conversationApi";
+import { createKnowledgeApi } from "@/lib/api/knowledgeApi";
+import { knowledgeCitations } from "@/lib/knowledge/retrieval";
+import { createTestPromptEnvelope } from "./helpers/promptEnvelope";
+const session = (db: Pick<PGlite, "query">): MigrationSession => ({ execute: async (query, parameters = []) => (await db.query<MigrationRow>(query, [...parameters])).rows });
+const input = { title: "缓存策略", sourceKey: "cache", content: "# 缓存\n缓存有效期为三十分钟。", format: "markdown" as const, sourceUrl: "", fileName: "" };
+describe("R5.3 real SQL and model transport integration (mock Provider)", () => {
+  let pg: PGlite; let database: ReturnType<typeof drizzle<typeof schema>>;
+  beforeEach(async () => { pg = new PGlite(); await migrateDatabase({ ...session(pg), transaction: (callback) => pg.transaction((tx) => callback(session(tx))) }, await loadMigrations()); database = drizzle(pg, { schema }); });
+  afterEach(async () => pg.close());
+  async function setup() {
+    const library = createKnowledgeRepository(database); const retrieval = createKnowledgeRetrievalRepository(database);
+    const collection = await library.createCollection({ title: "本会话资料", module: "professional", description: "" });
+    const document = await library.saveDocument(collection.id, input);
+    const conversations = createConversationRepository(database); const conversation = await conversations.createConversation({ title: "资料问答", mode: "professional" });
+    const appended = await conversations.appendMessage(conversation.id, { parentMessageId: null, role: "user", content: "缓存 TTL", status: "complete", model: null, citations: [] });
+    return { library, retrieval, collection, document, conversation, appended, conversations };
+  }
+  it("filters wrong owners/domains/unselected collections before body reads and uses the stored user query", async () => {
+    const { library, retrieval, collection, conversation, appended, conversations } = await setup();
+    const game = await library.createCollection({ title: "游戏", module: "game", description: "" });
+    await library.saveDocument(game.id, { ...input, content: "缓存有效期：游戏世界秘密", sourceKey: "secret" });
+    const other = "99999999-9999-4999-8999-999999999999";
+    await database.insert(schema.users).values({ id: other });
+    const [foreign] = await database.insert(schema.knowledgeCollections).values({ userId: other, title: "Foreign", module: "professional" }).returning();
+    for (const id of [game.id, foreign.id]) await expect(retrieval.search({ consumer: "professional", collectionIds: [id], query: "缓存" })).rejects.toMatchObject({ code: "KNOWLEDGE_CONFLICT" });
+    const actual = await retrieval.forConversation(conversation.id, appended.message.id, [collection.id]);
+    expect(actual.query).toBe("缓存 TTL"); expect(actual.result.hits).toHaveLength(1);
+    expect(JSON.stringify(actual.result)).not.toContain("游戏世界秘密");
+    const isolated = await library.createCollection({ title: "未选择", module: "professional", description: "" });
+    await library.saveDocument(isolated.id, { ...input, content: "未授权罕见词霜谷令牌", sourceKey: "isolated" });
+    expect((await retrieval.search({ consumer: "professional", collectionIds: [collection.id], query: "霜谷令牌" })).hits).toEqual([]);
+    const assistant = await conversations.appendMessage(conversation.id, { parentMessageId: appended.message.id, role: "assistant", content: "缓存", status: "complete", model: null, citations: [] });
+    await expect(retrieval.forConversation(conversation.id, assistant.message.id, [collection.id])).rejects.toMatchObject({ code: "KNOWLEDGE_CONFLICT" });
+    await database.update(schema.conversations).set({ userId: other }).where(eq(schema.conversations.id, conversation.id));
+    await expect(retrieval.forConversation(conversation.id, appended.message.id, [collection.id])).rejects.toMatchObject({ code: "KNOWLEDGE_CONFLICT" });
+  });
+  it("rejects stale/deleted sources or mode changes before a Run, and stores only retrieval metadata", async () => {
+    const { library, retrieval, collection, document, conversation, appended } = await setup();
+    const found = await retrieval.forConversation(conversation.id, appended.message.id, [collection.id]);
+    const context = { consumer: found.consumer, collectionIds: [collection.id], result: found.result };
+    const runs = createPromptRunRepository(database); const envelope = await createTestPromptEnvelope({ conversationId: conversation.id, activeLeafId: appended.message.id });
+    const recorded = await runs.start(envelope, [], context);
+    expect(recorded.knowledgeRetrieval).toMatchObject({ status: "completed", sources: [{ documentId: document.id, version: 1 }] });
+    expect(JSON.stringify(recorded)).not.toContain("三十分钟");
+    const changedEnvelope = { ...envelope, runId: crypto.randomUUID() };
+    await library.saveDocument(collection.id, { ...input, content: "# 缓存\n缓存有效期为六十分钟。" }, { id: document.id, expectedVersion: 1 });
+    await expect(runs.start(changedEnvelope, [], context)).rejects.toMatchObject({ code: "PROMPT_CONTEXT_CONFLICT" });
+    const fresh = await retrieval.forConversation(conversation.id, appended.message.id, [collection.id]);
+    expect(JSON.stringify(fresh.result.hits)).not.toContain("三十分钟");
+    await database.update(schema.conversations).set({ mode: "companion" }).where(eq(schema.conversations.id, conversation.id));
+    await expect(runs.start(changedEnvelope, [], { ...context, result: fresh.result })).rejects.toMatchObject({ code: "PROMPT_CONTEXT_CONFLICT" });
+    await database.update(schema.conversations).set({ mode: "professional" }).where(eq(schema.conversations.id, conversation.id));
+    await library.deleteDocument(document.id, 2);
+    await expect(runs.start(changedEnvelope, [], { ...context, result: fresh.result })).rejects.toMatchObject({ code: "PROMPT_CONTEXT_CONFLICT" });
+    expect((await database.select().from(schema.promptRuns))).toHaveLength(1);
+    expect((await retrieval.search({ consumer: "professional", collectionIds: [collection.id], query: "缓存" })).hits).toEqual([]);
+  });
+  it("injects only selected evidence, never searches the web, preserves citations and rejects missing source versions", async () => {
+    const { retrieval, library, collection, document, conversation, appended, conversations } = await setup();
+    const search = { search: vi.fn().mockRejectedValue(new Error("No private search")) }; const captured: unknown[] = [];
+    const api = createModelApi({ getConfig: () => ({ apiKey: "synthetic-key", baseUrl: "https://provider.example", model: "mock" }), getStatus: () => ({ configured: true, provider: "openai-compatible", baseUrl: "https://provider.example", model: "mock", missing: [] }), runs: createPromptRunRepository(database), knowledge: retrieval, search,
+      createProvider: () => ({ async *stream(request) { captured.push(request); yield { type: "delta", text: "缓存有效期为三十分钟。[S1]" }; yield { type: "done" }; } }),
+    });
+    const response = await api.stream(new Request("http://localhost/api/v1/model/stream", { method: "POST", body: JSON.stringify({ trigger: "send", conversation: { id: conversation.id, title: conversation.title, activeLeafId: appended.message.id }, prompt: [{ kind: "conversation", source: "conversation", role: "user", content: "客户端伪造的最新国际新闻" }], searchMode: "on", knowledgeCollectionIds: [collection.id] }) }));
+    expect(response.status).toBe(200); const stream = await response.text();
+    expect(search.search).not.toHaveBeenCalled(); expect(captured).toHaveLength(1);
+    expect(JSON.stringify(captured)).toContain("三十分钟");
+    const done = stream.split("\n\n").find((frame) => frame.startsWith("event: done"))!;
+    const data = JSON.parse(done.split("data: ")[1]);
+    expect(data.citations[0].snippet).toBe(""); expect(data.citations[0].knowledge).toMatchObject({ documentId: document.id, version: 1 });
+    const append = await createConversationApi(conversations).appendMessage(conversation.id, new Request("http://localhost", { method: "POST", body: JSON.stringify({ parentMessageId: appended.message.id, role: "assistant", content: "回答[S1]", citations: data.citations }) }));
+    expect(append.status).toBe(201);
+    const knowledgeApi = createKnowledgeApi(library, retrieval);
+    expect((await knowledgeApi.handle(new Request("http://localhost/api/v1/knowledge", { method: "POST", body: JSON.stringify({ consumer: "professional", collectionIds: [collection.id], query: "缓存" }) }), ["search"])).status).toBe(200);
+    await library.saveDocument(collection.id, { ...input, content: "新版缓存规范" }, { id: document.id, expectedVersion: 1 });
+    expect((await knowledgeApi.handle(new Request("http://localhost/api/v1/knowledge?version=1"), ["documents", document.id])).status).toBe(404);
+    const staleCitation = { ...knowledgeCitations((await retrieval.search({ consumer: "professional", collectionIds: [collection.id], query: "缓存" })).hits)[0], snippet: "should not persist" };
+    expect((await createConversationApi(conversations).appendMessage(conversation.id, new Request("http://localhost", { method: "POST", body: JSON.stringify({ role: "assistant", content: "x", citations: [staleCitation] }) }))).status).toBe(400);
+  });
+});

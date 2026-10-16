@@ -5,6 +5,10 @@ import { knowledgeClient as client, type KnowledgeCollection, type KnowledgeDocu
 import { documentInputSchema, KNOWLEDGE_MODULE_LABELS, KNOWLEDGE_MODULES, type DocumentInput } from "@/lib/knowledge/documents";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import { getFileExportAdapter } from "@/lib/platform/fileExport";
+import { currentAppSearchParams } from "@/lib/platform/appNavigation";
+import { AppLink } from "@/components/platform/AppLink";
+import { knowledgeCitationUrl } from "@/lib/knowledge/citations";
+import type { KnowledgeRetrievalResult } from "@/lib/knowledge/retrieval";
 
 const blank: DocumentInput = { title: "", sourceKey: "", format: "markdown", content: "", sourceUrl: "", fileName: "" };
 const inputClass = "mt-1 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700";
@@ -25,21 +29,43 @@ export function KnowledgeLibrary() {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResult, setSearchResult] = useState<KnowledgeRetrievalResult | null>(null);
+  const [sourceLine, setSourceLine] = useState<number | null>(null);
+  const [sourceQuery, setSourceQuery] = useState(() => typeof window === "undefined" ? "" : currentAppSearchParams().toString());
   const dirty = JSON.stringify(draft) !== JSON.stringify(opened ? documentDraft(opened) : blank);
   const collection = collections.find((value) => value.id === selected);
   const collectionDirty = Boolean(collection && (collection.title !== collectionTitle || collection.description !== collectionDescription));
   useNavigationGuard(dirty || collectionDirty || Boolean(newTitle.trim()) || busy);
 
   useEffect(() => {
+    const readSource = () => { const next = currentAppSearchParams().toString(); if (next === sourceQuery) return; setSourceQuery(next); setOpened(null); setDraft(blank); setSourceLine(null); setError(""); setLoading(true); };
+    window.addEventListener("hashchange", readSource);
+    return () => window.removeEventListener("hashchange", readSource);
+  }, [sourceQuery]);
+
+  useEffect(() => {
     let active = true;
     void client.collections().then(async (loaded) => {
       if (!active) return;
       setCollections(loaded);
+      const params = currentAppSearchParams();
+      const documentId = params.get("document"); const requestedVersion = Number(params.get("version"));
+      if (documentId) {
+        if (!Number.isInteger(requestedVersion) || requestedVersion < 1) throw new Error("引用缺少有效版本；请从资料列表打开原文。");
+        const source = await client.document(documentId, requestedVersion);
+        if (!active) return;
+        const parent = loaded.find((value) => value.id === source.collectionId);
+        if (!parent) throw new Error("引用所在集合已不可用。");
+        setSelected(parent.id); setCollectionTitle(parent.title); setCollectionDescription(parent.description); setOpened(source); setDraft(documentDraft(source)); setSourceLine(Number(params.get("line")) || 1);
+        const docs = await client.documents(parent.id); if (active) setDocuments(docs);
+        return;
+      }
       const first = loaded[0];
       if (first) { setSelected(first.id); setCollectionTitle(first.title); setCollectionDescription(first.description); const docs = await client.documents(first.id); if (active) setDocuments(docs); }
     }).catch((failure: unknown) => { if (active) setError(failure instanceof Error ? failure.message : "读取知识库失败"); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, []);
+  }, [sourceQuery]);
 
   const act = async (operation: () => Promise<void>) => {
     setBusy(true); setError(""); setStatus("");
@@ -55,11 +81,11 @@ export function KnowledgeLibrary() {
   const canDiscard = () => !(dirty || collectionDirty) || window.confirm("有未保存的文档或集合修改，确定放弃并切换吗？");
   const selectCollection = (id: string) => {
     if (!canDiscard()) return;
-    void act(async () => { await reload(id); setOpened(null); setDraft(blank); });
+    void act(async () => { await reload(id); setOpened(null); setDraft(blank); setSourceLine(null); setSearchResult(null); });
   };
   const openDocument = (id: string) => {
     if (dirty && !window.confirm("放弃未保存的文档修改？")) return;
-    void act(async () => { const document = await client.document(id); setOpened(document); setDraft(documentDraft(document)); });
+    void act(async () => { const document = await client.document(id); setOpened(document); setDraft(documentDraft(document)); setSourceLine(null); });
   };
   const save = (event: FormEvent) => {
     event.preventDefault();
@@ -85,7 +111,7 @@ export function KnowledgeLibrary() {
   };
 
   return <section aria-labelledby="knowledge-title" className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
-    <div><h2 id="knowledge-title" className="text-lg font-semibold">知识资料库</h2><p className="mt-1 text-xs leading-5 text-zinc-500">资料与个人事实分开保存。只上传你有权使用的文本/Markdown；网址仅作来源记录，不抓取网页。检索接入将在 R5.3 完成。</p></div>
+    <div><h2 id="knowledge-title" className="text-lg font-semibold">知识资料库</h2><p className="mt-1 text-xs leading-5 text-zinc-500">资料与个人事实分开保存。可在此离线检索，或在聊天中显式选择同模式集合。网址仅作来源记录，不抓取网页；词项检索不等于向量检索。</p></div>
     {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-200">{error}<span className="block text-xs">未保存的文档仍在编辑框中；冲突时请先导出草稿，再重新打开最新版本。</span></p>}
     {status && <p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">{status}</p>}
     {loading ? <p className="text-sm text-zinc-500">正在读取知识集合…</p> : <button type="button" className={buttonClass} disabled={busy} onClick={() => { if (canDiscard()) void act(async () => { const loaded = await client.collections(); await reload(selected || loaded[0]?.id || ""); }); }}>刷新集合与列表</button>}
@@ -97,6 +123,10 @@ export function KnowledgeLibrary() {
       </form>
       <label className="block text-sm">当前知识集合<select value={selected} onChange={(event) => selectCollection(event.target.value)} className={inputClass}><option value="">请选择集合</option>{collections.map((value) => <option key={value.id} value={value.id}>{value.title} · {KNOWLEDGE_MODULE_LABELS[value.module]}</option>)}</select></label>
       {collection && <>
+        <form className="space-y-2 rounded-xl border border-blue-200 p-3 dark:border-blue-900" onSubmit={(event) => { event.preventDefault(); void act(async () => { setSearchResult(await client.search({ consumer: collection.module, collectionIds: [collection.id], query: searchQuery })); }); }}>
+          <label className="block text-sm">检索本集合<input required maxLength={500} value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} className={inputClass} /></label><button type="submit" disabled={!searchQuery.trim()} className={buttonClass}>检索资料（不调用模型）</button>
+          {searchResult && <div role="status" className="space-y-2 text-xs"><p>{searchResult.status === "completed" ? `命中 ${searchResult.hits.length} 段` : searchResult.status === "too-broad" ? "候选过多，请缩小集合或增加关键词" : "资料库暂无相关依据"} · 约 {searchResult.estimatedTokens} Token · {searchResult.durationMs.toFixed(1)} ms</p>{searchResult.hits.map((hit) => <div key={hit.chunkId} className="rounded-lg bg-zinc-50 p-2 dark:bg-zinc-900"><AppLink href={knowledgeCitationUrl({ documentId: hit.documentId, version: hit.version, startLine: hit.startLine })} className="underline">{hit.title} · v{hit.version} · 行 {hit.startLine}–{hit.endLine}</AppLink><pre className="mt-1 whitespace-pre-wrap break-words font-sans">{hit.content}</pre></div>)}</div>}
+        </form>
         <div className="space-y-2 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800">
           <p className="text-xs text-zinc-500">集合 v{collection.version} · {documents.length}/100 篇；所属模式创建后不可直接修改。</p>
           <label className="block text-sm">集合名称<input value={collectionTitle} maxLength={120} onChange={(event) => setCollectionTitle(event.target.value)} className={inputClass} /></label>
@@ -118,7 +148,7 @@ export function KnowledgeLibrary() {
               <button type="button" className={buttonClass} disabled={!draft.content} onClick={() => void act(async () => { await getFileExportAdapter().export({ filename: `knowledge-draft.${draft.format === "markdown" ? "md" : "txt"}`, mediaType: "text/plain", content: draft.content, directory: "knowledge-exports", shareTitle: "知识文档导出", shareText: "此文件可能包含私人资料，请谨慎分享。", dialogTitle: "导出文档" }); setStatus("已导出当前正文；集合与版本元数据仍保存在服务端。"); })}>导出当前正文</button>
               {opened && <button type="button" className={`${buttonClass} text-red-700`} onClick={() => { if (window.confirm("永久删除这篇文档及全部分段？")) void act(async () => { await client.delete(opened.id, opened.version); setOpened(null); setDraft(blank); await reload(selected); setStatus("文档及全部分段已删除。"); }); }}>删除文档</button>}
             </div>
-            {opened && <details className="space-y-2 rounded-xl bg-zinc-50 p-3 text-xs dark:bg-zinc-900"><summary className="cursor-pointer">查看已保存版本与来源定位（{opened.chunks.length} 段）</summary><p className="mt-2 break-all">文档 {opened.id} · v{opened.version} · {opened.contentHash}</p>{opened.chunks.map((segment) => <div key={segment.id} className="mt-3 border-t border-zinc-200 pt-2 dark:border-zinc-800"><p>{segment.heading || "正文"} · 原文行 {segment.startLine}–{segment.endLine} · v{segment.documentVersion}</p><pre className="mt-1 whitespace-pre-wrap break-words font-sans">{segment.content}</pre></div>)}</details>}
+            {opened && <details open={sourceLine !== null} className="space-y-2 rounded-xl bg-zinc-50 p-3 text-xs dark:bg-zinc-900"><summary className="cursor-pointer">查看已保存版本与来源定位（{opened.chunks.length} 段）</summary><p className="mt-2 break-all">文档 {opened.id} · v{opened.version} · {opened.contentHash}</p>{opened.chunks.map((segment) => <div key={segment.id} className={`mt-3 border-t pt-2 ${sourceLine && sourceLine >= segment.startLine && sourceLine <= segment.endLine ? "border-blue-500 bg-blue-50 dark:bg-blue-950" : "border-zinc-200 dark:border-zinc-800"}`}><p>{segment.heading || "正文"} · 原文行 {segment.startLine}–{segment.endLine} · v{segment.documentVersion}</p><pre className="mt-1 whitespace-pre-wrap break-words font-sans">{segment.content}</pre></div>)}</details>}
           </form>
         </div>
       </>}

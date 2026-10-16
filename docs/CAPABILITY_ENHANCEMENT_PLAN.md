@@ -1,7 +1,7 @@
 # R3–R5：提示词、模块工具与分域记忆增强规划
 
 - 创建/修订：2026-10-15。
-- 状态（2026-10-16）：R3.1–R3.3 已实现；R3.4 工程收尾与已知问题修复已交付，人工语义验收保留；R4.1–R4.5 首期工具已实现；R5.1–R5.2 已交付分域/来源规范、个人记忆来源控制与知识资料库，下一步 R5.3。受控费用测量不冒充完整生产收益或人工质量通过。工具范围见 `TOOLS_GUIDE.md`、`reports/R4_REPORT.md`；记忆/资料库见 `MEMORY_DOMAIN_AND_SOURCE_GUIDE.md`、`KNOWLEDGE_LIBRARY_GUIDE.md`。
+- 状态（2026-10-16）：R3.1–R3.3 已实现；R3.4 工程收尾与已知问题修复已交付，人工语义验收保留；R4.1–R4.5 首期工具已实现；R5.1–R5.3 首期已交付分域/来源规范、个人来源控制、资料库及词项检索/引用，Embedding 待开发，下一步 R5.4。受控费用测量不冒充生产收益或人工质量通过。工具见 `TOOLS_GUIDE.md`、`reports/R4_REPORT.md`；检索见 `KNOWLEDGE_RETRIEVAL_GUIDE.md`、`reports/R5_3_REPORT.md`。
 - 优先级事实来源：[`PRODUCT_MAINLINE_GUIDE.md`](./PRODUCT_MAINLINE_GUIDE.md)。
 - 目的：让每种模式更会完成自己的任务，并通过真实工具和可追溯记忆提升连续性，不另建通用 Agent 框架。
 - 承接：R1 成本观测/预算、R2 共享 UI、Core Prompt/搜索/Verifier、Phase 5 记忆、Phase 6 GameSession、Phase 7 Plugin API v1。
@@ -68,7 +68,7 @@
 
 质量维度：任务完成度、可操作性、事实/引用、模式适配、工具调用正确性、自然度、上下文连续性、延迟和含检索/摘要/重试的总费用。R3.1 先记录基线并约定量化门槛，不能事后只挑漂亮回答。
 
-R3.1–R3.3 历史报告与模板保持原记录。R3.4 原始比较见 [`reports/R3_4_REPORT.md`](./reports/R3_4_REPORT.md)，后续修复见 [`reports/R3_4_FOLLOWUP.md`](./reports/R3_4_FOLLOWUP.md)。R4 全部子阶段交付见 [`reports/R4_REPORT.md`](./reports/R4_REPORT.md)，工具规范见 [`TOOLS_GUIDE.md`](./TOOLS_GUIDE.md)。R5.1 已交付分域策略/来源契约和现有娱乐聊天隔离修正，见 [`MEMORY_DOMAIN_AND_SOURCE_GUIDE.md`](./MEMORY_DOMAIN_AND_SOURCE_GUIDE.md) 与 [`reports/R5_1_REPORT.md`](./reports/R5_1_REPORT.md)；R5.2 的实际资料库/来源清理见 [`KNOWLEDGE_LIBRARY_GUIDE.md`](./KNOWLEDGE_LIBRARY_GUIDE.md)，下一步 R5.3。人工体验/华为真机不伪装成已通过。
+R3.1–R3.3 历史报告与模板保持原记录。R3.4 原始比较见 [`reports/R3_4_REPORT.md`](./reports/R3_4_REPORT.md)，后续修复见 [`reports/R3_4_FOLLOWUP.md`](./reports/R3_4_FOLLOWUP.md)。R4 全部子阶段交付见 [`reports/R4_REPORT.md`](./reports/R4_REPORT.md)，工具规范见 [`TOOLS_GUIDE.md`](./TOOLS_GUIDE.md)。R5.1 分域规范见 [`MEMORY_DOMAIN_AND_SOURCE_GUIDE.md`](./MEMORY_DOMAIN_AND_SOURCE_GUIDE.md)，R5.2 资料库/来源清理见 [`KNOWLEDGE_LIBRARY_GUIDE.md`](./KNOWLEDGE_LIBRARY_GUIDE.md)，R5.3 查询/引用与首期限制见 [`KNOWLEDGE_RETRIEVAL_GUIDE.md`](./KNOWLEDGE_RETRIEVAL_GUIDE.md)，下一步 R5.4。人工体验/华为真机不伪装成已通过。
 
 ## 4. R4：全模块工具补全与优化
 
@@ -179,14 +179,14 @@ type ToolDescriptor = {
 |---|---|---|
 | R5.1 ✅ | 分域策略、来源/版本与迁移设计 | 16 模块读写/预算、权威来源和渐进迁移已约定；来源/派生依赖反例及真实 Repository 隔离有测试，娱乐聊天按服务端模式排除个人记忆；不新增表或重建 Memory |
 | R5.2 ✅ | 个人记忆库增强与知识资料库 | 保留候选/重复/版本冲突/有效期；资料集合、文本/Markdown 显式导入、版本更正、原文行定位与删除闭环，旧分段事务替换/级联删除；个人来源清除及关联删除可选，语义矛盾识别不冒充已实现 |
-| R5.3 | RAG 查询与渐进语义检索 | 中文/改写/无答案/旧版本/越域样例有报告；若 Embedding 暂不值得，明确保留待开发，不把词项检索称为向量检索 |
+| R5.3 首期✅ / 语义召回待开发 | 授权词项 RAG 与来源引用 | 同模式显式选择、中文/中英别名、版本复核与原文引用已接入；80 合成查询及 10 倍压力总体 Recall@5 90.91%，4 个隐含改写漏检；Embedding 保留待开发，未测其收益，不把词项叫向量检索 |
 | R5.4 | 分支感知压缩与总结，承接 R1.3 | 祖先/兄弟分支、编辑删除/失效/回退通过；质量与含摘要总费用一同验收，不宣称摘要永不失真 |
 | R5.5 | 模块特化与记忆宫殿 MVP | 各模块采用相应检索/摘要策略；可按领域追踪 AI 记忆来源，背书材料→位置关联→路线回忆/抽背→复习记录形成闭环 |
 | R5.6 | 用户控制与跨端综合验收 | 查看/解释/更正/删除/导出、增量重建、索引离线降级、冷/热查询与 Web/APK 流程有测试记录 |
 
 检索报告至少包含 Recall@k/无答案误召回、来源定位正确率、越域泄露数量、旧版本命中、P50/P95 延迟与模型/索引成本；R5.1 以真实规模和标注集约定目标。越域、兄弟分支混入和删除后仍检出正文为阻断项；摘要质量与记忆宫殿的学习效果须有人工案例，不能由模拟测试证明。
 
-R5.1 的预算矩阵、版本/hash 适配约定、备份/回退及固定合成规模/门槛见 [`MEMORY_DOMAIN_AND_SOURCE_GUIDE.md`](./MEMORY_DOMAIN_AND_SOURCE_GUIDE.md)。R5.2 已补当前来源清理和资料生命周期，见 [`KNOWLEDGE_LIBRARY_GUIDE.md`](./KNOWLEDGE_LIBRARY_GUIDE.md) 与 [`reports/R5_2_REPORT.md`](./reports/R5_2_REPORT.md)。资料库管理不等于模型已能检索；R5.3 接入查询和评测，当前不宣称向量/摘要、语义矛盾识别、所有历史/备份副本清理已完成。
+R5.1 的预算矩阵、版本/hash 适配约定、备份/回退及固定合成规模/门槛见 [`MEMORY_DOMAIN_AND_SOURCE_GUIDE.md`](./MEMORY_DOMAIN_AND_SOURCE_GUIDE.md)。R5.2 已补当前来源清理和资料生命周期，见 [`KNOWLEDGE_LIBRARY_GUIDE.md`](./KNOWLEDGE_LIBRARY_GUIDE.md)。R5.3 的实际查询/引用与非盲测限制见 [`KNOWLEDGE_RETRIEVAL_GUIDE.md`](./KNOWLEDGE_RETRIEVAL_GUIDE.md)、[`reports/R5_3_REPORT.md`](./reports/R5_3_REPORT.md)。当前不宣称向量/摘要、语义矛盾识别、所有历史回答/备份副本清理已完成。
 
 ## 6. 推荐执行顺序与短长期目标
 

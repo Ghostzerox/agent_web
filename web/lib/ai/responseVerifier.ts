@@ -199,6 +199,7 @@ function freshnessCheck(
   ids: readonly string[],
   retrieval: SearchRetrieval,
 ): VerificationCheck {
+  if (retrieval.kind === "knowledge") return { id: "freshness", label: "时效标注", status: "not-applicable", detail: "本次仅核对资料修订版本，未联网；不能据此证明内容最新。" };
   if (!query || !TIME_SENSITIVE_PATTERN.test(query)) {
     return {
       id: "freshness",

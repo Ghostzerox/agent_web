@@ -47,9 +47,9 @@ export class KnowledgeRepository<T extends PgQueryResultHKT> {
     await this.collection(collectionId);
     return this.database.select({ id: documents.id, collectionId: documents.collectionId, title: documents.title, sourceKey: documents.sourceKey, format: documents.format, sourceUrl: documents.sourceUrl, fileName: documents.fileName, contentHash: documents.contentHash, version: documents.version, updatedAt: documents.updatedAt }).from(documents).where(and(eq(documents.collectionId, collectionId), eq(documents.userId, owner))).orderBy(desc(documents.updatedAt), asc(documents.id));
   }
-  async getDocument(id: string) {
-    const [document] = await this.database.select().from(documents).where(and(eq(documents.id, id), eq(documents.userId, owner)));
-    if (!document) throw new KnowledgeError("KNOWLEDGE_NOT_FOUND", "找不到知识文档。");
+  async getDocument(id: string, expectedVersion?: number) {
+    const [document] = await this.database.select().from(documents).where(and(eq(documents.id, id), eq(documents.userId, owner), expectedVersion === undefined ? undefined : eq(documents.version, expectedVersion)));
+    if (!document) throw new KnowledgeError("KNOWLEDGE_NOT_FOUND", "找不到该版本的知识文档，可能已更正或删除；不会用新版本冒充旧引用。");
     const segments = await this.database.select().from(chunks).where(and(eq(chunks.documentId, id), eq(chunks.documentVersion, document.version))).orderBy(asc(chunks.ordinal));
     return { ...document, chunks: segments };
   }

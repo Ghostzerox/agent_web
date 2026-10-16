@@ -24,7 +24,7 @@ export type PromptEnvelope = {
     activeLeafId: string | null;
   };
   composer: {
-    version: typeof PROMPT_COMPOSER_VERSION | "r1/cache-friendly-v1" | "phase-5.2/v1" | "phase-5.3/v1";
+    version: typeof PROMPT_COMPOSER_VERSION | "r1/cache-friendly-v1" | "phase-5.2/v1" | "phase-5.3/v1" | "r5.3/knowledge-context-v1";
     layerOrder: Array<PromptMessage["source"]>;
   };
   provider: ModelRequestMetadata;
@@ -70,6 +70,7 @@ const LAYER_VERSIONS: Record<PromptMessage["source"], string> = {
   persona: PERSONA_PROMPT_VERSION,
   memory: "memory-context/v2",
   "web-search": "web-search-context/v2",
+  knowledge: "knowledge-context/r5.3-v1",
   conversation: "conversation-tree/v2",
 };
 
@@ -144,7 +145,7 @@ export async function createPromptEnvelope(input: {
     trigger: input.trigger,
     conversation: { ...input.conversation },
     composer: {
-      version: PROMPT_COMPOSER_VERSION,
+      version: input.prompt.some((layer) => layer.source === "knowledge") ? "r5.3/knowledge-context-v1" as const : PROMPT_COMPOSER_VERSION,
       layerOrder: promptLayers.map((layer) => layer.source),
     },
     provider: { requestId: input.runId, ...input.provider },
@@ -157,7 +158,7 @@ export async function createPromptEnvelope(input: {
     promptLayers,
     context: { truncated: false as const, compressed: false as const, notes: [] as [] },
     privacy: {
-      containsMemory: input.prompt.some((message) => message.source === "memory"),
+      containsMemory: input.prompt.some((message) => message.source === "memory" || message.source === "knowledge"),
       persistedPromptContent: false as const,
       alwaysExcluded: [
         "model API key",

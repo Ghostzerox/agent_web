@@ -8,6 +8,7 @@ import { isCoreModeId, type CoreModeId } from "@/lib/agent/modeRegistry";
 import type { Session } from "@/lib/config";
 import { CONVERSATION_SCHEMA_VERSION } from "@/lib/conversation/tree";
 import { apiFetch } from "@/lib/api/clientRuntime";
+import { isSafeCitation } from "@/lib/knowledge/citations";
 
 type ConversationRecord = {
   id: string;
@@ -68,11 +69,7 @@ function safeCitations(value: MessageCitation[] | undefined): MessageCitation[] 
     if (!citation || typeof citation.title !== "string" || typeof citation.url !== "string") {
       return false;
     }
-    try {
-      return ["http:", "https:"].includes(new URL(citation.url).protocol);
-    } catch {
-      return false;
-    }
+    return isSafeCitation(citation);
   });
 }
 

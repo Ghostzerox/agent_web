@@ -3,7 +3,8 @@ import { resolve } from "node:path";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { comparePromptBaselines, promptBaselineCases, promptBaselineSnapshot, runPromptBaseline } from "@/evals/r3/promptBaseline";
 import { MODEL_CALLER_FILES, MODULE_PROMPT_COVERAGE, PROMPT_ENTRY_POINTS, PROMPT_SOURCE_FILES } from "@/evals/r3/promptInventory";
-import baseline from "@/evals/r3/baseline-r5.2.json";
+import baseline from "@/evals/r3/baseline-r5.3.json";
+import library from "@/evals/r3/baseline-r5.2.json";
 import memoryPolicy from "@/evals/r3/baseline-r5.1.json";
 import tools from "@/evals/r3/baseline-r4.json";
 import tasks from "@/evals/r3/baseline-r3.3.json";
@@ -11,6 +12,7 @@ import previous from "@/evals/r3/baseline-r3.2.json";
 import original from "@/evals/r3/baseline.json";
 
 vi.mock("@/lib/db/client", () => ({ getDatabase: () => { throw new Error("Database access is forbidden in prompt baseline tests"); } }));
+const knowledgeSources = ["lib/knowledge/retrieval.ts", "lib/knowledge/citations.ts", "lib/repositories/knowledgeRetrievalRepository.ts", "lib/repositories/knowledgeRepository.ts"];
 let result: Awaited<ReturnType<typeof runPromptBaseline>>;
 const fetch = vi.fn(() => { throw new Error("Network access is forbidden"); });
 beforeAll(async () => { vi.stubGlobal("fetch", fetch); result = await runPromptBaseline(); });
@@ -89,7 +91,7 @@ describe("R3 offline prompt baselines", () => {
     expect(taskComparison.addedCases).toHaveLength(29);
     expect(taskComparison.changedExistingRequests).toHaveLength(20);
     expect(taskComparison.changedExistingRequests.every((item) => !item.id.startsWith("chat-") && !item.id.startsWith("mode-"))).toBe(true);
-    expect(taskComparison.addedSourceFiles.sort()).toEqual(["lib/ai/taskPromptProfiles.ts", "lib/ai/modelUsage.ts", "lib/tools/sourceTools.ts", "lib/game/toolkit.ts", "lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts", "lib/repositories/conversationRepository.ts"].sort());
+    expect(taskComparison.addedSourceFiles.sort()).toEqual(["lib/ai/taskPromptProfiles.ts", "lib/ai/modelUsage.ts", "lib/tools/sourceTools.ts", "lib/game/toolkit.ts", "lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts", "lib/repositories/conversationRepository.ts", ...knowledgeSources].sort());
   });
 
   it("has at least five normal and one boundary case per family without changing runtime templates", () => {
@@ -99,7 +101,7 @@ describe("R3 offline prompt baselines", () => {
     }
     const comparison = comparePromptBaselines(tasks, promptBaselineSnapshot(result));
     expect(comparison).toMatchObject({ removedCases: [], changedExistingFixtures: [] });
-    expect(comparison.addedSourceFiles.sort()).toEqual(["lib/tools/sourceTools.ts", "lib/game/toolkit.ts", "lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts", "lib/repositories/conversationRepository.ts"].sort());
+    expect(comparison.addedSourceFiles.sort()).toEqual(["lib/tools/sourceTools.ts", "lib/game/toolkit.ts", "lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts", "lib/repositories/conversationRepository.ts", ...knowledgeSources].sort());
     expect(comparison.changedSourceFiles.length).toBeGreaterThan(0);
     expect(comparison.changedExistingRequests.length).toBeGreaterThan(0);
     expect(comparison.addedCases).toHaveLength(13);
@@ -109,13 +111,18 @@ describe("R3 offline prompt baselines", () => {
     const comparison = comparePromptBaselines(tools, promptBaselineSnapshot(result));
     expect(comparison).toMatchObject({ addedCases: [], removedCases: [], changedExistingRequests: [], changedExistingFixtures: [] });
     expect(Object.keys(tools.sourceHashes).every((file) => file in result.sourceHashes)).toBe(true);
-    expect(comparison.addedSourceFiles.sort()).toEqual(["lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts", "lib/repositories/conversationRepository.ts"].sort());
+    expect(comparison.addedSourceFiles.sort()).toEqual(["lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts", "lib/repositories/conversationRepository.ts", ...knowledgeSources].sort());
   });
 
   it("keeps R5.1 prompts unchanged while tracking source cleanup in the real repositories", () => {
     const comparison = comparePromptBaselines(memoryPolicy, promptBaselineSnapshot(result));
     expect(comparison).toMatchObject({ addedCases: [], removedCases: [], changedExistingRequests: [], changedExistingFixtures: [] });
-    expect(comparison.changedSourceFiles).toEqual(["lib/repositories/memoryRepository.ts"]);
-    expect(comparison.addedSourceFiles).toEqual(["lib/repositories/conversationRepository.ts"]);
+    expect(comparison.changedSourceFiles).toContain("lib/repositories/memoryRepository.ts");
+    expect(comparison.addedSourceFiles.sort()).toEqual(["lib/repositories/conversationRepository.ts", ...knowledgeSources].sort());
+  });
+  it("retains R5.2 legacy request hashes and separately tracks the new knowledge assembly", () => {
+    const comparison = comparePromptBaselines(library, promptBaselineSnapshot(result));
+    expect(comparison).toMatchObject({ addedCases: [], removedCases: [], changedExistingRequests: [], changedExistingFixtures: [] });
+    expect(comparison.addedSourceFiles.sort()).toEqual([...knowledgeSources].sort());
   });
 });

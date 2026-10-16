@@ -28,6 +28,7 @@ export async function sendChatMessage(
     trigger: PromptTrigger;
     conversation: PromptEnvelope["conversation"];
     searchMode?: SearchMode;
+    knowledgeCollectionIds?: string[];
   },
   signal?: AbortSignal,
   onDelta?: (text: string, accumulated: string) => void,
@@ -45,6 +46,7 @@ export async function sendChatMessage(
       conversation: context.conversation,
       prompt: messages,
       searchMode: context.searchMode ?? "auto",
+      ...(context.knowledgeCollectionIds?.length ? { knowledgeCollectionIds: context.knowledgeCollectionIds } : {}),
     }),
     signal,
   });

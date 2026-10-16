@@ -47,6 +47,10 @@ import {
   type PersonaProfileRepositoryPort,
 } from "@/lib/repositories/personaProfileRepository";
 import type { PromptMessage } from "@/lib/ai/messages";
+import { createKnowledgeRetrievalRepository } from "@/lib/repositories/knowledgeRetrievalRepository";
+import { KnowledgeError } from "@/lib/repositories/knowledgeRepository";
+import { addKnowledgeEvidence, knowledgeCitations } from "@/lib/knowledge/retrieval";
+import type { KnowledgeRunContext } from "@/lib/knowledge/audit";
 
 type ModelApiDependencies = {
   getConfig: () => ModelProviderConfig | Promise<ModelProviderConfig>;
@@ -56,6 +60,7 @@ type ModelApiDependencies = {
   memories?: Pick<MemoryRepositoryPort, "retrieveForMessage">;
   persona?: Pick<PersonaProfileRepositoryPort, "get">;
   search?: WebSearchProvider;
+  knowledge?: Pick<ReturnType<typeof createKnowledgeRetrievalRepository>, "forConversation">;
 };
 
 const instructionPromptSchema = z
@@ -95,6 +100,7 @@ const modelRequestSchema = z
       .min(1)
       .max(500),
     searchMode: z.enum(SEARCH_MODES).default("auto"),
+    knowledgeCollectionIds: z.array(z.uuid()).max(10).refine((values) => new Set(values).size === values.length).default([]),
   })
   .strict()
   .refine(
@@ -184,6 +190,7 @@ export function createModelApi(dependencies: ModelApiDependencies) {
       let retrieval: Awaited<ReturnType<typeof retrieveWebEvidence>>["retrieval"];
       let usedMemories: RetrievedMemory[] = [];
       let generationBudget: GenerationBudget;
+      let knowledge: KnowledgeRunContext | undefined;
 
       try {
         input = await parseRequest(request);
@@ -213,12 +220,14 @@ export function createModelApi(dependencies: ModelApiDependencies) {
           }),
         );
         const promptWithMemory = addMemoryContext(promptWithPersona, usedMemories);
-        const prepared = await retrieveWebEvidence({
-          prompt: promptWithMemory,
-          mode: input.searchMode,
-          provider: dependencies.search,
-          signal: request.signal,
-        });
+        let prepared: Awaited<ReturnType<typeof retrieveWebEvidence>>;
+        if (input.knowledgeCollectionIds.length) {
+          if (!dependencies.knowledge) throw new KnowledgeError("KNOWLEDGE_CONFLICT", "资料库检索暂不可用；未将私人问题发送给搜索服务。");
+          const found = await dependencies.knowledge.forConversation(input.conversation.id, input.conversation.activeLeafId, input.knowledgeCollectionIds);
+          if (found.result.status === "too-broad") throw new KnowledgeError("KNOWLEDGE_LIMIT", "匹配候选超过 1,000 段，请缩小集合或增加具体关键词；尚未调用模型。");
+          knowledge = { consumer: found.consumer, collectionIds: input.knowledgeCollectionIds, result: found.result };
+          prepared = { prompt: addKnowledgeEvidence(promptWithMemory, found.result), retrieval: { kind: "knowledge", query: found.query, status: "completed", reason: "completed", citations: knowledgeCitations(found.result.hits) } };
+        } else prepared = await retrieveWebEvidence({ prompt: promptWithMemory, mode: input.searchMode, provider: dependencies.search, signal: request.signal });
         retrieval = prepared.retrieval;
         envelope = await createPromptEnvelope({
           runId: requestId,
@@ -232,8 +241,11 @@ export function createModelApi(dependencies: ModelApiDependencies) {
             model: config.model,
           },
         });
-        await dependencies.runs.start(envelope, usedMemories);
+        if (inputTextCharacters(prepared.prompt) > generationBudget.inputCharacterLimit) throw new ModelProviderError("PROVIDER_CONTEXT_TOO_LARGE", "含检索资料的上下文超过输入预算，尚未调用模型。", false);
+        if (knowledge) await dependencies.runs.start(envelope, usedMemories, knowledge);
+        else await dependencies.runs.start(envelope, usedMemories);
       } catch (error) {
+        if (error instanceof KnowledgeError) return apiError(requestId, 409, error.code, error.message, false);
         if (error instanceof ModelProviderError) return apiError(requestId, 413, error.code, error.message, false);
         if (error instanceof SyntaxError) {
           return apiError(
@@ -298,7 +310,8 @@ export function createModelApi(dependencies: ModelApiDependencies) {
                 baseUrl: config.baseUrl,
                 model: config.model,
                 envelope,
-                retrieval,
+                retrieval: knowledge ? { ...retrieval, citations: retrieval.citations.map(({ snippet, ...citation }) => { void snippet; return { ...citation, snippet: "" }; }) } : retrieval,
+                ...(knowledge ? { knowledgeRetrieval: { status: knowledge.result.status, count: knowledge.result.hits.length, candidateCount: knowledge.result.candidateCount, estimatedTokens: knowledge.result.estimatedTokens, durationMs: knowledge.result.durationMs, version: knowledge.result.version } } : {}),
                 memoryRetrieval: {
                   count: usedMemories.length,
                   estimatedTokens: usedMemories.reduce(
@@ -328,7 +341,7 @@ export function createModelApi(dependencies: ModelApiDependencies) {
                 });
                 controller.enqueue(
                   sse("done", {
-                    citations,
+                    citations: knowledge ? citations.map(({ snippet, ...citation }) => { void snippet; return { ...citation, snippet: "" }; }) : citations,
                     verification,
                   }),
                 );
@@ -404,5 +417,6 @@ export function getModelApi() {
     memories: createMemoryRepository(database),
     persona: createPersonaProfileRepository(database),
     search: createConfiguredWebSearchProvider(),
+    knowledge: createKnowledgeRetrievalRepository(database),
   });
 }

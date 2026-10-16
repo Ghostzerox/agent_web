@@ -49,7 +49,7 @@ describe("database migrations", () => {
     async () => {
       const migrations = await loadMigrations();
 
-      expect(migrations).toHaveLength(29);
+      expect(migrations).toHaveLength(30);
       expect(migrations.every((migration) => migration.down !== null)).toBe(
         true,
       );
@@ -550,6 +550,7 @@ describe("database migrations", () => {
       await expect(migrateDatabase(database, migrations)).resolves.toEqual([]);
       await pglite.query(`DELETE FROM inbox_items WHERE id = $1`, [agentInbox.rows[0].id]);
       await pglite.query(`DELETE FROM scheduled_tasks WHERE id = $1`, [agentTask.rows[0].id]);
+      await expect(rollbackDatabase(database, migrations)).resolves.toBe(migrations[29].id);
       await expect(rollbackDatabase(database, migrations)).resolves.toBe(migrations[28].id);
       await expect(rollbackDatabase(database, migrations)).resolves.toBe(
         migrations[27].id,
@@ -863,6 +864,7 @@ describe("database migrations", () => {
         migrations[26].id,
         migrations[27].id,
         migrations[28].id,
+        migrations[29].id,
       ]);
     },
     15_000,
@@ -918,6 +920,7 @@ describe("database migrations", () => {
       migrations[26].id,
       migrations[27].id,
       migrations[28].id,
+      migrations[29].id,
     ]);
     const rows = await pglite.query<{ provider: string; model: string }>(
       `SELECT provider, model FROM model_credentials WHERE user_id = $1`,

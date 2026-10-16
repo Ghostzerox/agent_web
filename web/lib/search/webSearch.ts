@@ -5,6 +5,7 @@ export const SEARCH_MODES = ["auto", "on", "off"] as const;
 export type SearchMode = (typeof SEARCH_MODES)[number];
 
 export type WebCitation = {
+  knowledge?: import("@/lib/knowledge/citations").KnowledgeCitationMetadata;
   id: string;
   title: string;
   url: string;
@@ -15,6 +16,7 @@ export type WebCitation = {
 };
 
 export type SearchRetrieval = {
+  kind?: "knowledge";
   status: "skipped" | "completed" | "failed";
   reason:
     | "disabled"

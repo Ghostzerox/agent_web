@@ -1,0 +1,495 @@
+{
+  "engine": "PGlite PostgreSQL/WASM; not Docker/network latency",
+  "documents": 94,
+  "chunks": 940,
+  "logicalCorpusDocuments": 100,
+  "logicalCorpusChunks": 1000,
+  "firstQueryMs": 23.607299999999896,
+  "p50Ms": 7.691100000000006,
+  "p95Ms": 15.609100000000126,
+  "recallAt5": 0.9090909090909091,
+  "falseHits": 0,
+  "modelCalls": 0,
+  "measurements": [
+    {
+      "id": "direct-1",
+      "ms": 23.607299999999896,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-2",
+      "ms": 11.275699999999915,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-3",
+      "ms": 10.464999999999918,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-4",
+      "ms": 11.611599999999953,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-5",
+      "ms": 9.98739999999998,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-6",
+      "ms": 9.178899999999885,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-7",
+      "ms": 10.406099999999924,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-8",
+      "ms": 8.564699999999903,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-9",
+      "ms": 6.41780000000017,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-10",
+      "ms": 7.876699999999801,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-11",
+      "ms": 7.009599999999864,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-12",
+      "ms": 8.951300000000174,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-13",
+      "ms": 7.776200000000017,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-14",
+      "ms": 8.855399999999918,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-15",
+      "ms": 10.17470000000003,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "direct-16",
+      "ms": 8.192299999999932,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "paraphrase-1",
+      "ms": 11.370100000000093,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "paraphrase-2",
+      "ms": 10.104700000000093,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "paraphrase-3",
+      "ms": 7.981299999999919,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "paraphrase-4",
+      "ms": 11.296399999999949,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "paraphrase-5",
+      "ms": 9.184300000000121,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "paraphrase-6",
+      "ms": 13.337300000000141,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "paraphrase-7",
+      "ms": 10.590400000000045,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "paraphrase-8",
+      "ms": 11.287700000000086,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "paraphrase-9",
+      "ms": 12.068099999999959,
+      "recall": 0,
+      "falseHit": false
+    },
+    {
+      "id": "paraphrase-10",
+      "ms": 9.937799999999925,
+      "recall": 0,
+      "falseHit": false
+    },
+    {
+      "id": "paraphrase-11",
+      "ms": 14.040900000000192,
+      "recall": 0,
+      "falseHit": false
+    },
+    {
+      "id": "paraphrase-12",
+      "ms": 13.113000000000056,
+      "recall": 0,
+      "falseHit": false
+    },
+    {
+      "id": "bilingual-1",
+      "ms": 9.95679999999993,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "bilingual-2",
+      "ms": 9.479000000000042,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "bilingual-3",
+      "ms": 7.1551999999999225,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "bilingual-4",
+      "ms": 7.601000000000113,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "bilingual-5",
+      "ms": 8.103200000000015,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "bilingual-6",
+      "ms": 7.269100000000208,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "bilingual-7",
+      "ms": 7.783100000000104,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "bilingual-8",
+      "ms": 7.755100000000311,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "multi-1",
+      "ms": 17.2175000000002,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "multi-2",
+      "ms": 16.187999999999647,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "multi-3",
+      "ms": 18.99709999999959,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "multi-4",
+      "ms": 13.680499999999938,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "multi-5",
+      "ms": 12.982299999999668,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "multi-6",
+      "ms": 14.490400000000136,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "multi-7",
+      "ms": 12.202300000000378,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "multi-8",
+      "ms": 15.609100000000126,
+      "recall": 1,
+      "falseHit": false
+    },
+    {
+      "id": "no-answer-1",
+      "ms": 5.908199999999852,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "no-answer-2",
+      "ms": 4.798700000000281,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "no-answer-3",
+      "ms": 5.267100000000028,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "no-answer-4",
+      "ms": 6.164000000000215,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "no-answer-5",
+      "ms": 7.691100000000006,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "no-answer-6",
+      "ms": 6.263100000000122,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "no-answer-7",
+      "ms": 6.196400000000267,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "no-answer-8",
+      "ms": 9.583399999999983,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "no-answer-9",
+      "ms": 6.185599999999795,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "no-answer-10",
+      "ms": 6.266900000000078,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "no-answer-11",
+      "ms": 4.994299999999839,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "no-answer-12",
+      "ms": 7.080600000000231,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "stale-80",
+      "ms": 3.2197000000001026,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "stale-81",
+      "ms": 3.0999000000001615,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "stale-82",
+      "ms": 3.1403000000000247,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "stale-83",
+      "ms": 2.9572000000002845,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "stale-84",
+      "ms": 2.8240999999998166,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "stale-85",
+      "ms": 3.0147000000001754,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "stale-86",
+      "ms": 3.315599999999904,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "stale-87",
+      "ms": 4.048600000000079,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-88",
+      "ms": 2.7932999999998174,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-89",
+      "ms": 2.7863000000002103,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-90",
+      "ms": 3.013800000000174,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-91",
+      "ms": 3.0583999999998923,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-92",
+      "ms": 2.9936000000002423,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-93",
+      "ms": 3.5540000000000873,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-94",
+      "ms": 3.180500000000393,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-95",
+      "ms": 3.2682999999997264,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-96-exact",
+      "ms": 3.090400000000045,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-96-隐私",
+      "ms": 4.715900000000147,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-97-exact",
+      "ms": 3.2663000000002285,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-97-隐私",
+      "ms": 4.2908000000002176,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-98-exact",
+      "ms": 4.16359999999986,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-98-隐私",
+      "ms": 5.797599999999875,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-99-exact",
+      "ms": 3.766700000000128,
+      "recall": null,
+      "falseHit": false
+    },
+    {
+      "id": "isolation-99-隐私",
+      "ms": 4.213600000000042,
+      "recall": null,
+      "falseHit": false
+    }
+  ]
+}

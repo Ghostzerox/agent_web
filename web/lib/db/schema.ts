@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { KnowledgeRetrievalAudit } from "@/lib/knowledge/audit";
 import type { KNOWLEDGE_MODULES } from "@/lib/knowledge/documents";
 import { CORE_MODE_IDS } from "@/lib/agent/modeRegistry";
 import {
@@ -1022,6 +1023,7 @@ export const promptRuns = pgTable(
   "prompt_runs",
   {
     id: uuid("id").primaryKey(),
+    knowledgeRetrieval: jsonb("knowledge_retrieval").$type<KnowledgeRetrievalAudit>(),
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),

@@ -140,7 +140,7 @@ export function PromptExportControl({ envelope }: PromptExportControlProps) {
                   className="mt-0.5 size-4"
                 />
                 <span>
-                  <span className="font-medium">包含个人记忆上下文</span>
+                  <span className="font-medium">包含个人记忆上下文（含私人资料）</span>
                   <span className="mt-0.5 block text-xs opacity-75">
                     默认脱敏。只有确认文件保存位置和分享对象安全时才开启。
                   </span>

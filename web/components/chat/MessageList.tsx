@@ -2,6 +2,9 @@ import type { ChatMessage } from "@/lib/config";
 import { MarkdownMessage } from "@/components/chat/MarkdownMessage";
 import { ResponseVerificationPanel } from "@/components/chat/ResponseVerificationPanel";
 import { MessageSpeechControl } from "@/components/chat/MessageSpeechControl";
+import { isKnowledgeCitation, isSafeCitation } from "@/lib/knowledge/citations";
+import { appHref } from "@/lib/platform/appNavigation";
+import { requestNavigationPermission } from "@/lib/platform/navigationGuard";
 
 type MessageListProps = {
   hasActiveSession: boolean;
@@ -20,14 +23,6 @@ function formatMessageTime(timestamp: number): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-function isSafeSourceUrl(value: string): boolean {
-  try {
-    return ["http:", "https:"].includes(new URL(value).protocol);
-  } catch {
-    return false;
-  }
 }
 
 export function MessageList({
@@ -98,19 +93,20 @@ export function MessageList({
               <MarkdownMessage content={message.content} />
               {message.role === "assistant" &&
                 message.citations &&
-                message.citations.some((citation) => isSafeSourceUrl(citation.url)) && (
+                message.citations.some(isSafeCitation) && (
                   <details className="mt-4 border-t border-zinc-200 pt-3 dark:border-zinc-800">
                     <summary className="mb-2 cursor-pointer text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                      参考来源（{message.citations.filter((citation) => isSafeSourceUrl(citation.url)).length}）
+                      参考来源（{message.citations.filter(isSafeCitation).length}）
                     </summary>
                     <div className="grid gap-2">
                       {message.citations
-                        .filter((citation) => isSafeSourceUrl(citation.url))
+                        .filter(isSafeCitation)
                         .map((citation, citationIndex) => (
                         <a
                           key={`${citation.url}-${citationIndex}`}
-                          href={citation.url}
-                          target="_blank"
+                          href={isKnowledgeCitation(citation) ? appHref(citation.url) : citation.url}
+                          target={isKnowledgeCitation(citation) ? undefined : "_blank"}
+                          onClick={(event) => { if (isKnowledgeCitation(citation) && !requestNavigationPermission()) event.preventDefault(); }}
                           rel="noopener noreferrer"
                           className="rounded-lg border border-zinc-200 px-3 py-2 transition-colors hover:border-blue-400 hover:bg-blue-50/50 dark:border-zinc-800 dark:hover:border-blue-700 dark:hover:bg-blue-950/20"
                         >

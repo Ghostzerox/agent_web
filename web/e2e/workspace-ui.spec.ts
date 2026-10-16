@@ -84,6 +84,7 @@ test("mode entry needs confirmation and long math/code stay within a full-width 
   const conversation = () => ({ id: "session-ui", title: "UI 测试", mode, activeLeafMessageId: "a", version: writes + 1, updatedAt: "2026-10-01T00:00:00Z", messages });
   await page.route("**/api/v1/**", (route) => {
     const request = route.request(); const pathname = new URL(request.url()).pathname;
+    if (pathname.endsWith("/knowledge")) return route.fulfill({ json: { data: [] } });
     if (request.method() !== "GET") { writes++; mode = request.postDataJSON().mode; }
     return route.fulfill({ json: { data: pathname.endsWith("/conversations") ? [conversation()] : conversation() } });
   });

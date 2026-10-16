@@ -7,6 +7,7 @@ import { ChatHeader } from "@/components/chat/ChatHeader";
 import { MessageList } from "@/components/chat/MessageList";
 import { ModeSelector } from "@/components/chat/ModeSelector";
 import { PromptExportControl } from "@/components/chat/PromptExportControl";
+import { KnowledgeSelector } from "@/components/chat/KnowledgeSelector";
 import { SessionSidebar } from "@/components/chat/SessionSidebar";
 import { AppLink } from "@/components/platform/AppLink";
 import { AppShell } from "@/components/ui/AppShell";
@@ -74,6 +75,7 @@ export default function ChatPage() {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [requestedMode, setRequestedMode] = useState<CoreModeId | null>(null);
   const [searchMode, setSearchMode] = useState<SearchMode>("auto");
+  const [knowledgeSelections, setKnowledgeSelections] = useState<Record<string, string[]>>({});
   const [updatingModeSessionId, setUpdatingModeSessionId] = useState<
     string | null
   >(null);
@@ -277,6 +279,7 @@ export default function ChatPage() {
             activeLeafId: persistedUserSession.activeLeafId ?? null,
           },
           searchMode,
+          knowledgeCollectionIds: knowledgeSelections[sessionId] ?? [],
         },
         controller.signal,
         (_delta, accumulated) => {
@@ -354,6 +357,7 @@ export default function ChatPage() {
             activeLeafId: retrySession.activeLeafId ?? null,
           },
           searchMode,
+          knowledgeCollectionIds: knowledgeSelections[sessionId] ?? [],
         },
         controller.signal,
         (_delta, accumulated) => {
@@ -601,6 +605,7 @@ export default function ChatPage() {
             />
           </div>
 
+          {resolvedActiveSessionId && <KnowledgeSelector key={resolvedActiveSessionId} mode={activeSession?.mode ?? "auto"} selected={knowledgeSelections[resolvedActiveSessionId] ?? []} disabled={loading} onChange={(ids) => setKnowledgeSelections((current) => ({ ...current, [resolvedActiveSessionId]: ids }))} />}
           {resolvedActiveSessionId && (
             <ChatComposer
               value={input}
