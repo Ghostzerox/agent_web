@@ -1,8 +1,8 @@
 import { GAME_PROMPT_VERSION, TASK_PROMPT_PROFILES } from "@/lib/ai/taskPromptProfiles";
 
 /** Audit data only; runtime generation uses the actual builders below. */
-export const PROMPT_BASELINE_VERSION = "r5.4/branch-summary-v1";
-export const BASELINE_SOURCE_COMMIT = "31a49a296d4b4e73447b63d272be671bf73b8030";
+export const PROMPT_BASELINE_VERSION = "r5.5/module-memory-v1";
+export const BASELINE_SOURCE_COMMIT = "641aeb78e23cf976a14859599ca2c0bb8da61e2c";
 
 export const PROMPT_ENTRY_POINTS = [
   { id: "chat", source: "lib/api/modelApi.ts", builder: "lib/agent/promptBuilder.ts", versions: ["r3.2/mode-prompts-v1", "mode-registry/r3.2-v1", "persona-profile/r3.2-v1", "memory-context/v2", "web-search-context/v2"], transport: "chat", format: "Markdown + optional citations", context: "server Persona, confirmed relevant memory, selected branch, optional search", fallback: "visible error / cancel, no fabricated complete answer" },
@@ -17,7 +17,7 @@ export const PROMPT_ENTRY_POINTS = [
 ] as const;
 export type PromptEntryId = typeof PROMPT_ENTRY_POINTS[number]["id"];
 // Auxiliary paid operation, separately tested with source/branch/approval fixtures; not a new user mode.
-export const AUXILIARY_PROMPT_ENTRY_POINTS = [{ id: "context-summary", source: "lib/api/conversationSummaryApi.ts", builder: "lib/conversation/summary.ts", version: "branch-summary/r5.4-v1", fallback: "full raw branch or explicit input-limit error; never automatic regeneration" }] as const;
+export const AUXILIARY_PROMPT_ENTRY_POINTS = [{ id: "context-summary", source: "lib/api/conversationSummaryApi.ts", builder: "lib/conversation/summary.ts", version: "branch-summary/r5.5-v1", fallback: "full raw branch or explicit input-limit error; never automatic regeneration" }] as const;
 
 /** Every module from the R3–R5 planning matrix, including non-generative services. */
 export const MODULE_PROMPT_COVERAGE: ReadonlyArray<{ module: string; generation: "yes" | "mixed" | "no"; entries: readonly PromptEntryId[]; note: string }> = [
@@ -57,6 +57,7 @@ export const PROMPT_SOURCE_FILES = [...new Set([
   "lib/repositories/conversationRepository.ts",
   "lib/knowledge/retrieval.ts", "lib/knowledge/citations.ts", "lib/repositories/knowledgeRetrievalRepository.ts", "lib/repositories/knowledgeRepository.ts",
   "lib/conversation/summary.ts", "lib/repositories/conversationSummaryRepository.ts",
+  "lib/memory/moduleProfiles.ts",
 ])].sort();
 
 export const QUALITY_DIMENSIONS = ["task-completion", "actionability", "facts-and-citations", "mode-fit", "tool-honesty", "naturalness", "continuity"] as const;

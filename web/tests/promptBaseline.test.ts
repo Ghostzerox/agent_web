@@ -3,7 +3,8 @@ import { resolve } from "node:path";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { comparePromptBaselines, promptBaselineCases, promptBaselineSnapshot, runPromptBaseline } from "@/evals/r3/promptBaseline";
 import { MODEL_CALLER_FILES, MODULE_PROMPT_COVERAGE, PROMPT_ENTRY_POINTS, AUXILIARY_PROMPT_ENTRY_POINTS, PROMPT_SOURCE_FILES } from "@/evals/r3/promptInventory";
-import baseline from "@/evals/r3/baseline-r5.4.json";
+import baseline from "@/evals/r3/baseline-r5.5.json";
+import summaries from "@/evals/r3/baseline-r5.4.json";
 import retrieval from "@/evals/r3/baseline-r5.3.json";
 import library from "@/evals/r3/baseline-r5.2.json";
 import memoryPolicy from "@/evals/r3/baseline-r5.1.json";
@@ -13,7 +14,7 @@ import previous from "@/evals/r3/baseline-r3.2.json";
 import original from "@/evals/r3/baseline.json";
 
 vi.mock("@/lib/db/client", () => ({ getDatabase: () => { throw new Error("Database access is forbidden in prompt baseline tests"); } }));
-const summarySources = ["lib/api/conversationSummaryApi.ts", "lib/conversation/summary.ts", "lib/repositories/conversationSummaryRepository.ts"];
+const summarySources = ["lib/api/conversationSummaryApi.ts", "lib/conversation/summary.ts", "lib/repositories/conversationSummaryRepository.ts", "lib/memory/moduleProfiles.ts"];
 const knowledgeSources = ["lib/knowledge/retrieval.ts", "lib/knowledge/citations.ts", "lib/repositories/knowledgeRetrievalRepository.ts", "lib/repositories/knowledgeRepository.ts", ...summarySources];
 let result: Awaited<ReturnType<typeof runPromptBaseline>>;
 const fetch = vi.fn(() => { throw new Error("Network access is forbidden"); });
@@ -21,6 +22,12 @@ beforeAll(async () => { vi.stubGlobal("fetch", fetch); result = await runPromptB
 afterAll(() => vi.unstubAllGlobals());
 
 describe("R3 offline prompt baselines", () => {
+  it("preserves R5.4 legacy fixtures/requests and records the module-specialization implementation", () => {
+    const comparison = comparePromptBaselines(summaries, promptBaselineSnapshot(result));
+    expect(comparison).toMatchObject({ addedCases: [], removedCases: [], changedExistingRequests: [], changedExistingFixtures: [] });
+    expect(comparison.addedSourceFiles).toEqual(["lib/memory/moduleProfiles.ts"]);
+    expect(comparison.changedSourceFiles).toContain("lib/memory/domainPolicy.ts");
+  });
   it("covers nine generation families and all sixteen modules, including deterministic services", () => {
     expect(PROMPT_ENTRY_POINTS).toHaveLength(9);
     expect(AUXILIARY_PROMPT_ENTRY_POINTS).toHaveLength(1);

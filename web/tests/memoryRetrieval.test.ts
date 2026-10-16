@@ -35,6 +35,12 @@ function memory(
 }
 
 describe("memory relevance retrieval", () => {
+  it("prioritizes relevant goals in reflection and preferences in companion, without admitting unrelated or expired facts", () => {
+    const rows = [memory("fact", "数学练习", { kind: "fact" }), memory("goal", "数学练习", { kind: "goal" }), memory("pref", "数学练习"), memory("unrelated", "中国历史", { kind: "goal" }), memory("expired", "数学练习", { kind: "goal", validUntil: new Date(0) })];
+    expect(rankMemories(rows, "数学", now, { consumer: "reflection" }).map((r) => r.id)).toEqual(["goal", "fact", "pref"]);
+    expect(rankMemories(rows, "数学", now, { consumer: "companion" }).map((r) => r.id)).toEqual(["pref", "fact", "goal"]);
+    expect(rankMemories(rows, "数学", now)).toEqual(rankMemories(rows, "数学", now, { consumer: "professional" }));
+  });
   it("selects only relevant and unexpired memories within count and token budgets", () => {
     const selected = rankMemories(
       [

@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { PalaceRoom } from "@/lib/memory/palace";
 import type { SourceRevision, SummaryPayload, SummarySettings, SummaryUse } from "@/lib/conversation/summary";
 import type { KnowledgeRetrievalAudit } from "@/lib/knowledge/audit";
 import type { KNOWLEDGE_MODULES } from "@/lib/knowledge/documents";
@@ -1019,6 +1020,18 @@ export const memoryItems = pgTable(
     check("memory_items_version_positive", sql`${table.version} > 0`),
   ],
 );
+
+export const memoryPalaces = pgTable("memory_palaces", {
+  id: uuid("id").defaultRandom().primaryKey(), userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  title: text("title").notNull(), purpose: text("purpose").$type<"navigation" | "learning">().notNull(), rooms: jsonb("rooms").$type<PalaceRoom[]>().notNull().default(sql`'[]'::jsonb`),
+  version: integer("version").notNull().default(1), updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("memory_palaces_owner_updated_idx").on(table.userId, table.updatedAt),
+  check("memory_palaces_title_check", sql`length(btrim(${table.title})) BETWEEN 1 AND 120`),
+  check("memory_palaces_purpose_check", sql`${table.purpose} IN ('navigation','learning')`),
+  check("memory_palaces_rooms_check", sql`jsonb_typeof(${table.rooms}) = 'array' AND jsonb_array_length(${table.rooms}) <= 6`),
+  check("memory_palaces_version_check", sql`${table.version} > 0`),
+]);
 
 export const conversationSummaries = pgTable("conversation_summaries", {
   id: uuid("id").primaryKey().defaultRandom(),

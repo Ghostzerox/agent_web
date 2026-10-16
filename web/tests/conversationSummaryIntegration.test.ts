@@ -98,7 +98,7 @@ describe("R5.4 real SQL + mock Provider", () => {
     expect((await api.handle(request(), s.conversation.id)).status).toBe(422); expect(calls).toHaveBeenCalledTimes(1);
     expect((await db.select().from(schema.conversationSummaries))[0].status).toBe("failed");
     malformed = false; expect((await api.handle(request(), s.conversation.id)).status).toBe(200); expect(calls).toHaveBeenCalledTimes(2);
-    expect(calls.mock.calls[1][0]).toMatchObject({ business: "context-summary", promptVersion: "branch-summary/r5.4-v1" });
+    expect(calls.mock.calls[1][0]).toMatchObject({ business: "context-summary", promptVersion: "branch-summary/r5.5-v1" });
     expect((await api.handle(request(), s.conversation.id)).status).toBe(200); expect(calls).toHaveBeenCalledTimes(2);
   });
   it("sends summary+recent raw messages through Model API and records only usage metadata", async () => {

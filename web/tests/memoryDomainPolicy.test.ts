@@ -16,8 +16,8 @@ describe("R5.1 memory domain policy", () => {
     const policy = MEMORY_DOMAIN_POLICIES[consumer];
     const allowed = ["professional", "companion", "reflection"].includes(consumer);
     expect(assessMemorySourceRead(context({ consumer }), source(), now).allowed).toBe(allowed);
-    expect(policy.personal.maxItems).toBe(allowed ? 5 : 0);
-    expect(policy.personal.maxEstimatedTokens).toBe(allowed ? 500 : 0);
+    expect(policy.personal.maxItems).toBe(consumer === "professional" ? 5 : allowed ? 4 : 0);
+    expect(policy.personal.maxEstimatedTokens).toBe(consumer === "professional" ? 500 : consumer === "companion" ? 400 : consumer === "reflection" ? 450 : 0);
     expect(policy.ownWrite.length).toBeGreaterThan(10);
     expect(policy.knowledge.maxItems === 0).toBe(policy.knowledge.maxEstimatedTokens === 0);
     expect(policy.moduleNamespaces.every((namespace) => namespace === consumer)).toBe(true);

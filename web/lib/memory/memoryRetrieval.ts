@@ -1,5 +1,6 @@
 import type { PromptMessage } from "@/lib/ai/messages";
 import { stableJson } from "@/lib/ai/stableJson";
+import { personalMemoryBonus } from "./moduleProfiles";
 import type {
   MemoryCandidateKind,
   MemoryItemRecord,
@@ -91,7 +92,7 @@ export function rankMemories(
   memories: readonly MemoryItemRecord[],
   query: string,
   now: Date,
-  options: { limit?: number; tokenBudget?: number } = {},
+  options: { limit?: number; tokenBudget?: number; consumer?: string } = {},
 ): RetrievedMemory[] {
   const limit = options.limit ?? MEMORY_RETRIEVAL_LIMIT;
   const tokenBudget = options.tokenBudget ?? MEMORY_TOKEN_BUDGET;
@@ -101,7 +102,7 @@ export function rankMemories(
     .filter((memory) => !memory.validUntil || memory.validUntil.getTime() > now.getTime())
     .map((memory) => ({
       memory,
-      score: relevanceScore(memory, query, now),
+      score: (() => { const score = relevanceScore(memory, query, now); return score > 0 ? score + personalMemoryBonus(options.consumer ?? "professional", memory.kind) : 0; })(),
       estimatedTokens: estimateMemoryTokens(memory.content),
     }))
     .filter((candidate) => candidate.score > 0)

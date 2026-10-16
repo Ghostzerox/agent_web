@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getDatabase } from "@/lib/db/client";
 import { createConversationSummaryRepository, summaryModelKey } from "@/lib/repositories/conversationSummaryRepository";
-import { DEFAULT_SUMMARY_SETTINGS, SUMMARY_INSTRUCTION, SUMMARY_POLICY, SummaryError, summarySettingsSchema } from "@/lib/conversation/summary";
+import { DEFAULT_SUMMARY_SETTINGS, summaryInstructionForMode, SUMMARY_POLICY, SummaryError, summarySettingsSchema } from "@/lib/conversation/summary";
 import { resolveModelProviderConfig } from "@/lib/ai/server/modelCredentialService";
 import { createMeasuredProvider } from "@/lib/ai/server/measuredProvider";
 import { ModelProviderError, type ModelProvider } from "@/lib/ai/server/modelProvider";
@@ -27,7 +27,7 @@ export function createConversationSummaryApi(repo: Pick<Repo, "inspect" | "begin
       const begun = await repo.begin(id, input.leafId, modelKey, input.settings);
       if (begun.reused) return Response.json({ data: begun.record, reused: true }, { headers });
       pendingId = begun.record.id;
-      const messages = [{ role: "system" as const, content: `${SUMMARY_INSTRUCTION}\n输出JSON总长度不超过${begun.record.settings.maxCharacters}字符。` }, { role: "user" as const, content: JSON.stringify(begun.sources.map(({ id, role, content }) => ({ id, role, content }))) }];
+      const messages = [{ role: "system" as const, content: `${summaryInstructionForMode(begun.record.mode)}\n输出JSON总长度不超过${begun.record.settings.maxCharacters}字符。` }, { role: "user" as const, content: JSON.stringify(begun.sources.map(({ id, role, content }) => ({ id, role, content }))) }];
       const generationBudget = resolveGenerationBudget(config, "context-summary");
       if (inputTextCharacters(messages) > generationBudget.inputCharacterLimit) throw new SummaryError("原始摘要输入超出预算；未请求模型，请调整覆盖策略或保持完整历史。", 413);
       const signal = AbortSignal.any([request.signal, AbortSignal.timeout(90000)]);

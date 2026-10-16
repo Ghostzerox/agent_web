@@ -1,7 +1,7 @@
 import { MEMORY_RETRIEVAL_LIMIT, MEMORY_TOKEN_BUDGET } from "./memoryRetrieval";
 import type { MemoryCandidateKind } from "@/lib/db/schema";
 
-export const MEMORY_DOMAIN_POLICY_VERSION = "memory-domain/r5.1-v1";
+export const MEMORY_DOMAIN_POLICY_VERSION = "memory-domain/r5.5-v1";
 export const MEMORY_MODULE_IDS = ["professional", "companion", "reflection", "news", "reading", "tasks", "inbox", "memorization", "problem-solving", "game", "memory", "voice", "plugins", "configuration", "navigation", "maintenance"] as const;
 export type MemoryModuleId = typeof MEMORY_MODULE_IDS[number];
 
@@ -24,8 +24,8 @@ const base: MemoryDomainPolicy = { personal: noPersonal, knowledge: none, collec
 /** Policy/specification, not new grants or evidence that planned retrieval is implemented. */
 export const MEMORY_DOMAIN_POLICIES: Readonly<Record<MemoryModuleId, MemoryDomainPolicy>> = {
   professional: { ...base, personal: confirmed, knowledge: { maxItems: 6, maxEstimatedTokens: 1800 }, collectionModules: ["professional"], branch: "conversation", personalWrite: "candidate-and-user-confirmation" },
-  companion: { ...base, personal: confirmed, branch: "conversation", personalWrite: "candidate-and-user-confirmation" },
-  reflection: { ...base, personal: confirmed, knowledge: { maxItems: 3, maxEstimatedTokens: 900 }, collectionModules: ["reflection"], moduleNamespaces: ["reflection"], branch: "conversation", personalWrite: "candidate-and-user-confirmation" },
+  companion: { ...base, personal: { ...confirmed, maxItems: 4, maxEstimatedTokens: 400 }, branch: "conversation", personalWrite: "candidate-and-user-confirmation" },
+  reflection: { ...base, personal: { ...confirmed, maxItems: 4, maxEstimatedTokens: 450 }, knowledge: { maxItems: 3, maxEstimatedTokens: 900 }, collectionModules: ["reflection"], moduleNamespaces: ["reflection"], branch: "conversation", personalWrite: "candidate-and-user-confirmation" },
   news: { ...base, knowledge: { maxItems: 6, maxEstimatedTokens: 1800 }, collectionModules: ["news"], moduleNamespaces: ["news"] },
   reading: { ...base, knowledge: { maxItems: 5, maxEstimatedTokens: 1500 }, collectionModules: ["reading"], moduleNamespaces: ["reading"] },
   tasks: { ...base, knowledge: { maxItems: 3, maxEstimatedTokens: 900 }, collectionModules: ["tasks"], moduleNamespaces: ["tasks"] },

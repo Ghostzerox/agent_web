@@ -7,6 +7,7 @@ import type { GenerationBudget } from "@/lib/ai/server/tokenBudget";
 import { CORE_MODE_PROMPT_VERSION } from "@/lib/agent/modeRegistry";
 import { PERSONA_PROMPT_VERSION } from "@/lib/persona/personaProfile";
 import type { SummaryUse } from "@/lib/conversation/summary";
+import { SUMMARY_POLICY } from "@/lib/conversation/summary";
 
 export const PROMPT_ENVELOPE_SCHEMA_VERSION = 1 as const;
 export const PROMPT_COMPOSER_VERSION = "r3.2/mode-prompts-v1" as const;
@@ -73,7 +74,7 @@ const LAYER_VERSIONS: Record<PromptMessage["source"], string> = {
   memory: "memory-context/v2",
   "web-search": "web-search-context/v2",
   knowledge: "knowledge-context/r5.3-v1",
-  summary: "branch-summary/r5.4-v1",
+  summary: SUMMARY_POLICY,
   conversation: "conversation-tree/v2",
 };
 

@@ -4,7 +4,7 @@
 
 基准运行源码：`31a49a296d4b4e73447b63d272be671bf73b8030`；离线基线版本 `r3.1/inventory-v1`。这个版本是评测/清单版本，不是给未版本化的运行时模板冒加版本号。
 
-更新说明：保留R3.1历史与原31例；旧快照均保留，当前核对 `baseline-r5.4.json`（旧80例、34源文件），旧请求/fixture hash不变。九类原入口之外，新 `context-summary` 辅助调用单独登记及专项测试，不冒充旧80例已覆盖摘要。资料/摘要分别见 [检索指南](KNOWLEDGE_RETRIEVAL_GUIDE.md)、[摘要指南](BRANCH_SUMMARY_GUIDE.md)；模式/任务见 `MODE_PROMPT_GUIDE.md`、`TASK_PROMPT_GUIDE.md`。真实单样例与费用不等于人工七维签收，下文旧状态是历史记录。
+更新说明：保留R3.1历史与原31例；旧快照均保留，当前核对 `baseline-r5.5.json`（旧80例、35源文件），旧请求/fixture hash不变。九类原入口之外，`context-summary` 辅助调用单独登记及专项测试；R5.5模块策略/摘要模板另外有SQL与纯函数测试，不冒充旧80例已覆盖。资料/摘要/宫殿见 [检索指南](KNOWLEDGE_RETRIEVAL_GUIDE.md)、[摘要指南](BRANCH_SUMMARY_GUIDE.md)、[宫殿指南](MEMORY_PALACE_GUIDE.md)；模式/任务见 `MODE_PROMPT_GUIDE.md`、`TASK_PROMPT_GUIDE.md`。真实单样例与费用不等于人工七维签收，下文旧状态是历史记录。
 
 ## 1. 调用结构与完整范围
 

@@ -1,6 +1,6 @@
 # R5.1：分域记忆、来源版本与渐进迁移规范
 
-> R5.4更新：本文件保留R5.1历史。资料/查询见 [资料库指南](KNOWLEDGE_LIBRARY_GUIDE.md)、[检索指南](KNOWLEDGE_RETRIEVAL_GUIDE.md)，已实现的分支摘要/失效/费用限制见 [摘要指南](BRANCH_SUMMARY_GUIDE.md)。向量仍待开发；下文“没有知识库/未处理证据/未有摘要/指标未测”是R5.1历史，不是最新功能。合成集开发中查看过，不冒充冻结盲测。
+> R5.5更新：本文件保留R5.1历史。当前策略为 `memory-domain/r5.5-v1`，专业5/500、陪伴4/400、反思4/450；模块排序/摘要与宫殿见 [宫殿指南](MEMORY_PALACE_GUIDE.md)。资料/查询见 [资料库指南](KNOWLEDGE_LIBRARY_GUIDE.md)、[检索指南](KNOWLEDGE_RETRIEVAL_GUIDE.md)，摘要/失效/费用见 [摘要指南](BRANCH_SUMMARY_GUIDE.md)。向量和独立工作流自动资料绑定仍待开发；下文旧版本/预算及“没有知识库/未有摘要/指标未测”是R5.1历史。合成集开发中查看过，不冒充冻结盲测。
 
 - 日期：2026-10-16；状态：R5.1 已实现，R5.2–R5.6 待实施。
 - 策略版本：`memory-domain/r5.1-v1`。

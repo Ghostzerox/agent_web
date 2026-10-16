@@ -252,6 +252,7 @@ export function MemorizationActivity() {
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <aside className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <AppLink href="/memory?palace=learning" className="block text-xs text-blue-600 underline">记忆宫殿：关联单元、位置联想与路线抽测</AppLink>
         <div className="flex items-center justify-between gap-3">
           <div><p className="text-xs text-zinc-500">已导入材料</p><h2 className="font-semibold">复习库</h2></div>
           <button type="button" onClick={() => { setActive(null); setEditingId(null); setDraftUnits([]); setTitle(""); setSourceText(""); }} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white">导入</button>

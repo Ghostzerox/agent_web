@@ -82,7 +82,7 @@ export class MemoryRepository<TQueryResult extends PgQueryResultHKT>
       )
       .orderBy(desc(memoryItems.pinned), desc(memoryItems.updatedAt))
       .limit(500);
-    return rankMemories(active, query, now, { limit: policy.maxItems, tokenBudget: policy.maxEstimatedTokens });
+    return rankMemories(active, query, now, { limit: policy.maxItems, tokenBudget: policy.maxEstimatedTokens, consumer });
   }
 
   async retrieveForMessage(

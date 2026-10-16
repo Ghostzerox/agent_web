@@ -141,11 +141,12 @@ describe("R5.2 knowledge lifecycle and personal source deletion", () => {
     const migrations = await loadMigrations();
     const conversations = createConversationRepository(database);
     const existing = await conversations.createConversation({ title: "保留旧数据", mode: "auto" });
+    expect(await rollbackDatabase(migrationDb(pg), migrations)).toBe("0031_memory_palaces.sql");
     expect(await rollbackDatabase(migrationDb(pg), migrations)).toBe("0030_conversation_summaries.sql");
     expect(await rollbackDatabase(migrationDb(pg), migrations)).toBe("0029_knowledge_retrieval_audit.sql");
     expect(await rollbackDatabase(migrationDb(pg), migrations)).toBe("0028_knowledge_library.sql");
     expect(await conversations.getConversation(existing.id)).not.toBeNull();
-    expect(await migrateDatabase(migrationDb(pg), migrations)).toEqual(["0028_knowledge_library.sql", "0029_knowledge_retrieval_audit.sql", "0030_conversation_summaries.sql"]);
+    expect(await migrateDatabase(migrationDb(pg), migrations)).toEqual(["0028_knowledge_library.sql", "0029_knowledge_retrieval_audit.sql", "0030_conversation_summaries.sql", "0031_memory_palaces.sql"]);
     expect(await createKnowledgeRepository(database).listCollections()).toEqual([]);
   });
 });
