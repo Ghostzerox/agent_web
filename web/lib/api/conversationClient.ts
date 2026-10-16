@@ -152,8 +152,8 @@ export async function createServerSession(): Promise<ServerSession> {
   };
 }
 
-export async function deleteServerSession(id: string): Promise<void> {
-  await apiRequest<void>(`/api/v1/conversations/${id}`, { method: "DELETE" });
+export async function deleteServerSession(id: string, options?: { deleteRelatedMemories: boolean }): Promise<void> {
+  await apiRequest<void>(`/api/v1/conversations/${id}`, { method: "DELETE", ...(options ? { headers: { "content-type": "application/json" }, body: JSON.stringify(options) } : {}) });
 }
 
 export async function updateServerSession(

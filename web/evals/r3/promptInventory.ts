@@ -1,7 +1,7 @@
 import { GAME_PROMPT_VERSION, TASK_PROMPT_PROFILES } from "@/lib/ai/taskPromptProfiles";
 
 /** Audit data only; runtime generation uses the actual builders below. */
-export const PROMPT_BASELINE_VERSION = "r5.1/source-policy-v1";
+export const PROMPT_BASELINE_VERSION = "r5.2/library-v1";
 export const BASELINE_SOURCE_COMMIT = "31a49a296d4b4e73447b63d272be671bf73b8030";
 
 export const PROMPT_ENTRY_POINTS = [
@@ -51,6 +51,7 @@ export const PROMPT_SOURCE_FILES = [...new Set([
   "lib/proactivity/proactivityPolicy.ts", "lib/api/promptExportApi.ts",
   "lib/tools/sourceTools.ts", "lib/game/toolkit.ts",
   "lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts",
+  "lib/repositories/conversationRepository.ts",
 ])].sort();
 
 export const QUALITY_DIMENSIONS = ["task-completion", "actionability", "facts-and-citations", "mode-fit", "tool-honesty", "naturalness", "continuity"] as const;

@@ -1,6 +1,6 @@
 # R3.4：任务质量、成本对照与集成回归
 
-> 2026-10-16 更新：下文保留 2026-10-15 的历史对照条件。已知问题修复与新增定点复测见 [`reports/R3_4_FOLLOWUP.md`](reports/R3_4_FOLLOWUP.md)，R4 整体验证见 [`reports/R4_REPORT.md`](reports/R4_REPORT.md)。原始快照不覆盖；当前离线命令核对 `baseline-r5.1.json`（原 R4 的 80 个请求/样例 hash 不变，新增记忆读取边界源码指纹），历史 `baseline-r4.json` 与 `baseline-r3.4-v2.json` 保留。原 ¥5 授权已结束；后续所有付费测试共用 ¥3 总预算，台账见 [`PAID_TEST_BUDGET.md`](PAID_TEST_BUDGET.md)。不要直接照抄历史付费命令重跑，需核对累计余额、当日价格和候选源码版本；定点复测不能混入原 270 次比较。
+> 2026-10-16 更新：下文保留 2026-10-15 的历史对照条件。已知问题修复与新增定点复测见 [`reports/R3_4_FOLLOWUP.md`](reports/R3_4_FOLLOWUP.md)，R4 整体验证见 [`reports/R4_REPORT.md`](reports/R4_REPORT.md)。原始快照不覆盖；当前离线命令核对 `baseline-r5.2.json`（原 R4 的 80 个请求/样例 hash 不变，新增记忆读取边界源码指纹），历史 `baseline-r4.json` 与 `baseline-r3.4-v2.json` 保留。原 ¥5 授权已结束；后续所有付费测试共用 ¥3 总预算，台账见 [`PAID_TEST_BUDGET.md`](PAID_TEST_BUDGET.md)。不要直接照抄历史付费命令重跑，需核对累计余额、当日价格和候选源码版本；定点复测不能混入原 270 次比较。
 
 日期：2026-10-15。工程评测与真实受控对照已交付；人工语义评分、发现的问题修正和最终质量签收仍待完成。不能把格式校验通过当作专业性、自然度或事实准确性通过。
 

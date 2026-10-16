@@ -122,7 +122,7 @@ export default function ChatPage() {
         }
       }
       try {
-        await refreshSessions();
+        await refreshSessions(currentAppSearchParams().get("session"));
       } catch (loadError) {
         if (!disposed) {
           setError(
@@ -196,7 +196,7 @@ export default function ChatPage() {
   };
 
   const handleDeleteSession = async (id: string) => {
-    if (!window.confirm("确定要删除这个对话吗？")) return;
+    if (!window.confirm("确定要删除这个对话吗？已确认记忆独立保留，但来源证据副本会清除。若要连同关联记忆删除，可在记忆页的来源操作中执行。")) return;
     try {
       controllers.current.get(id)?.abort();
       await deleteServerSession(id);

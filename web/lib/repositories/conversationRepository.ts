@@ -1,9 +1,11 @@
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
   conversations,
   messages,
   users,
+  memoryCandidates,
+  memoryItems,
   type ConversationRecord,
   type MessageCitation,
   type MessageRecord,
@@ -62,7 +64,7 @@ export interface ConversationRepositoryPort {
   listConversations(): Promise<ConversationSummary[]>;
   createConversation(input: CreateConversationInput): Promise<ConversationSummary>;
   getConversation(id: string): Promise<ConversationDetail | null>;
-  deleteConversation(id: string): Promise<boolean>;
+  deleteConversation(id: string, options?: { deleteRelatedMemories: boolean }): Promise<boolean>;
   updateConversation(
     id: string,
     input: UpdateConversationInput,
@@ -143,9 +145,25 @@ export class ConversationRepository<
     return { ...conversation, messages: conversationMessages };
   }
 
-  async deleteConversation(id: string): Promise<boolean> {
+  async deleteConversation(id: string, options?: { deleteRelatedMemories: boolean }): Promise<boolean> {
     await this.ensureLocalUser();
-    const deleted = await this.database
+    return this.database.transaction(async (transaction) => {
+    const [existing] = await transaction.select({ id: conversations.id }).from(conversations).where(and(eq(conversations.id, id), eq(conversations.userId, LOCAL_USER_ID))).for("update");
+    if (!existing) return false;
+    const candidates = await transaction.select({ id: memoryCandidates.id, status: memoryCandidates.status }).from(memoryCandidates).where(and(eq(memoryCandidates.userId, LOCAL_USER_ID), eq(memoryCandidates.sourceConversationId, id))).for("update");
+    if (options?.deleteRelatedMemories) {
+      await transaction.delete(memoryItems).where(and(eq(memoryItems.userId, LOCAL_USER_ID), eq(memoryItems.sourceConversationId, id)));
+      if (candidates.length) await transaction.delete(memoryItems).where(and(eq(memoryItems.userId, LOCAL_USER_ID), inArray(memoryItems.candidateId, candidates.map((candidate) => candidate.id))));
+    }
+    if (candidates.length) {
+      const ids = candidates.map((candidate) => candidate.id);
+      const retained = await transaction.select({ candidateId: memoryItems.candidateId }).from(memoryItems).where(inArray(memoryItems.candidateId, ids));
+      const kept = new Set(retained.map((item) => item.candidateId));
+      const unused = ids.filter((candidateId) => !kept.has(candidateId));
+      if (unused.length) await transaction.delete(memoryCandidates).where(and(eq(memoryCandidates.userId, LOCAL_USER_ID), inArray(memoryCandidates.id, unused)));
+      await transaction.update(memoryCandidates).set({ sourceConversationId: null, sourceMessageId: null, evidenceQuote: "", content: "来源已删除", reason: "来源已删除；已确认事实独立保留", version: sql`${memoryCandidates.version} + 1`, updatedAt: new Date() }).where(and(eq(memoryCandidates.userId, LOCAL_USER_ID), inArray(memoryCandidates.id, ids)));
+    }
+    const deleted = await transaction
       .delete(conversations)
       .where(
         and(
@@ -155,6 +173,7 @@ export class ConversationRepository<
       )
       .returning({ id: conversations.id });
     return deleted.length > 0;
+    });
   }
 
   async updateConversation(

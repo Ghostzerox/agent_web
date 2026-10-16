@@ -32,6 +32,7 @@ const updateSchema = z
     pinned: z.boolean(),
     validUntil: z.iso.datetime({ offset: true }).nullable(),
     expectedVersion: z.number().int().positive(),
+    clearSourceEvidence: z.boolean().optional(),
   })
   .strict();
 const deleteSchema = z

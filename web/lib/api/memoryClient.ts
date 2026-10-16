@@ -63,6 +63,7 @@ export function updateMemory(
     pinned: boolean;
     validUntil: string | null;
     expectedVersion: number;
+    clearSourceEvidence?: boolean;
   },
 ): Promise<MemoryItem> {
   return request(`/api/v1/memories/${id}`, {

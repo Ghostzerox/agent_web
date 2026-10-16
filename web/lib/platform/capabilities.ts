@@ -5,7 +5,7 @@ export type ClientPlatformId =
 
 export type PromptExportArtifact = {
   filename: string;
-  mediaType: "application/json" | "text/markdown";
+  mediaType: "application/json" | "text/markdown" | "text/plain";
   content: string;
   directory?: string;
   shareTitle?: string;

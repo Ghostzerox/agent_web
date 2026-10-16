@@ -1,5 +1,7 @@
 # R5.1：分域记忆、来源版本与渐进迁移规范
 
+> R5.2 更新：本文件保留 R5.1 时的设计与历史限制。当前已实现知识集合/文档/分段生命周期及个人来源清理，详见 [知识资料库指南](KNOWLEDGE_LIBRARY_GUIDE.md)。尚未接入 RAG/摘要；下文“没有知识库/未处理证据”描述的是 R5.1 状态，不是 R5.2 最新功能。
+
 - 日期：2026-10-16；状态：R5.1 已实现，R5.2–R5.6 待实施。
 - 策略版本：`memory-domain/r5.1-v1`。
 - 决策：[ADR-064](adr/ADR-064-memory-domain-source-and-incremental-migration.md)。验收：[R5.1 报告](reports/R5_1_REPORT.md)。

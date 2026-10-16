@@ -299,10 +299,20 @@ export function createConversationApi(
       });
     },
 
-    delete(id: string): Promise<Response> {
+    delete(id: string, request?: Request): Promise<Response> {
       return handleRequest(async (requestId) => {
+        const raw = request ? await request.text() : "";
+        let options: { deleteRelatedMemories: boolean } | undefined;
+        if (raw) {
+          let parsed: unknown;
+          try { parsed = JSON.parse(raw); } catch { throw new ApiInputError("INVALID_JSON", "Request body must be valid JSON."); }
+          const validated = z.object({ deleteRelatedMemories: z.boolean() }).strict().safeParse(parsed);
+          if (!validated.success) throw new ApiInputError("INVALID_REQUEST", "Invalid deletion options.", validated.error.issues);
+          options = validated.data;
+        }
         const deleted = await repository().deleteConversation(
           parseConversationId(id),
+          ...(options ? [options] : []),
         );
         if (!deleted) {
           return errorResponse(

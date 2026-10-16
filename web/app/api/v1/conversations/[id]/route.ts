@@ -16,11 +16,11 @@ export async function GET(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: ConversationRouteContext,
 ): Promise<Response> {
   const { id } = await context.params;
-  return getConversationApi().delete(id);
+  return getConversationApi().delete(id, request);
 }
 
 export async function PATCH(

@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { KNOWLEDGE_MODULES } from "@/lib/knowledge/documents";
 import { CORE_MODE_IDS } from "@/lib/agent/modeRegistry";
 import {
   type AnyPgColumn,
@@ -1504,6 +1505,37 @@ export type GameCharacterRecord = typeof gameCharacters.$inferSelect;
 export type GameTurnRecord = typeof gameTurns.$inferSelect;
 export type GameEventRecord = typeof gameEvents.$inferSelect;
 export type GameCheckpointRecord = typeof gameCheckpoints.$inferSelect;
+export const knowledgeCollections = pgTable("knowledge_collections", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  module: text("module").$type<typeof KNOWLEDGE_MODULES[number]>().notNull(),
+  title: text("title").notNull(), description: text("description").notNull().default(""),
+  version: integer("version").notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (table) => [uniqueIndex("knowledge_collections_id_owner_unique").on(table.id, table.userId), index("knowledge_collections_owner_idx").on(table.userId), check("knowledge_collection_version", sql`${table.version} > 0`), check("knowledge_collection_module", sql`${table.module} IN ('professional','reflection','news','reading','tasks','memorization','problem-solving','game')`)]);
+
+export const knowledgeDocuments = pgTable("knowledge_documents", {
+  id: uuid("id").defaultRandom().primaryKey(), userId: uuid("user_id").notNull(),
+  collectionId: uuid("collection_id").notNull(), sourceKey: text("source_key").notNull(),
+  title: text("title").notNull(), format: text("format").$type<"text" | "markdown">().notNull(),
+  content: text("content").notNull(), contentHash: text("content_hash").notNull(),
+  sourceUrl: text("source_url").notNull().default(""), fileName: text("file_name").notNull().default(""),
+  chunkStrategy: text("chunk_strategy").notNull(), version: integer("version").notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (table) => [foreignKey({ columns: [table.collectionId, table.userId], foreignColumns: [knowledgeCollections.id, knowledgeCollections.userId] }).onDelete("cascade"), uniqueIndex("knowledge_document_source_unique").on(table.collectionId, table.sourceKey), index("knowledge_document_owner_collection_idx").on(table.userId, table.collectionId), check("knowledge_document_version", sql`${table.version} > 0`), check("knowledge_document_format", sql`${table.format} IN ('text','markdown')`), check("knowledge_document_content", sql`length(btrim(${table.content})) > 0 AND length(${table.content}) <= 100000 AND octet_length(${table.content}) <= 300000`)]);
+
+export const knowledgeChunks = pgTable("knowledge_chunks", {
+  id: uuid("id").defaultRandom().primaryKey(), documentId: uuid("document_id").notNull().references(() => knowledgeDocuments.id, { onDelete: "cascade" }),
+  documentVersion: integer("document_version").notNull(), ordinal: integer("ordinal").notNull(),
+  content: text("content").notNull(), contentHash: text("content_hash").notNull(),
+  startLine: integer("start_line").notNull(), endLine: integer("end_line").notNull(), heading: text("heading").notNull(),
+}, (table) => [uniqueIndex("knowledge_chunk_document_ordinal_unique").on(table.documentId, table.ordinal), check("knowledge_chunk_position", sql`${table.documentVersion} > 0 AND ${table.ordinal} >= 0 AND ${table.startLine} > 0 AND ${table.endLine} >= ${table.startLine}`)]);
+
+export type KnowledgeCollectionRecord = typeof knowledgeCollections.$inferSelect;
+export type KnowledgeDocumentRecord = typeof knowledgeDocuments.$inferSelect;
+export type KnowledgeChunkRecord = typeof knowledgeChunks.$inferSelect;
 export type ConversationRecord = typeof conversations.$inferSelect;
 export type MessageRecord = typeof messages.$inferSelect;
 export type MemoryCandidateRecord = typeof memoryCandidates.$inferSelect;

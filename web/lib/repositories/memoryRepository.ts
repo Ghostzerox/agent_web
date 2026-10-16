@@ -22,6 +22,7 @@ export type UpdateMemoryInput = {
   validUntil: Date | null;
   expectedVersion: number;
   now: Date;
+  clearSourceEvidence?: boolean;
 };
 
 export type MemoryItemView = MemoryItemRecord & {
@@ -106,8 +107,9 @@ export class MemoryRepository<TQueryResult extends PgQueryResultHKT>
     return consumer ? this.retrieve(source.content, now, consumer) : [];
   }
 
-  async update(input: UpdateMemoryInput): Promise<MemoryItemRecord> {
-    const [updated] = await this.database
+  async update(input: UpdateMemoryInput): Promise<MemoryItemView> {
+    return this.database.transaction(async (transaction) => {
+    const [updated] = await transaction
       .update(memoryItems)
       .set({
         content: input.content,
@@ -116,6 +118,7 @@ export class MemoryRepository<TQueryResult extends PgQueryResultHKT>
         validUntil: input.validUntil,
         version: sql`${memoryItems.version} + 1`,
         updatedAt: input.now,
+        ...(input.clearSourceEvidence ? { sourceConversationId: null, sourceMessageId: null } : {}),
       })
       .where(
         and(
@@ -125,16 +128,22 @@ export class MemoryRepository<TQueryResult extends PgQueryResultHKT>
         ),
       )
       .returning();
-    if (updated) return updated;
+    if (updated) {
+      if (input.clearSourceEvidence) await transaction.update(memoryCandidates).set({ sourceConversationId: null, sourceMessageId: null, evidenceQuote: "", content: "来源证据已清除", reason: "用户清除来源证据", version: sql`${memoryCandidates.version} + 1`, updatedAt: input.now }).where(and(eq(memoryCandidates.id, updated.candidateId), eq(memoryCandidates.userId, LOCAL_USER_ID)));
+      const [candidate] = await transaction.select({ evidenceQuote: memoryCandidates.evidenceQuote }).from(memoryCandidates).where(and(eq(memoryCandidates.id, updated.candidateId), eq(memoryCandidates.userId, LOCAL_USER_ID)));
+      return { ...updated, evidenceQuote: candidate?.evidenceQuote ?? "" };
+    }
     await this.throwMissingOrConflict(input.id);
     throw new MemoryRepositoryError(
       "MEMORY_VERSION_CONFLICT",
       "Memory changed in another client.",
     );
+    });
   }
 
   async delete(id: string, expectedVersion: number): Promise<void> {
-    const [deleted] = await this.database
+    return this.database.transaction(async (transaction) => {
+    const [deleted] = await transaction
       .delete(memoryItems)
       .where(
         and(
@@ -143,13 +152,17 @@ export class MemoryRepository<TQueryResult extends PgQueryResultHKT>
           eq(memoryItems.version, expectedVersion),
         ),
       )
-      .returning({ id: memoryItems.id });
-    if (deleted) return;
+      .returning({ id: memoryItems.id, candidateId: memoryItems.candidateId });
+    if (deleted) {
+      await transaction.delete(memoryCandidates).where(and(eq(memoryCandidates.id, deleted.candidateId), eq(memoryCandidates.userId, LOCAL_USER_ID)));
+      return;
+    }
     await this.throwMissingOrConflict(id);
     throw new MemoryRepositoryError(
       "MEMORY_VERSION_CONFLICT",
       "Memory changed in another client.",
     );
+    });
   }
 
   private async throwMissingOrConflict(id: string): Promise<void> {

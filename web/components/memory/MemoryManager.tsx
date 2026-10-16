@@ -8,6 +8,8 @@ import {
   type MemoryItem,
 } from "@/lib/api/memoryClient";
 import type { MemoryCandidateKind } from "@/lib/api/memoryCandidateClient";
+import { deleteServerSession } from "@/lib/api/conversationClient";
+import { AppLink } from "@/components/platform/AppLink";
 import { getFileExportAdapter } from "@/lib/platform/fileExport";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 
@@ -53,6 +55,7 @@ export function MemoryManager() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [showExpired, setShowExpired] = useState(false);
+  const [query, setQuery] = useState("");
   const [snapshotAt] = useState(() => Date.now());
   useNavigationGuard(busyId !== null || items.some((item) => drafts[item.id] && JSON.stringify(drafts[item.id]) !== JSON.stringify(draftFor(item))));
 
@@ -96,15 +99,16 @@ export function MemoryManager() {
     () =>
       items.filter(
         (item) =>
-          showExpired || !item.validUntil || new Date(item.validUntil).getTime() > snapshotAt,
+          (showExpired || !item.validUntil || new Date(item.validUntil).getTime() > snapshotAt) && item.content.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
       ),
-    [items, showExpired, snapshotAt],
+    [items, showExpired, snapshotAt, query],
   );
   const expiredCount = items.filter(
     (item) => item.validUntil && new Date(item.validUntil).getTime() <= snapshotAt,
   ).length;
 
-  const save = async (item: MemoryItem) => {
+  const save = async (item: MemoryItem, clearSourceEvidence = false) => {
+    if (clearSourceEvidence && !window.confirm("保留这条已确认记忆，但清除其来源链接和候选证据副本？原始对话不会被删除。")) return;
     const draft = drafts[item.id] ?? draftFor(item);
     if (!draft.content.trim()) return;
     setBusyId(item.id);
@@ -117,6 +121,7 @@ export function MemoryManager() {
         pinned: draft.pinned,
         validUntil: draft.validUntil ? new Date(draft.validUntil).toISOString() : null,
         expectedVersion: item.version,
+        ...(clearSourceEvidence ? { clearSourceEvidence: true } : {}),
       });
       setItems((current) => current.map((value) => (value.id === updated.id ? updated : value)));
       setDrafts((current) => ({ ...current, [updated.id]: draftFor(updated) }));
@@ -190,6 +195,14 @@ export function MemoryManager() {
     }
   };
 
+  const removeSourceAndMemories = async (item: MemoryItem) => {
+    if (!item.sourceConversationId || !window.confirm("永久删除这条记忆的原始对话、该对话的全部消息及其所有关联记忆/候选证据？已导出文件和旧备份不会自动擦除。")) return;
+    setBusyId(item.id); setError(null);
+    try { await deleteServerSession(item.sourceConversationId, { deleteRelatedMemories: true }); await load(); window.dispatchEvent(new Event("memory-items-changed")); setStatus("原对话、关联记忆及候选证据已删除。"); }
+    catch (failure) { setError(friendlyError(failure)); }
+    finally { setBusyId(null); }
+  };
+
   if (loading) {
     return <p className="rounded-2xl border border-zinc-200 bg-white p-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950">正在读取长期记忆…</p>;
   }
@@ -214,6 +227,8 @@ export function MemoryManager() {
 
       {error && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">{error}</p>}
       {status && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">{status}</p>}
+      <label className="block text-sm">筛选记忆内容<input aria-label="筛选记忆内容" value={query} onChange={(event) => setQuery(event.target.value)} className="ml-2 rounded-lg border border-zinc-300 bg-transparent px-3 py-2 dark:border-zinc-700" /></label>
+      <p className="text-xs text-zinc-500">同类记忆可能并存；有冲突请查看证据后更正/删除，系统不会自动决定哪条是真的。永久删除也会清除该条记忆的候选证据副本，不会删除原始对话。</p>
 
       {visible.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-950">还没有可用的长期记忆。确认下方候选后，它会出现在这里。</p>
@@ -255,12 +270,15 @@ export function MemoryManager() {
                 <p className="mt-3 text-xs text-zinc-400">敏感等级：{item.sensitivity} · 最近使用：{item.lastUsedAt ? new Date(item.lastUsedAt).toLocaleString("zh-CN") : "尚未使用"}</p>
                 <details className="mt-3 rounded-xl bg-zinc-50 p-3 text-xs leading-5 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
                   <summary className="cursor-pointer font-medium">查看来源证据</summary>
-                  <p className="mt-2 break-words">{item.evidenceQuote}</p>
+                  <p className="mt-2 break-words">{item.evidenceQuote || "来源证据已清除；这条记忆由你独立确认保留。"}</p>
                   <p className="mt-1 break-all text-zinc-400">来源消息：{item.sourceMessageId ?? "原对话已删除"}</p>
+                  {item.sourceConversationId && <AppLink href={`/chat?session=${item.sourceConversationId}`} className="mt-2 inline-block underline">打开来源对话</AppLink>}
                 </details>
-                <div className="mt-4 flex gap-2">
+                <div className="mt-4 flex flex-wrap gap-2">
                   <button type="button" disabled={busyId === item.id || !draft.content.trim()} onClick={() => void save(item)} className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-950">保存修改</button>
                   <button type="button" disabled={busyId === item.id} onClick={() => void remove(item)} className="rounded-lg border border-red-200 px-4 py-2 text-sm text-red-700 disabled:opacity-50 dark:border-red-900 dark:text-red-300">永久删除</button>
+                  {(item.evidenceQuote || item.sourceMessageId) && <button type="button" disabled={busyId !== null} onClick={() => void save(item, true)} className="rounded-lg border border-zinc-300 px-3 py-2 text-xs dark:border-zinc-700">保留记忆，清除来源证据</button>}
+                  {item.sourceConversationId && <button type="button" disabled={busyId !== null} onClick={() => void removeSourceAndMemories(item)} className="rounded-lg border border-red-200 px-3 py-2 text-xs text-red-700">删除原对话及关联记忆</button>}
                 </div>
               </article>
             );
