@@ -1,0 +1,54 @@
+{
+  "kind": "one-synthetic-paired-probe-not-general-quality-or-production-net-savings",
+  "date": "2026-10-16T09:25:52.872Z",
+  "model": "deepseek-flash",
+  "priceSource": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+  "prices": {
+    "inputPerMillion": 2,
+    "cachedInputPerMillion": 0.04,
+    "outputPerMillion": 8,
+    "currency": "CNY",
+    "basis": "peak-upper-bound-not-account-bill"
+  },
+  "reservedBudgetCny": 0.2,
+  "spentUpperCny": 0.025698,
+  "failure": "Probe failed output/timeout/source/quality validation; no automatic retry. See completed synthetic outputs and conservative cost.",
+  "rawAnswerMatchesGold": false,
+  "compactAnswerMatchesGold": false,
+  "costs": {
+    "summary": 0.025698,
+    "raw": null,
+    "compact": null,
+    "firstUseTotal": null,
+    "conditionalBreakEvenUses": null
+  },
+  "outputs": {},
+  "calls": [
+    {
+      "id": "919b86cc-fd8a-463e-8d0a-51226fde01ba",
+      "business": "context-summary",
+      "providerOrigin": "https://api.deepseek.com",
+      "model": "deepseek-flash",
+      "startedAt": "2026-10-16T09:25:31.479Z",
+      "status": "failed",
+      "attempts": 2,
+      "durationMs": 21387,
+      "firstTokenMs": null,
+      "usage": {
+        "inputTokens": 4661,
+        "outputTokens": 2047,
+        "cachedInputTokens": 0,
+        "uncachedInputTokens": 4661,
+        "reasoningTokens": 2047
+      },
+      "finishReason": "length",
+      "errorCode": "PROVIDER_OUTPUT_TRUNCATED",
+      "requestCharacters": 7836,
+      "maxOutputTokens": 2048,
+      "promptVersion": "branch-summary/r5.4-v1",
+      "price": null,
+      "estimatedCost": null,
+      "conservativeCostCny": 0.025698
+    }
+  ]
+}

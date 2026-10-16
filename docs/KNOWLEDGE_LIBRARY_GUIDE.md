@@ -4,7 +4,7 @@
 - 页面：`/memory`，Web 与本地 React APK 共用组件。
 - 关联：[分域规范](MEMORY_DOMAIN_AND_SOURCE_GUIDE.md)、[ADR-065](adr/ADR-065-knowledge-library-and-source-deletion.md)、[交付报告](reports/R5_2_REPORT.md)。
 
-> R5.3 更新：现在可在资料页手动检索，在聊天中显式选定同模式集合后使用来源引用；不会仅因导入而自动发送。使用、版本失效与限制见 [检索指南](KNOWLEDGE_RETRIEVAL_GUIDE.md)。本文件迁移/备份段保留 R5.2 历史；当前共有 30 份迁移。
+> R5.4更新：资料页检索、聊天显式选择与版本引用见 [检索指南](KNOWLEDGE_RETRIEVAL_GUIDE.md)，分支摘要见 [摘要指南](BRANCH_SUMMARY_GUIDE.md)。不会仅因导入而自动发送资料。本文件迁移/备份段保留R5.2历史；当前31份迁移。
 
 ## 1. 现在能做什么
 

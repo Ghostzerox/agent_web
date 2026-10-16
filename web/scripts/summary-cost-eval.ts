@@ -1,0 +1,10 @@
+import { summaryFixture } from "../evals/r5/summaryFixtures";
+import { DEFAULT_SUMMARY_SETTINGS, validateSummary, summaryLayer, SUMMARY_INSTRUCTION } from "../lib/conversation/summary";
+import { estimateMemoryTokens } from "../lib/memory/memoryRetrieval";
+import { stableJson } from "../lib/ai/stableJson";
+const f = summaryFixture(); validateSummary(f.payload, f.sources, DEFAULT_SUMMARY_SETTINGS);
+const original = f.rows.map(({ role, content }) => ({ role, content }));
+const compact = [summaryLayer(f.payload), ...original.slice(f.sources.length)];
+const tokens = (value: unknown) => estimateMemoryTokens(stableJson(value));
+const fullTokens = tokens(original); const compactTokens = tokens(compact); const generationInput = tokens([{ role: "system", content: SUMMARY_INSTRUCTION }, { role: "user", content: stableJson(f.sources) }]); const generationOutput = tokens(f.payload);
+console.log(JSON.stringify({ kind: "offline-character-estimates-with-hand-authored-summary-not-model-quality-or-billed-tokens", sourceMessages: f.sources.length, recentMessages: f.rows.length - f.sources.length, originalEstimatedTokens: fullTokens, compactEstimatedTokens: compactTokens, generationEstimatedInputTokens: generationInput, generationEstimatedOutputTokens: generationOutput, firstRequestTotalEstimatedTokens: generationInput + generationOutput + compactTokens, noSummaryFirstRequestEstimatedTokens: fullTokens, approximateTokenBreakEvenUses: Math.ceil((generationInput + generationOutput) / (fullTokens - compactTokens)), paidCalls: 0, costCny: 0, limitations: ["Only a synthetic hand-authored summary; no semantic scoring", "Output/context/cache prices differ; token break-even is not money break-even", "Retries and future regeneration must be included in actual cost"] }, null, 2));

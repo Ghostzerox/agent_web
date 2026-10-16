@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { SourceRevision, SummaryPayload, SummarySettings, SummaryUse } from "@/lib/conversation/summary";
 import type { KnowledgeRetrievalAudit } from "@/lib/knowledge/audit";
 import type { KNOWLEDGE_MODULES } from "@/lib/knowledge/documents";
 import { CORE_MODE_IDS } from "@/lib/agent/modeRegistry";
@@ -1019,10 +1020,20 @@ export const memoryItems = pgTable(
   ],
 );
 
+export const conversationSummaries = pgTable("conversation_summaries", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  conversationId: uuid("conversation_id").notNull().references(() => conversations.id, { onDelete: "cascade" }),
+  fingerprint: text("fingerprint").notNull(), mode: text("mode").notNull(), policy: text("policy").notNull(), contextStamp: text("context_stamp").notNull(), modelKey: text("model_key").notNull(),
+  settings: jsonb("settings").$type<SummarySettings>().notNull(), sources: jsonb("sources").$type<SourceRevision[]>().notNull(), payload: jsonb("payload").$type<SummaryPayload>(),
+  status: text("status").$type<"pending" | "draft" | "approved" | "failed">().notNull(), version: integer("version").notNull().default(1), createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [uniqueIndex("conversation_summaries_fingerprint_idx").on(table.conversationId, table.fingerprint), index("conversation_summaries_owner_idx").on(table.userId, table.conversationId)]);
+
 export const promptRuns = pgTable(
   "prompt_runs",
   {
     id: uuid("id").primaryKey(),
+    summaryUsage: jsonb("summary_usage").$type<SummaryUse>(),
     knowledgeRetrieval: jsonb("knowledge_retrieval").$type<KnowledgeRetrievalAudit>(),
     userId: uuid("user_id")
       .notNull()

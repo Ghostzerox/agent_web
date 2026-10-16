@@ -51,6 +51,8 @@ import { createKnowledgeRetrievalRepository } from "@/lib/repositories/knowledge
 import { KnowledgeError } from "@/lib/repositories/knowledgeRepository";
 import { addKnowledgeEvidence, knowledgeCitations } from "@/lib/knowledge/retrieval";
 import type { KnowledgeRunContext } from "@/lib/knowledge/audit";
+import { createConversationSummaryRepository, summaryModelKey } from "@/lib/repositories/conversationSummaryRepository";
+import { SummaryError, type SummaryUse } from "@/lib/conversation/summary";
 
 type ModelApiDependencies = {
   getConfig: () => ModelProviderConfig | Promise<ModelProviderConfig>;
@@ -61,6 +63,7 @@ type ModelApiDependencies = {
   persona?: Pick<PersonaProfileRepositoryPort, "get">;
   search?: WebSearchProvider;
   knowledge?: Pick<ReturnType<typeof createKnowledgeRetrievalRepository>, "forConversation">;
+  summaries?: Pick<ReturnType<typeof createConversationSummaryRepository>, "prepare">;
 };
 
 const instructionPromptSchema = z
@@ -100,6 +103,7 @@ const modelRequestSchema = z
       .min(1)
       .max(500),
     searchMode: z.enum(SEARCH_MODES).default("auto"),
+    useSummary: z.boolean().default(false),
     knowledgeCollectionIds: z.array(z.uuid()).max(10).refine((values) => new Set(values).size === values.length).default([]),
   })
   .strict()
@@ -191,12 +195,22 @@ export function createModelApi(dependencies: ModelApiDependencies) {
       let usedMemories: RetrievedMemory[] = [];
       let generationBudget: GenerationBudget;
       let knowledge: KnowledgeRunContext | undefined;
+      let summaryUse: SummaryUse | null = null;
+      let summaryNote: string | undefined;
 
       try {
         input = await parseRequest(request);
         config = await dependencies.getConfig();
-        generationBudget = resolveGenerationBudget(config, "chat", latestRequestText(input.prompt));
-        if (inputTextCharacters(input.prompt) > generationBudget.inputCharacterLimit) {
+        let requestPrompt: PromptMessage[] = input.prompt;
+        if (input.useSummary) {
+          if (!dependencies.summaries) throw new SummaryError("摘要服务不可用；请关闭摘要后重试，历史未丢失。");
+          const compacted = await dependencies.summaries.prepare(input.conversation.id, input.conversation.activeLeafId, summaryModelKey(config), input.prompt);
+          requestPrompt = compacted.prompt;
+          summaryUse = compacted.usage;
+          summaryNote = compacted.note;
+        }
+        generationBudget = resolveGenerationBudget(config, "chat", latestRequestText(requestPrompt));
+        if (inputTextCharacters(requestPrompt) > generationBudget.inputCharacterLimit) {
           throw new ModelProviderError("PROVIDER_CONTEXT_TOO_LARGE", "上下文超过本机输入预算，尚未调用模型。请新建对话或调整预算；原历史仍保留。", false);
         }
         const persona: PersonaProfileValues = dependencies.persona
@@ -210,7 +224,7 @@ export function createModelApi(dependencies: ModelApiDependencies) {
           );
         }
         const promptWithPersona = applyPersonaProfile(
-          input.prompt,
+          requestPrompt,
           persona,
           (content): PromptMessage => ({
             kind: "instruction",
@@ -235,6 +249,7 @@ export function createModelApi(dependencies: ModelApiDependencies) {
           conversation: input.conversation,
           prompt: prepared.prompt,
           generationBudget,
+          ...(summaryNote ? { summary: { usage: summaryUse, note: summaryNote } } : {}),
           provider: {
             provider: "openai-compatible",
             baseUrl: config.baseUrl,
@@ -242,9 +257,11 @@ export function createModelApi(dependencies: ModelApiDependencies) {
           },
         });
         if (inputTextCharacters(prepared.prompt) > generationBudget.inputCharacterLimit) throw new ModelProviderError("PROVIDER_CONTEXT_TOO_LARGE", "含检索资料的上下文超过输入预算，尚未调用模型。", false);
-        if (knowledge) await dependencies.runs.start(envelope, usedMemories, knowledge);
+        if (summaryUse) await dependencies.runs.start(envelope, usedMemories, knowledge, summaryUse);
+        else if (knowledge) await dependencies.runs.start(envelope, usedMemories, knowledge);
         else await dependencies.runs.start(envelope, usedMemories);
       } catch (error) {
+        if (error instanceof SummaryError) return apiError(requestId, error.status, "SUMMARY_CONFLICT", error.message, false);
         if (error instanceof KnowledgeError) return apiError(requestId, 409, error.code, error.message, false);
         if (error instanceof ModelProviderError) return apiError(requestId, 413, error.code, error.message, false);
         if (error instanceof SyntaxError) {
@@ -418,5 +435,6 @@ export function getModelApi() {
     persona: createPersonaProfileRepository(database),
     search: createConfiguredWebSearchProvider(),
     knowledge: createKnowledgeRetrievalRepository(database),
+    summaries: createConversationSummaryRepository(database),
   });
 }

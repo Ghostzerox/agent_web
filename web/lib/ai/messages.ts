@@ -62,7 +62,7 @@ export type PromptMessage =
     }
   | {
       kind: "context";
-      source: "memory" | "web-search" | "knowledge";
+      source: "memory" | "web-search" | "knowledge" | "summary";
       role: "system";
       content: string;
     }

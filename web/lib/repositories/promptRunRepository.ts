@@ -18,6 +18,8 @@ import { LOCAL_USER_ID } from "@/lib/repositories/conversationRepository";
 import { MEMORY_DOMAIN_POLICIES, memoryModuleForConversationMode } from "@/lib/memory/domainPolicy";
 import { knowledgeAudit, type KnowledgeRunContext } from "@/lib/knowledge/audit";
 import { assessMemorySourceRevision, type MemoryReadContext } from "@/lib/memory/sourceReference";
+import type { SummaryUse } from "@/lib/conversation/summary";
+import { createConversationSummaryRepository, summaryModelKey } from "./conversationSummaryRepository";
 
 export class PromptRunRepositoryError extends Error {
   constructor(
@@ -36,6 +38,7 @@ export interface PromptRunRepositoryPort {
     envelope: PromptEnvelope,
     usedMemories?: readonly RetrievedMemory[],
     knowledge?: KnowledgeRunContext,
+    summary?: SummaryUse,
   ): Promise<PromptRunRecord>;
   finish(
     id: string,
@@ -56,6 +59,7 @@ export class PromptRunRepository<
     envelope: PromptEnvelope,
     usedMemories: readonly RetrievedMemory[] = [],
     knowledge?: KnowledgeRunContext,
+    summary?: SummaryUse,
   ): Promise<PromptRunRecord> {
     return this.database.transaction(async (transaction) => {
       const [conversation] = await transaction
@@ -76,6 +80,7 @@ export class PromptRunRepository<
         );
       }
       const memoryConsumer = memoryModuleForConversationMode(conversation.mode);
+      if (summary) await createConversationSummaryRepository(transaction).verifyUse(envelope.conversation.id, envelope.conversation.activeLeafId, summaryModelKey(envelope.provider), summary);
       if (usedMemories.length > 0 && (!memoryConsumer || MEMORY_DOMAIN_POLICIES[memoryConsumer].personal.maxItems === 0)) {
         throw new PromptRunRepositoryError("PROMPT_CONTEXT_CONFLICT", "Conversation mode no longer allows personal memory; refresh before retrying.");
       }
@@ -140,6 +145,7 @@ export class PromptRunRepository<
           containsMemory: envelope.privacy.containsMemory,
           status: "started",
           ...(knowledge ? { knowledgeRetrieval: knowledgeAudit(knowledge) } : {}),
+          ...(summary ? { summaryUsage: summary } : {}),
           createdAt: new Date(envelope.createdAt),
         })
         .returning();

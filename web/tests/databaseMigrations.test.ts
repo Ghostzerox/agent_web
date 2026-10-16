@@ -49,7 +49,7 @@ describe("database migrations", () => {
     async () => {
       const migrations = await loadMigrations();
 
-      expect(migrations).toHaveLength(30);
+      expect(migrations).toHaveLength(31);
       expect(migrations.every((migration) => migration.down !== null)).toBe(
         true,
       );
@@ -65,6 +65,7 @@ describe("database migrations", () => {
       `);
       expect(tableResult.rows.map((row) => row.tablename)).toEqual([
         "conversation_imports",
+        "conversation_summaries",
         "conversations",
         "game_characters",
         "game_checkpoints",
@@ -550,6 +551,7 @@ describe("database migrations", () => {
       await expect(migrateDatabase(database, migrations)).resolves.toEqual([]);
       await pglite.query(`DELETE FROM inbox_items WHERE id = $1`, [agentInbox.rows[0].id]);
       await pglite.query(`DELETE FROM scheduled_tasks WHERE id = $1`, [agentTask.rows[0].id]);
+      await expect(rollbackDatabase(database, migrations)).resolves.toBe(migrations[30].id);
       await expect(rollbackDatabase(database, migrations)).resolves.toBe(migrations[29].id);
       await expect(rollbackDatabase(database, migrations)).resolves.toBe(migrations[28].id);
       await expect(rollbackDatabase(database, migrations)).resolves.toBe(
@@ -865,6 +867,7 @@ describe("database migrations", () => {
         migrations[27].id,
         migrations[28].id,
         migrations[29].id,
+        migrations[30].id,
       ]);
     },
     15_000,
@@ -921,6 +924,7 @@ describe("database migrations", () => {
       migrations[27].id,
       migrations[28].id,
       migrations[29].id,
+      migrations[30].id,
     ]);
     const rows = await pglite.query<{ provider: string; model: string }>(
       `SELECT provider, model FROM model_credentials WHERE user_id = $1`,

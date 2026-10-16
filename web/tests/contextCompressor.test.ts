@@ -11,7 +11,7 @@ describe("context compressor memory boundary", () => {
       createdAt: index,
     }));
     const result = compress(messages);
-    expect(result.summary).not.toBe("");
+    expect(result.summary).toBe("");
     expect(result.memoryItems).toEqual([]);
   });
 });

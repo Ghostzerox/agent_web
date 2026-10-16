@@ -1,0 +1,19 @@
+{
+  "kind": "offline-character-estimates-with-hand-authored-summary-not-model-quality-or-billed-tokens",
+  "sourceMessages": 18,
+  "recentMessages": 6,
+  "originalEstimatedTokens": 7734,
+  "compactEstimatedTokens": 2515,
+  "generationEstimatedInputTokens": 6426,
+  "generationEstimatedOutputTokens": 192,
+  "firstRequestTotalEstimatedTokens": 9133,
+  "noSummaryFirstRequestEstimatedTokens": 7734,
+  "approximateTokenBreakEvenUses": 2,
+  "paidCalls": 0,
+  "costCny": 0,
+  "limitations": [
+    "Only a synthetic hand-authored summary; no semantic scoring",
+    "Output/context/cache prices differ; token break-even is not money break-even",
+    "Retries and future regeneration must be included in actual cost"
+  ]
+}

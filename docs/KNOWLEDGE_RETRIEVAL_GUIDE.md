@@ -2,6 +2,8 @@
 
 日期：2026-10-16。首期词项 RAG 已接入；不是向量检索，也不是全部 R5 已完成。实现与测量见 [交付报告](reports/R5_3_REPORT.md)、[ADR-066](adr/ADR-066-scoped-knowledge-retrieval.md)。
 
+> R5.4后续已交付用户审核分支摘要，见 [摘要指南](BRANCH_SUMMARY_GUIDE.md)；本文件保留R5.3检索证据，下一步主线现为R5.5。
+
 ## 使用方法
 
 1. 在“记忆 → 知识资料库”创建集合，导入文本或 UTF-8 Markdown。材料管理规则沿用 [资料库指南](KNOWLEDGE_LIBRARY_GUIDE.md)。

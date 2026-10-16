@@ -1,0 +1,183 @@
+{
+  "kind": "one-synthetic-paired-probe-not-general-quality-or-production-net-savings",
+  "date": "2026-10-16T09:28:37.625Z",
+  "model": "deepseek-flash",
+  "priceSource": "https://api-docs.deepseek.com/zh-cn/quick_start/pricing/",
+  "prices": {
+    "inputPerMillion": 2,
+    "cachedInputPerMillion": 0.04,
+    "outputPerMillion": 8,
+    "currency": "CNY",
+    "basis": "peak-upper-bound-not-account-bill"
+  },
+  "reservedBudgetCny": 0.2,
+  "spentUpperCny": 0.032002,
+  "failure": null,
+  "rawAnswerMatchesGold": true,
+  "compactAnswerMatchesGold": true,
+  "costs": {
+    "summary": 0.012352,
+    "raw": 0.013384,
+    "compact": 0.006266,
+    "firstUseTotal": 0.018618,
+    "conditionalBreakEvenUses": 2
+  },
+  "outputs": {
+    "summary": {
+      "points": [
+        {
+          "kind": "fact",
+          "text": "这是合成练习项目。",
+          "evidence": [
+            {
+              "messageId": "55555555-5555-4555-8555-000000000001",
+              "quote": "这是合成练习项目"
+            }
+          ]
+        },
+        {
+          "kind": "constraint",
+          "text": "预算最多30元。",
+          "evidence": [
+            {
+              "messageId": "55555555-5555-4555-8555-000000000001",
+              "quote": "预算最多30元"
+            }
+          ]
+        },
+        {
+          "kind": "constraint",
+          "text": "最终期限为周五。",
+          "evidence": [
+            {
+              "messageId": "55555555-5555-4555-8555-000000000001",
+              "quote": "最终期限周五"
+            }
+          ]
+        },
+        {
+          "kind": "open",
+          "text": "待确认事项是导师答复，且不得声称已经答复。",
+          "evidence": [
+            {
+              "messageId": "55555555-5555-4555-8555-000000000007",
+              "quote": "待确认事项是导师答复，不得声称已经答复。"
+            }
+          ]
+        },
+        {
+          "kind": "constraint",
+          "text": "本次只讨论计划，禁止创建真实任务。",
+          "evidence": [
+            {
+              "messageId": "55555555-5555-4555-8555-000000000013",
+              "quote": "本次只讨论计划，禁止创建真实任务。"
+            }
+          ]
+        },
+        {
+          "kind": "fact",
+          "text": "AI在第2、4、6、8、10、12、14、16、18条合成讨论中重复主张复核已有资料、保持约束、不推断已完成并先核实再决定。",
+          "evidence": [
+            {
+              "messageId": "55555555-5555-4555-8555-000000000002",
+              "quote": "保持约束，不推断已经完成，先核实再作决定。"
+            },
+            {
+              "messageId": "55555555-5555-4555-8555-000000000018",
+              "quote": "保持约束，不推断已经完成，先核实再作决定。"
+            }
+          ]
+        }
+      ]
+    },
+    "rawAnswer": {
+      "budget": 30,
+      "deadline": "周五",
+      "pending": "导师答复"
+    },
+    "compactAnswer": {
+      "budget": 30,
+      "deadline": "周五",
+      "pending": "导师答复"
+    }
+  },
+  "calls": [
+    {
+      "id": "d9ecb840-ef97-4cd6-9596-30f32c76d748",
+      "business": "context-summary",
+      "providerOrigin": "https://api.deepseek.com",
+      "model": "deepseek-flash",
+      "startedAt": "2026-10-16T09:28:20.138Z",
+      "status": "completed",
+      "attempts": 2,
+      "durationMs": 12314,
+      "firstTokenMs": 11010,
+      "usage": {
+        "inputTokens": 4636,
+        "outputTokens": 385,
+        "cachedInputTokens": 0,
+        "uncachedInputTokens": 4636,
+        "reasoningTokens": null
+      },
+      "finishReason": "stop",
+      "errorCode": null,
+      "requestCharacters": 7836,
+      "maxOutputTokens": 2048,
+      "promptVersion": "branch-summary/r5.4-v1",
+      "price": null,
+      "estimatedCost": null,
+      "conservativeCostCny": 0.012352
+    },
+    {
+      "id": "c7c53a64-2be9-4405-8697-51d93f471711",
+      "business": "chat",
+      "providerOrigin": "https://api.deepseek.com",
+      "model": "deepseek-flash",
+      "startedAt": "2026-10-16T09:28:32.460Z",
+      "status": "completed",
+      "attempts": 1,
+      "durationMs": 2526,
+      "firstTokenMs": 2422,
+      "usage": {
+        "inputTokens": 5576,
+        "outputTokens": 279,
+        "cachedInputTokens": 0,
+        "uncachedInputTokens": 5576,
+        "reasoningTokens": 262
+      },
+      "finishReason": "stop",
+      "errorCode": null,
+      "requestCharacters": 8565,
+      "maxOutputTokens": 2048,
+      "price": null,
+      "estimatedCost": null,
+      "conservativeCostCny": 0.013384
+    },
+    {
+      "id": "94ea863b-480e-4fbf-a8ef-5429de8da7f5",
+      "business": "chat",
+      "providerOrigin": "https://api.deepseek.com",
+      "model": "deepseek-flash",
+      "startedAt": "2026-10-16T09:28:34.990Z",
+      "status": "completed",
+      "attempts": 1,
+      "durationMs": 2631,
+      "firstTokenMs": 2549,
+      "usage": {
+        "inputTokens": 2097,
+        "outputTokens": 259,
+        "cachedInputTokens": 0,
+        "uncachedInputTokens": 2097,
+        "reasoningTokens": 242
+      },
+      "finishReason": "stop",
+      "errorCode": null,
+      "requestCharacters": 3575,
+      "maxOutputTokens": 2048,
+      "price": null,
+      "estimatedCost": null,
+      "conservativeCostCny": 0.006266
+    }
+  ]
+}

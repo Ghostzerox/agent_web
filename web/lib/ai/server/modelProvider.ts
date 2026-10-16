@@ -194,8 +194,10 @@ export class OpenAICompatibleProvider implements ModelProvider {
             stream: true,
             // Verified official endpoint only; custom compatible providers retain their contract.
             ...(new URL(this.config.baseUrl).hostname === "api.deepseek.com" &&
-              ["reflection", "memorization", "problem-solving", "review-card", "game"].includes(request.business ?? "")
+              ["reflection", "memorization", "problem-solving", "review-card", "game", "context-summary"].includes(request.business ?? "")
               ? { response_format: { type: "json_object" } } : {}),
+            // Compact summaries are extraction, not open-ended reasoning. Official API only.
+            ...(new URL(this.config.baseUrl).hostname === "api.deepseek.com" && request.business === "context-summary" ? { thinking: { type: "disabled" } } : {}),
             ...(generationBudget.tokenParameter && generationBudget.maxOutputTokens ? { [generationBudget.tokenParameter]: generationBudget.maxOutputTokens } : {}),
             // Only the verified official endpoint is opted in automatically.
             ...(new URL(this.config.baseUrl).hostname === "api.deepseek.com" ? { stream_options: { include_usage: true } } : {}),

@@ -6,6 +6,7 @@ import {
 import type { GenerationBudget } from "@/lib/ai/server/tokenBudget";
 import { CORE_MODE_PROMPT_VERSION } from "@/lib/agent/modeRegistry";
 import { PERSONA_PROMPT_VERSION } from "@/lib/persona/personaProfile";
+import type { SummaryUse } from "@/lib/conversation/summary";
 
 export const PROMPT_ENVELOPE_SCHEMA_VERSION = 1 as const;
 export const PROMPT_COMPOSER_VERSION = "r3.2/mode-prompts-v1" as const;
@@ -24,7 +25,7 @@ export type PromptEnvelope = {
     activeLeafId: string | null;
   };
   composer: {
-    version: typeof PROMPT_COMPOSER_VERSION | "r1/cache-friendly-v1" | "phase-5.2/v1" | "phase-5.3/v1" | "r5.3/knowledge-context-v1";
+    version: typeof PROMPT_COMPOSER_VERSION | "r1/cache-friendly-v1" | "phase-5.2/v1" | "phase-5.3/v1" | "r5.3/knowledge-context-v1" | "r5.4/branch-summary-v1";
     layerOrder: Array<PromptMessage["source"]>;
   };
   provider: ModelRequestMetadata;
@@ -47,8 +48,9 @@ export type PromptEnvelope = {
   >;
   context: {
     truncated: false;
-    compressed: false;
-    notes: [];
+    compressed: boolean;
+    notes: string[];
+    summary?: SummaryUse;
   };
   privacy: {
     containsMemory: boolean;
@@ -71,6 +73,7 @@ const LAYER_VERSIONS: Record<PromptMessage["source"], string> = {
   memory: "memory-context/v2",
   "web-search": "web-search-context/v2",
   knowledge: "knowledge-context/r5.3-v1",
+  summary: "branch-summary/r5.4-v1",
   conversation: "conversation-tree/v2",
 };
 
@@ -131,6 +134,7 @@ export async function createPromptEnvelope(input: {
   prompt: readonly PromptMessage[];
   provider: Omit<ModelRequestMetadata, "requestId">;
   generationBudget?: GenerationBudget;
+  summary?: { usage: SummaryUse | null; note: string };
 }): Promise<PromptEnvelope> {
   const promptLayers = input.prompt.map((message, index) => ({
     ...message,
@@ -145,7 +149,7 @@ export async function createPromptEnvelope(input: {
     trigger: input.trigger,
     conversation: { ...input.conversation },
     composer: {
-      version: input.prompt.some((layer) => layer.source === "knowledge") ? "r5.3/knowledge-context-v1" as const : PROMPT_COMPOSER_VERSION,
+      version: input.summary?.usage ? "r5.4/branch-summary-v1" as const : input.prompt.some((layer) => layer.source === "knowledge") ? "r5.3/knowledge-context-v1" as const : PROMPT_COMPOSER_VERSION,
       layerOrder: promptLayers.map((layer) => layer.source),
     },
     provider: { requestId: input.runId, ...input.provider },
@@ -156,9 +160,9 @@ export async function createPromptEnvelope(input: {
       generation: { temperature: null, tools: [] as [], ...(input.generationBudget ? { maxOutputTokens: input.generationBudget.maxOutputTokens, tokenParameter: input.generationBudget.tokenParameter } : {}) },
     },
     promptLayers,
-    context: { truncated: false as const, compressed: false as const, notes: [] as [] },
+    context: { truncated: false as const, compressed: Boolean(input.summary?.usage), notes: input.summary ? [input.summary.note] : [], ...(input.summary?.usage ? { summary: input.summary.usage } : {}) },
     privacy: {
-      containsMemory: input.prompt.some((message) => message.source === "memory" || message.source === "knowledge"),
+      containsMemory: input.prompt.some((message) => message.source === "memory" || message.source === "knowledge" || message.source === "summary"),
       persistedPromptContent: false as const,
       alwaysExcluded: [
         "model API key",

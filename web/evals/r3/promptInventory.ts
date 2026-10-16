@@ -1,7 +1,7 @@
 import { GAME_PROMPT_VERSION, TASK_PROMPT_PROFILES } from "@/lib/ai/taskPromptProfiles";
 
 /** Audit data only; runtime generation uses the actual builders below. */
-export const PROMPT_BASELINE_VERSION = "r5.3/knowledge-retrieval-v1";
+export const PROMPT_BASELINE_VERSION = "r5.4/branch-summary-v1";
 export const BASELINE_SOURCE_COMMIT = "31a49a296d4b4e73447b63d272be671bf73b8030";
 
 export const PROMPT_ENTRY_POINTS = [
@@ -16,6 +16,8 @@ export const PROMPT_ENTRY_POINTS = [
   { id: "game", source: "lib/game/gameTurnService.ts", builder: "lib/game/gameTurnService.ts", versions: [GAME_PROMPT_VERSION], transport: "game", format: "JSON narrative/statePatch; code validates and applies patch", context: "world/characters, selected branch, authoritative state/dice/check results", fallback: "invalid/empty/provider error, no partial turn committed" },
 ] as const;
 export type PromptEntryId = typeof PROMPT_ENTRY_POINTS[number]["id"];
+// Auxiliary paid operation, separately tested with source/branch/approval fixtures; not a new user mode.
+export const AUXILIARY_PROMPT_ENTRY_POINTS = [{ id: "context-summary", source: "lib/api/conversationSummaryApi.ts", builder: "lib/conversation/summary.ts", version: "branch-summary/r5.4-v1", fallback: "full raw branch or explicit input-limit error; never automatic regeneration" }] as const;
 
 /** Every module from the R3–R5 planning matrix, including non-generative services. */
 export const MODULE_PROMPT_COVERAGE: ReadonlyArray<{ module: string; generation: "yes" | "mixed" | "no"; entries: readonly PromptEntryId[]; note: string }> = [
@@ -42,6 +44,7 @@ export const MODEL_CALLER_FILES = [
   "lib/tasks/personalBriefingGenerator.ts", "lib/tasks/bookRecommendationGenerator.ts",
   "lib/tasks/reflectionQuestionGenerator.ts", "lib/plugins/hostCapabilityAdapters.ts",
   "lib/game/gameTurnService.ts", "lib/game/gameNarrativeGenerator.ts",
+  "lib/api/conversationSummaryApi.ts",
 ] as const;
 
 export const PROMPT_SOURCE_FILES = [...new Set([
@@ -53,6 +56,7 @@ export const PROMPT_SOURCE_FILES = [...new Set([
   "lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts",
   "lib/repositories/conversationRepository.ts",
   "lib/knowledge/retrieval.ts", "lib/knowledge/citations.ts", "lib/repositories/knowledgeRetrievalRepository.ts", "lib/repositories/knowledgeRepository.ts",
+  "lib/conversation/summary.ts", "lib/repositories/conversationSummaryRepository.ts",
 ])].sort();
 
 export const QUALITY_DIMENSIONS = ["task-completion", "actionability", "facts-and-citations", "mode-fit", "tool-honesty", "naturalness", "continuity"] as const;
@@ -62,5 +66,5 @@ export const KNOWN_PROMPT_GAPS = [
   { id: "G3", target: "R3.2/R4.5", finding: "Proactive contact currently uses deterministic templates, not a context-aware generation prompt.", status: "current-design-not-a-bug" },
   { id: "G4", target: "R3.2/R3.3", finding: "Eight task/game template versions now travel with real provider requests and optional usage metadata; old records remain valid.", status: "implemented-no-prompt-body-logged" },
   { id: "G5", target: "R4.3", finding: "Semantic recitation and explicit deterministic spelling mode are separate; spelling supports original-position insert/delete/replace differences.", status: "implemented-offline-regression-tested" },
-  { id: "G6", target: "R5.4/R1.3", finding: "No validated branch-aware summary in current chat assembly; old head/tail compressor is not a semantic summary baseline.", status: "pending-existing-plan" },
+  { id: "G6", target: "R5.4/R1.3", finding: "Explicitly generated, source-validated and user-reviewed branch summaries now reuse shared ancestors; semantic fidelity and net cost require separate evaluation.", status: "implemented-contracts-not-general-quality-proof" },
 ] as const;

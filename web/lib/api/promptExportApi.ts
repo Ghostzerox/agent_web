@@ -19,6 +19,7 @@ const sourceSchema = z.enum([
   "memory",
   "web-search",
   "knowledge",
+  "summary",
   "conversation",
 ]);
 const promptLayerSchema = z
@@ -47,7 +48,7 @@ const envelopeSchema = z
       .strict(),
     composer: z
       .object({
-        version: z.enum(["phase-5.2/v1", "phase-5.3/v1", "r1/cache-friendly-v1", "r3.2/mode-prompts-v1", "r5.3/knowledge-context-v1"]),
+        version: z.enum(["phase-5.2/v1", "phase-5.3/v1", "r1/cache-friendly-v1", "r3.2/mode-prompts-v1", "r5.3/knowledge-context-v1", "r5.4/branch-summary-v1"]),
         layerOrder: z.array(sourceSchema).min(1).max(500),
       })
       .strict(),
@@ -88,8 +89,9 @@ const envelopeSchema = z
     context: z
       .object({
         truncated: z.literal(false),
-        compressed: z.literal(false),
-        notes: z.tuple([]),
+        compressed: z.boolean(),
+        notes: z.array(z.string().max(500)).max(10),
+        summary: z.object({ id: z.uuid(), fingerprint: z.string().regex(/^[a-f0-9]{64}$/u), sourceCount: z.number().int().positive(), originalEstimatedTokens: z.number().int().nonnegative(), compactEstimatedTokens: z.number().int().nonnegative() }).strict().optional(),
       })
       .strict(),
     privacy: z
