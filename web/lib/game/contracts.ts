@@ -3,6 +3,7 @@ import { gameRuleCheckRequestSchema } from "@/lib/game/checks";
 import { gameDiceRequestSchema } from "@/lib/game/dice";
 import { gameCharacterAttributesSchema } from "@/lib/game/state";
 import { gameToolRequestSchema } from "./toolkit";
+import { explorationActionSchema } from "./exploration/contracts";
 
 export const GAME_SESSION_KINDS = [
   "roleplay",
@@ -104,8 +105,12 @@ export const createGameTurnSchema = z
     requestId: z.uuid().optional(),
     toolRequest: gameToolRequestSchema.optional(),
     toolOnly: z.boolean().optional(),
+    explorationAction: explorationActionSchema.optional(),
+    narrate: z.boolean().optional(),
   })
   .strict().superRefine((input, context) => {
+    if (input.explorationAction && (!input.requestId || input.toolRequest || input.toolOnly || input.diceRequests.length || input.checkRequest)) context.addIssue({ code: "custom", message: "探索动作需要请求 ID，且不能混用其他工具。" });
+    if (input.narrate && (!input.explorationAction || !["talk", "ask", "help", "negotiate"].includes(input.explorationAction.action))) context.addIssue({ code: "custom", message: "仅人物交流动作可选择 AI 润色。" });
     if (input.toolRequest && !input.requestId) context.addIssue({ code: "custom", path: ["requestId"], message: "工具请求必须有幂等 ID。" });
     if (input.toolOnly && (!input.toolRequest || input.diceRequests.length || input.checkRequest)) context.addIssue({ code: "custom", path: ["toolOnly"], message: "纯工具回合只运行一个已选牌堆/随机表工具。" });
   });

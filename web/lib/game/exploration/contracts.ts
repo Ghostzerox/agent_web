@@ -66,6 +66,7 @@ export const explorationStateSchema = z.object({
   tick: z.number().int().min(0).max(1000000), locationId: worldKey,
   discovered: keys, visited: keys, learned: keys, flags: record(z.boolean()),
   coins: z.number().int().min(0).max(1000000), conditions: lines,
+  wallets: record(z.number().int().min(0).max(1000000), 50),
   progress: z.object({ rating: worldKey, tier: worldKey, level: z.number().int().min(1).max(10) }).strict(),
   instances: z.array(worldItemInstanceSchema).max(150),
   characters: record(publicWorldCharacterSchema, 50),

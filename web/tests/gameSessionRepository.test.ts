@@ -76,6 +76,34 @@ describe("GameSessionRepository", () => {
     await pglite.close();
   });
 
+  it("persists exploration receipts, inventory and checkpoints atomically across branches", async () => {
+    const now = new Date("2026-10-18T00:00:00Z");
+    let current = await repository.create({ title: "探索测试", kind: "interactive-story", world, initialCharacter: null, now });
+    current = await repository.updateStatus(current.id, { status: "active", expectedVersion: current.version, now });
+    const service = createGameTurnService(repository, { generate: async () => { throw new Error("No paid model"); } });
+    const base = { content: "开启雾港", parentTurnId: null, expectedVersion: current.version, diceRequests: [], checkRequest: null, requestId: crypto.randomUUID(), explorationAction: { action: "start" as const, templateId: "fog-harbor" } };
+    current = await service.create(current.id, base);
+    const root = current.activeLeafTurnId!;
+    expect((await service.create(current.id, base)).turns).toHaveLength(1);
+    await expect(service.create(current.id, { ...base, content: "不同请求" })).rejects.toThrow("同一个");
+    current = await repository.createCheckpoint(current.id, { name: "出发", note: "", expectedVersion: current.version, now });
+    const checkpointId = current.checkpoints[0].id;
+    current = await service.create(current.id, { ...base, content: "喝茶", requestId: crypto.randomUUID(), expectedVersion: current.version, parentTurnId: root, explorationAction: { action: "use", instanceId: "traveler-tea" } });
+    const left = current.activeLeafTurnId!;
+    current = await service.create(current.id, { ...base, content: "去集市", requestId: crypto.randomUUID(), expectedVersion: current.version, parentTurnId: root, explorationAction: { action: "move", targetId: "market" } });
+    expect(current.turns.find((turn) => turn.id === left)?.stateSnapshot.exploration?.instances.find((item) => item.id === "traveler-tea")?.quantity).toBe(1);
+    expect(current.turns.at(-1)?.stateSnapshot.exploration?.instances.find((item) => item.id === "traveler-tea")?.quantity).toBe(2);
+    const beforeInvalid = current.version;
+    await expect(service.create(current.id, { ...base, content: "瞬移", requestId: crypto.randomUUID(), expectedVersion: current.version, parentTurnId: root, explorationAction: { action: "move", targetId: "tower" } })).rejects.toThrow("相邻");
+    expect((await repository.get(current.id))?.version).toBe(beforeInvalid);
+    current = await repository.restoreCheckpoint(current.id, checkpointId, { expectedVersion: current.version, now });
+    expect(current.activeLeafTurnId).toBe(root);
+    const race = { ...base, content: "喝茶", requestId: crypto.randomUUID(), expectedVersion: current.version, parentTurnId: root, explorationAction: { action: "use" as const, instanceId: "traveler-tea" } };
+    await Promise.allSettled([service.create(current.id, race), service.create(current.id, race)]);
+    const final = await repository.get(current.id);
+    expect(final?.turns.filter((turn) => turn.stateSnapshot.exploration?.receipt?.requestId === race.requestId)).toHaveLength(1);
+  });
+
   it("persists branch-local decks, idempotent receipts and checkpoint restoration without model access", async () => {
     const now = new Date("2026-10-16T00:00:00Z");
     let current = await repository.create({ title: "工具局", kind: "tabletop", world, initialCharacter: null, now });

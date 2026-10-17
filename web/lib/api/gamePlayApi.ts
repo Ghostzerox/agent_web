@@ -14,6 +14,7 @@ import {
 import { exportGameSessionArtifact } from "@/lib/game/gameSessionExport";
 import { createGameTurnService, type GameTurnService } from "@/lib/game/gameTurnService";
 import { GameStateValidationError } from "@/lib/game/state";
+import { ExplorationError } from "@/lib/game/exploration/contracts";
 import {
   createGameSessionRepository,
   GameSessionRepositoryError,
@@ -74,6 +75,7 @@ function parseId(value: string): string {
 }
 
 function errorStatus(error: unknown): number {
+  if (error instanceof ExplorationError) return 422;
   if (error instanceof GamePlayInputError) return 400;
   if (error instanceof GameSessionRepositoryError) {
     return error.code.endsWith("NOT_FOUND") ? 404 : 409;
@@ -93,6 +95,7 @@ function errorStatus(error: unknown): number {
 }
 
 function publicError(error: unknown) {
+  if (error instanceof ExplorationError) return { code: error.code, message: error.message, retryable: false };
   if (error instanceof GamePlayInputError) {
     return {
       code: error.code,

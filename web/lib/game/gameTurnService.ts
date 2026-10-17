@@ -4,6 +4,8 @@ import { stableJson } from "@/lib/ai/stableJson";
 import { rollGameRuleCheck, type GameRuleCheck } from "@/lib/game/checks";
 import { createGameTurnSchema, type CreateGameTurnRequest } from "@/lib/game/contracts";
 import { applyGameTool } from "./toolkit";
+import { applyExplorationAction } from "./exploration/engine";
+import { ExplorationError } from "./exploration/contracts";
 import { rollGameDice, type GameDiceRoll } from "@/lib/game/dice";
 import {
   createGameNarrativeGenerator,
@@ -206,9 +208,9 @@ export function createGameTurnService(
       }
       const fingerprint = input.requestId ? createHash("sha256").update(stableJson(input)).digest("hex") : null;
       if (input.requestId) {
-        const existing = session.turns.find((turn) => turn.stateSnapshot.toolkit?.receipt?.requestId === input.requestId);
+        const existing = session.turns.find((turn) => turn.stateSnapshot.toolkit?.receipt?.requestId === input.requestId || turn.stateSnapshot.exploration?.receipt?.requestId === input.requestId);
         if (existing) {
-          if (existing.stateSnapshot.toolkit?.receipt?.fingerprint !== fingerprint) throw new GameStateValidationError("GAME_STATE_INVALID", "同一个请求 ID 不能用于不同内容。");
+          if ((existing.stateSnapshot.exploration?.receipt ?? existing.stateSnapshot.toolkit?.receipt)?.fingerprint !== fingerprint) throw new GameStateValidationError("GAME_STATE_INVALID", "同一个请求 ID 不能用于不同内容。");
           return session;
         }
       }
@@ -226,6 +228,17 @@ export function createGameTurnService(
       }
 
       let currentState = stateAtParent(session, input.parentTurnId);
+      if (input.explorationAction) {
+        if (input.explorationAction.action === "start" && session.turns.some((turn) => !turn.stateSnapshot.exploration)) throw new ExplorationError("旧故事不自动转换规则，请新建一局探索。");
+        const exploration = applyExplorationAction(currentState.exploration, input.explorationAction, input.requestId!);
+        exploration.receipt = { requestId: input.requestId!, fingerprint: fingerprint! };
+        currentState = { ...currentState, exploration, scene: exploration.view.locations.find((location) => location.id === exploration.locationId)!.name };
+        return repository.appendTurn(sessionId, {
+          parentTurnId: input.parentTurnId, playerContent: input.content,
+          assistantContent: exploration.lastResult, model: "host-exploration/v1",
+          statePatch: {}, stateSnapshot: currentState, events: [], expectedVersion: input.expectedVersion, now: now(),
+        });
+      }
       const seedFor = (label: string) => input.requestId ? `${sessionId}:${input.requestId}:${input.expectedVersion}:${label}` : createSeed();
       if (input.toolRequest) {
         try { currentState = { ...currentState, toolkit: applyGameTool(currentState.toolkit, input.toolRequest, seedFor("tool")) }; }
@@ -256,6 +269,7 @@ export function createGameTurnService(
       );
       const generated = input.toolOnly ? { content: JSON.stringify({ narrative: `宿主工具 · ${currentState.toolkit!.lastResult!.action}\n\n${currentState.toolkit!.lastResult!.labels.join("\n")}`, statePatch: {} }), model: "host-tools/r4-v1" } : await generator.generate(messages, signal);
       const turn = parseGameModelTurn(generated.content);
+      if (currentState.exploration && Object.keys(turn.statePatch).length) throw new GameStateValidationError("GAME_OUTPUT_INVALID", "探索状态只能通过已验证的结构化动作更新；本次叙事未保存。");
       const stateSnapshot = applyGameStatePatch(currentState, turn.statePatch);
       return repository.appendTurn(sessionId, {
         parentTurnId: input.parentTurnId,
