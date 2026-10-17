@@ -5,7 +5,7 @@ const characterCard = (id: string, name: string, locationId: string, identity: s
   id, name, locationId, identity, category: "npc", controller: "ai", faction: "雾港居民",
   personality: "谨慎但愿意交流", speech: "用具体事情说话，不做全知解说", goals: ["维持自己的日常生活"],
   appearance: "穿着适合海港生活的衣物", backstory: "你尚未了解此人的过往。", values: ["信守约定"], boundaries: ["不会无条件满足陌生人的请求"],
-  abilities: [], relationship: "neutral", relationshipReason: "初次见面", knownInformation: [], promises: [], memories: [], unresolved: [], arc: "尚未展开",
+  abilities: [], relationship: "neutral", relationshipReason: "初次见面", knownInformation: [], promises: [], memories: [], unresolved: [], arc: "尚未展开", topics: [], interactions: [],
 });
 
 export type WorldCondition = { flag?: string; learned?: string; item?: string; minTick?: number };
@@ -23,7 +23,7 @@ export type WorldTemplate = {
   items: ExplorationState["view"]["items"];
   instances: ExplorationState["instances"];
   consumableEffects: Record<string, WorldEffect>;
-  characters: { card: ExplorationState["characters"][string]; topics: { id: string; requires?: WorldCondition; answer: string; effect?: WorldEffect }[];
+  characters: { card: ExplorationState["characters"][string]; revealedCard?: Partial<WorldCharacter>; topics: { id: string; label: string; requires?: WorldCondition; answer: string; effect?: WorldEffect }[];
     promise?: { text: string; requires: WorldCondition; completion: WorldCondition; effect: WorldEffect }; help?: { requires?: WorldCondition; effect: WorldEffect; result: string };
     negotiate?: { requires: WorldCondition; effect: WorldEffect; result: string }; knowledge: string[]; trader: boolean }[];
   lore: (Omit<WorldHistory, "tick" | "source"> & { source: string })[];
@@ -64,11 +64,22 @@ export const fogHarbor: WorldTemplate = {
     { id: "lens-one", definitionId: "lens", owner: "unclaimed", quantity: 1, equippedSlot: null, source: "芦苇滩木匣" },
   ], consumableEffects: { tea: { removeCondition: "疲惫" } },
   characters: [
-    { card: { ...characterCard("merchant", "阿岚", "market", "旧物商与修补匠"), goals: ["出售可靠的货物", "让灯塔恢复夜航"] }, topics: [], knowledge: ["harbor-founded"], trader: true },
+    { card: { ...characterCard("merchant", "阿岚", "market", "旧物商与修补匠"), personality: "务实而有幽默感，重视公平交易", speech: "说话简短，常拿修补比喻关系", goals: ["出售可靠的货物", "让灯塔恢复夜航"] },
+      topics: [{ id: "old-light", label: "旧灯为何熄灭", answer: "阿岚说：镜片被风浪卷走了，芦苇滩常能捡到海上漂来的东西。这是他的推测，不是亲眼见证。", effect: { reveal: ["lens-rumor"] } }], knowledge: ["harbor-founded", "lens-rumor"], trader: true },
+    { card: { ...characterCard("keeper", "林汐", "tower", "年轻守灯人"), personality: "自尊、耐心，对空泛承诺保持戒心", speech: "先问具体能做什么，再谈感受", goals: ["修好旧灯", "不让航标被私人封锁"], appearance: "袖口有灯油痕迹，随身携带旧铜钥匙", abilities: ["航标维修", "辨认海雾"], unresolved: ["缺失的镜片", "灯塔未来归属"] },
+      revealedCard: { backstory: "林汐继承母亲的守灯职责，却不愿照搬所有旧规。她曾在风暴中救过陌生船只。", values: ["航道向所有人开放", "实际行动比誓言可靠"], arc: "从独自守灯到学会让港民共同承担责任", boundaries: ["不以灯塔换取私人控制权", "拒绝替玩家作出选择"] },
+      topics: [{ id: "repair", label: "询问维修条件", answer: "林汐指着空灯座：需要找回镜片。即使修好，我也希望先谈清楚由谁维护。", effect: { flags: ["repair-discussed"] } },
+        { id: "oath", label: "分享碑文盟约", requires: { learned: "keeper-oath" }, answer: "你向林汐展示碑文记录，她第一次得知完整盟约，愿意支持港民共管。", effect: { flags: ["oath-shared"], character: { id: "keeper", relationship: "friendly", reason: "你分享了可核对的碑文证据" } } }],
+      promise: { text: "我答应寻找旧灯镜片；这不是现实提醒。", requires: { flag: "repair-discussed" }, completion: { item: "lens" }, effect: { flags: ["promise-kept"], character: { id: "keeper", relationship: "trusted", reason: "你兑现了找回镜片的承诺", important: true } } },
+      help: { requires: { item: "lens" }, effect: { flags: ["repair-ready"], character: { id: "keeper", relationship: "friendly", reason: "你带来镜片并帮忙核对维修方案", important: true } }, result: "你与林汐核对了镜片和灯座。维修已准备就绪，镜片尚未消耗，最终方案由你在事件中决定。" },
+      negotiate: { requires: { flag: "oath-shared" }, effect: { flags: ["council-supported"], character: { id: "keeper", relationship: "trusted", reason: "双方依据旧盟约协商公共维护方案" } }, result: "林汐支持召开港民共议，但不会替你选择最终方案。" }, knowledge: ["harbor-founded"], trader: false },
+    { card: { ...characterCard("archivist", "闻笙", "archive", "潮历档案员"), goals: ["核对传说与档案", "保护借阅记录"], personality: "认真而好奇，明确区分证据与传闻" },
+      topics: [{ id: "map", label: "询问旧海图", answer: "闻笙请你亲自核对桌上的旧海图：传说不能代替史料，地图和碑文可以交叉验证。" }], knowledge: ["light-record", "well-legend"], trader: false },
   ], events: [], epics: [],
   lore: [
     { id: "harbor-founded", kind: "fact", origin: "setting", text: "潮历一百二十年，雾港由渡船工与守灯人共同建立。", locationId: "harbor", actorIds: [], eventId: null, source: "港务告示 / 地方年表" },
     { id: "well-legend", kind: "legend", origin: "setting", text: "据传退潮时旧井会映出通往失落祭坛的路；尚未证实。", locationId: "market", actorIds: [], eventId: null, source: "旧井浮雕旁的传说" },
+    { id: "lens-rumor", kind: "rumor", origin: "setting", text: "阿岚推测旧灯镜片可能被冲到芦苇滩，尚未亲眼确认。", locationId: "market", actorIds: ["merchant"], eventId: null, source: "阿岚口述" },
     { id: "light-record", kind: "fact", origin: "setting", text: "档案中的旧海图显示祭坛路径；旧灯最初是向所有船只开放的公共航标。", locationId: "archive", actorIds: [], eventId: null, source: "潮历档案馆旧海图" },
     { id: "keeper-oath", kind: "fact", origin: "setting", text: "守望者盟约：航标不得按船籍收费封锁，由港民共议维护。", locationId: "shrine", actorIds: [], eventId: null, source: "祭坛碑文" },
   ],

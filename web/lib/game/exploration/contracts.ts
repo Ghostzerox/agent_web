@@ -46,6 +46,8 @@ export const publicWorldCharacterSchema = z.object({
   abilities: lines, relationship: z.enum(["wary", "neutral", "friendly", "trusted"]),
   relationshipReason: text, knownInformation: lines, promises: lines, memories: lines,
   unresolved: lines, arc: text,
+  topics: z.array(z.object({ id: worldKey, label: text }).strict()).max(20),
+  interactions: z.array(z.enum(["promise", "help", "negotiate", "trade"])).max(4),
 }).strict();
 const locationView = z.object({
   id: worldKey, name: text, region: text, description: text, visited: z.boolean(),

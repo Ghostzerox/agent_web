@@ -54,6 +54,19 @@ export function applyWorldEffect(state: ExplorationState, template: WorldTemplat
   if (effect.condition) add(state.conditions, effect.condition);
   if (effect.removeCondition) state.conditions = state.conditions.filter((item) => item !== effect.removeCondition);
   if (effect.progress) state.progress = { ...effect.progress };
+  if (effect.character) {
+    const change = effect.character;
+    const definition = template.characters.find((person) => person.card.id === change.id) ?? fail("人物不存在。");
+    const character = state.characters[change.id] ??= structuredClone(definition.card);
+    if (change.important) Object.assign(character, definition.revealedCard ?? {}, { category: "important" });
+    if (change.relationship) {
+      // A small helpful action must not downgrade previously earned trust.
+      if (character.relationship !== "trusted" || change.relationship === "trusted") character.relationship = change.relationship;
+      character.relationshipReason = change.reason;
+    }
+    if (change.locationId) character.locationId = change.locationId;
+    character.memories = [...character.memories, change.reason].slice(-12);
+  }
   for (const id of effect.reveal ?? []) {
     const lore = template.lore.find((entry) => entry.id === id);
     if (!lore) fail("设定引用无效。");
@@ -67,8 +80,18 @@ export function applyWorldEffect(state: ExplorationState, template: WorldTemplat
 export function projectWorld(state: ExplorationState, template = getWorldTemplate(state.templateId, state.templateVersion)): ExplorationState {
   const current = template.locations.find((location) => location.id === state.locationId) ?? fail("当前位置不存在。");
   for (const exit of current.exits) if (meets(state, exit.requires)) add(state.discovered, exit.to);
+  for (const definition of template.characters) {
+    const character = state.characters[definition.card.id];
+    if ((character?.locationId ?? definition.card.locationId) !== state.locationId) continue;
+    const known = state.characters[definition.card.id] ??= structuredClone(definition.card);
+    known.topics = definition.topics.filter((topic) => meets(state, topic.requires)).map(({ id, label }) => ({ id, label }));
+    known.interactions = [
+      ...(definition.promise && meets(state, definition.promise.requires) ? ["promise" as const] : []),
+      ...(definition.help ? ["help" as const] : []), ...(definition.negotiate ? ["negotiate" as const] : []), ...(definition.trader ? ["trade" as const] : []),
+    ];
+  }
   for (const item of template.instances) {
-    const owner = template.characters.find((person) => person.card.id === item.owner)?.card;
+    const owner = state.characters[item.owner] ?? template.characters.find((person) => person.card.id === item.owner)?.card;
     if (item.owner === "player" || item.owner === state.locationId || owner?.locationId === state.locationId) spawn(state, template, item.id);
   }
   validateWorldInventory(state, template);
@@ -84,7 +107,7 @@ export function projectWorld(state: ExplorationState, template = getWorldTemplat
       })) : [],
       points: location.id === state.locationId ? location.points.filter((point) => meets(state, point.requires)).map(({ id, name, description }) => ({ id, name, description })) : [],
     })), items: template.items.filter((item) => state.instances.some((instance) => instance.definitionId === item.id &&
-      (instance.owner === "player" || instance.owner === state.locationId || template.characters.some((person) => person.card.id === instance.owner && person.card.locationId === state.locationId)))), events: [], epics: [],
+      (instance.owner === "player" || instance.owner === state.locationId || state.characters[instance.owner]?.locationId === state.locationId))), events: [], epics: [],
   };
   return explorationStateSchema.parse(state);
 }
@@ -136,7 +159,7 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
       state.lastResult = `拾取${definition.name} × ${action.quantity}。`;
     } else if (action.action === "give" || action.action === "trade") {
       const target = template.characters.find((person) => person.card.id === action.targetId) ?? fail("目标不存在。");
-      if (target.card.locationId !== state.locationId) fail("只能与同地点的人物交互。");
+      if ((state.characters[target.card.id]?.locationId ?? target.card.locationId) !== state.locationId) fail("只能与同地点的人物交互。");
       if (action.action === "trade") {
         if (!target.trader || definition.price <= 0) fail("对方不交易此物品。");
         const price = definition.price * action.quantity;
@@ -171,11 +194,43 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
         state.lastResult = `使用${definition.name}，消耗 1；${definition.abilities.join("、")}。`;
       }
     }
+  } else if (["talk", "ask", "promise", "help", "negotiate"].includes(action.action) && "targetId" in action) {
+    const definition = template.characters.find((person) => person.card.id === action.targetId) ?? fail("人物不存在。");
+    const character = state.characters[action.targetId];
+    if (!character || character.locationId !== state.locationId || character.controller === "user") fail("只能与同地点的非玩家角色交互。");
+    if (action.action === "talk") {
+      state.lastResult = `${character.name}：我现在关心的是${character.goals[0]}。你想谈什么？`;
+    } else if (action.action === "ask") {
+      const topic = definition.topics.find((entry) => entry.id === action.topicId && meets(state, entry.requires)) ?? fail("话题尚未解锁，对方不会凭空知道你的秘密。");
+      applyWorldEffect(state, template, topic.effect ?? {});
+      if (!character.knownInformation.includes(topic.answer)) character.knownInformation = [...character.knownInformation, topic.answer].slice(-20);
+      state.lastResult = topic.answer;
+    } else if (action.action === "promise") {
+      const promise = definition.promise ?? fail("对方目前没有可约定的事项。");
+      if (!meets(state, promise.requires)) fail("需要先讨论具体事项。");
+      if (character.promises.includes(promise.text)) fail("该承诺已记录，不重复创建。");
+      character.promises.push(promise.text); state.lastResult = `你明确作出承诺：${promise.text}`;
+    } else {
+      const interaction = action.action === "help" ? definition.help : definition.negotiate;
+      if (!interaction || !meets(state, interaction.requires)) {
+        state.lastResult = `${character.name}暂不接受：${action.action === "help" ? "需要先带来能解决问题的物品" : "需要可信证据和双方认可的依据"}。没有损失物品，也没有自动改变信任。`;
+      } else {
+        const flag = `interaction-${action.action}-${character.id}`;
+        if (state.flags[flag]) fail("该项协助 / 交涉已经完成，不重复奖励。");
+        applyWorldEffect(state, template, interaction.effect); state.flags[flag] = true; state.lastResult = interaction.result;
+      }
+    }
+    character.memories = [...character.memories, state.lastResult].slice(-12);
+    const promise = definition.promise;
+    if (promise && character.promises.includes(promise.text) && meets(state, promise.completion) && !state.flags[`fulfilled-${character.id}`]) {
+      applyWorldEffect(state, template, promise.effect); state.flags[`fulfilled-${character.id}`] = true;
+      character.unresolved = character.unresolved.filter((entry) => entry !== "缺失的镜片");
+    }
   } else if (action.action === "wait") state.lastResult = "你停留片刻，观察潮水与路人的变化。";
   else fail("该动作尚未在当前世界开放。");
   state.tick += action.action === "inspect" ? 0 : 1;
   state.history.push({ id: `${source}:${state.tick}`, tick: state.tick, kind: "fact", origin: "play", text: state.lastResult,
-    locationId: state.locationId, actorIds: [], eventId: null, source });
+    locationId: state.locationId, actorIds: "targetId" in action && state.characters[action.targetId] ? [action.targetId] : [], eventId: null, source });
   // Full records remain in immutable turn snapshots; context keeps a bounded working chronology.
   state.history = state.history.slice(-200);
   return projectWorld(state, template);
