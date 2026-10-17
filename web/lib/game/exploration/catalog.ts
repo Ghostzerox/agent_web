@@ -102,7 +102,15 @@ export const fogHarbor: WorldTemplate = {
         { id: "observe", label: "记录暮潮见闻", cost: "无消耗", next: "recorded", effect: { flags: ["tide-recorded"], reveal: ["harbor-opinion"] }, result: "你记录了暮潮。有人认为公共维护更公平，也有人担心费用不足；这些是观点，不是已经发生的事实。" },
       ] }, { id: "recorded", description: "本次暮潮已记入区域年表。", terminal: true, choices: [] },
     ] },
-  ], epics: [],
+  ], epics: [
+    { id: "light-and-tide", name: "灯火与潮汐", chapters: ["抵港与失灵航标", "镜片与被遗忘的盟约", "谁来守望开放航道", "你的决定成为港史"], keyActors: ["keeper", "merchant", "archivist"],
+      milestones: [{ flag: "beacon-seen", text: "见到失灵的旧灯" }, { flag: "lens-found", text: "找回失落镜片" }, { flag: "oath-known", text: "核对守望者盟约" }, { flag: "council-supported", text: "通过交涉争取公共维护支持" }, { flag: "light-restored", text: "旧灯重新点亮" }],
+      endings: [
+        { flag: "ending-public", text: "开放的灯火", consequences: ["航标向所有船只开放，港民共管", "林汐到码头组织夜航，关系成为信任", "地区认可使行旅进入守望等阶；远方岛屿后续可依此挂接，不冒充已实现新大陆"] },
+        { flag: "ending-guild", text: "有价的航道", consequences: ["商会获得经营权并收取部分通行费", "林汐保留异议，你获得报酬但没有守望等阶认可", "后续区域可读取商会影响标记，首期不模拟无限经济"] },
+        { flag: "ending-left", text: "未承担的守望", consequences: ["你保留物品与自由行旅，不领取此事件奖励", "灯塔问题未由你解决，其他探索仍开放"] },
+      ] },
+  ],
   lore: [
     { id: "harbor-founded", kind: "fact", origin: "setting", text: "潮历一百二十年，雾港由渡船工与守灯人共同建立。", locationId: "harbor", actorIds: [], eventId: null, source: "港务告示 / 地方年表" },
     { id: "well-legend", kind: "legend", origin: "setting", text: "据传退潮时旧井会映出通往失落祭坛的路；尚未证实。", locationId: "market", actorIds: [], eventId: null, source: "旧井浮雕旁的传说" },

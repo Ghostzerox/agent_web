@@ -15,6 +15,8 @@ import { exportGameSessionArtifact } from "@/lib/game/gameSessionExport";
 import { createGameTurnService, type GameTurnService } from "@/lib/game/gameTurnService";
 import { GameStateValidationError } from "@/lib/game/state";
 import { ExplorationError } from "@/lib/game/exploration/contracts";
+import { explorationHistoryQuerySchema, searchWorldHistory } from "@/lib/game/exploration/history";
+import { gameTurnPath } from "@/lib/game/gameTurnService";
 import {
   createGameSessionRepository,
   GameSessionRepositoryError,
@@ -154,6 +156,12 @@ export function createGamePlayApi(
       return response(requestId, {
         data: await repository.updateStatus(parseId(id), { ...input, now: now() }),
       });
+    }),
+    searchHistory: (id: string, request: Request) => handle(async (requestId) => {
+      const query = await parseBody(request, explorationHistoryQuerySchema);
+      const session = await repository.get(parseId(id));
+      if (!session) throw new GameSessionRepositoryError("GAME_SESSION_NOT_FOUND", "Game session was not found.");
+      return response(requestId, { data: searchWorldHistory(gameTurnPath(session.turns, query.parentTurnId), query) });
     }),
     createTurn: (id: string, request: Request) => handle(async (requestId) => {
       const input = await parseBody(request, createGameTurnSchema);

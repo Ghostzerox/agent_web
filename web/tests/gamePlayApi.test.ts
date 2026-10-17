@@ -21,6 +21,26 @@ function request(body: unknown): Request {
 }
 
 describe("GamePlay API", () => {
+  it("retrieves only selected-branch history and returns rule failures as 422", async () => {
+    const { startWorld, applyExplorationAction } = await import("@/lib/game/exploration/engine");
+    const { ExplorationError } = await import("@/lib/game/exploration/contracts");
+    const id = crypto.randomUUID(); const root = crypto.randomUUID(); const left = crypto.randomUUID(); const right = crypto.randomUUID();
+    const state = startWorld("fog-harbor");
+    const leftState = applyExplorationAction(state, { action: "move", targetId: "market" }, "left-only");
+    const rightState = applyExplorationAction(state, { action: "move", targetId: "marsh" }, "right-only");
+    const get = vi.fn().mockResolvedValue({ turns: [
+      { id: root, parentTurnId: null, stateSnapshot: { exploration: state } },
+      { id: left, parentTurnId: root, stateSnapshot: { exploration: leftState } },
+      { id: right, parentTurnId: root, stateSnapshot: { exploration: rightState } },
+    ] });
+    const api = createGamePlayApi(repository({ get }), { create: vi.fn().mockRejectedValue(new ExplorationError("路径不可达")) });
+    const result = await api.searchHistory(id, request({ parentTurnId: left }));
+    expect(result.status).toBe(200);
+    const text = JSON.stringify(await result.json()); expect(text).toContain("left-only"); expect(text).not.toContain("right-only");
+    expect((await api.searchHistory(id, request({ parentTurnId: crypto.randomUUID() }))).status).toBe(404);
+    expect((await api.searchHistory(id, request({ parentTurnId: left, limit: 999 }))).status).toBe(400);
+    expect((await api.createTurn(id, request({ content: "移动", parentTurnId: root, expectedVersion: 1, requestId: crypto.randomUUID(), explorationAction: { action: "move", targetId: "tower" } }))).status).toBe(422);
+  });
   it("validates and updates pause/resume state with a version", async () => {
     const updateStatus = vi.fn().mockResolvedValue({ status: "active", version: 2 });
     const api = createGamePlayApi(

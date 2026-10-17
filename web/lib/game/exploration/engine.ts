@@ -115,7 +115,13 @@ export function projectWorld(state: ExplorationState, template = getWorldTemplat
         choices: stage.choices.map((choice) => ({ id: choice.id, label: choice.label, cost: choice.cost,
           available: meets(state, choice.requires) && state.coins >= (choice.coinCost ?? 0)
             && (!choice.consume || state.instances.some((item) => item.owner === "player" && item.definitionId === choice.consume && !item.equippedSlot)) })) };
-    }), epics: [],
+    }), epics: template.epics.filter((epic) => epic.milestones.some((item) => state.flags[item.flag]) || epic.endings.some((item) => state.flags[item.flag])).map((epic) => {
+      const ending = epic.endings.find((item) => state.flags[item.flag]);
+      return { id: epic.id, name: epic.name, chapters: epic.chapters,
+        keyActors: epic.keyActors.filter((id) => state.characters[id]),
+        milestones: epic.milestones.filter((item) => state.flags[item.flag]).map((item) => item.text),
+        ending: ending?.text ?? null, consequences: ending?.consequences ?? [] };
+    }),
   };
   return explorationStateSchema.parse(state);
 }

@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api/clientRuntime";
 import type { GameToolRequest } from "@/lib/game/toolkit";
 import type { ExplorationAction } from "@/lib/game/exploration/contracts";
+import type { ExplorationHistoryQuery, ExplorationHistoryResult } from "@/lib/game/exploration/history";
 import type {
   GameCharacterController,
   GameCharacterInput,
@@ -129,6 +130,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function listGameSessions(): Promise<GameSessionSummary[]> {
   return request("/api/v1/game-sessions");
+}
+
+export function searchGameHistory(id: string, query: ExplorationHistoryQuery): Promise<ExplorationHistoryResult> {
+  return request(`/api/v1/game-sessions/${encodeURIComponent(id)}/exploration/history`, { method: "POST", body: JSON.stringify(query) });
 }
 
 export function getGameSession(id: string): Promise<GameSessionDetail> {
