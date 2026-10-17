@@ -67,4 +67,15 @@ describe("action facts and CAS", () => {
     expect(paused.data.rules[0].paused).toBe(false); expect(paused.data.rules.at(-1)).toMatchObject({ effectiveFrom: "2030-01-04", paused: true });
     await expect(repo.mutate({ ...base, expectedVersion: paused.version, day: "2030-01-02", mutationId: crypto.randomUUID() }, nextDay)).rejects.toThrow("恢复");
   });
+  it("links real steps to a goal without nesting goals or equating goal progress to task runs", async () => {
+    const goal = await create({ ...definition("目标"), kind:"goal" });
+    const step = await create({ ...definition("里程碑"), goalId:goal.id });
+    await expect(create({ ...definition("嵌套"), kind:"goal", goalId:goal.id })).rejects.toThrow("嵌套");
+    await expect(create({ ...definition("错关联"), goalId:step.id })).rejects.toThrow("目标不存在");
+    const done = await repo.mutate({ operation:"record", id:step.id, expectedVersion:1, mutationId:crypto.randomUUID(), day:"2030-01-02", value:1, state:"done", note:"" },now);
+    expect(done.data.goalId).toBe(goal.id);
+    const snapshot=await repo.read("2030-01-01","2030-01-03",now);
+    expect(snapshot.items.find((i)=>i.id===goal.id)?.data.completedOn).toBeNull();
+    expect(snapshot.items.filter((i)=>i.data.goalId===goal.id && i.data.completedOn)).toHaveLength(1);
+  });
 });

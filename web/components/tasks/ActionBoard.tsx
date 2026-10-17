@@ -4,6 +4,8 @@ import { actionClient } from "@/lib/api/actionClient";
 import { businessDay, shiftDay, todoState, type ActionCommand, type ActionItem, type ActionSnapshot } from "@/lib/tasks/actions";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import { HabitPanel } from "./HabitPanel";
+import { ActionInsights } from "./ActionInsights";
+import { GoalPanel } from "./GoalPanel";
 
 type ActionDraft = { [K in ActionCommand["operation"]]: Omit<Extract<ActionCommand, { operation: K }>, "mutationId"> }[ActionCommand["operation"]];
 const field = "min-h-11 rounded-lg border border-[var(--workspace-border)] bg-transparent px-3 py-2 text-sm";
@@ -18,11 +20,11 @@ export function ActionBoard() {
   async function load(confirm = false) {
     if (confirm && (title || note || due || editing) && !window.confirm("刷新保留当前草稿并更新列表，保存时仍会核对原版本。继续？")) return;
     setBusy(true); setError("");
-    try { setSnapshot(await actionClient.load(shiftDay(today, -31), today)); }
+    try { setSnapshot(await actionClient.load(shiftDay(today, -365), today)); }
     catch (failure) { setError(failure instanceof Error ? failure.message : "读取失败。"); }
     finally { setBusy(false); }
   }
-  useEffect(() => { let active = true; void actionClient.load(shiftDay(businessDay(), -31), businessDay()).then((value) => { if (active) setSnapshot(value); }).catch((failure: unknown) => { if (active) setError(failure instanceof Error ? failure.message : "读取失败。"); }); return () => { active = false; }; }, []);
+  useEffect(() => { let active = true; void actionClient.load(shiftDay(businessDay(), -365), businessDay()).then((value) => { if (active) setSnapshot(value); }).catch((failure: unknown) => { if (active) setError(failure instanceof Error ? failure.message : "读取失败。"); }); return () => { active = false; }; }, []);
   async function save(command: ActionDraft) {
     setBusy(true); setError("");
     const signature = JSON.stringify(command);
@@ -31,7 +33,7 @@ export function ActionBoard() {
       const saved = await actionClient.mutate({ ...command, mutationId } as ActionCommand);
       setSnapshot((s) => s ? { ...s, items: [...s.items.filter((i) => i.id !== saved.id), saved] } : s);
       if ((command.operation === "create" && command.data.kind === "todo") || (command.operation === "update" && editing?.id === command.id)) { setTitle(""); setNote(""); setDue(""); setEditing(null); } setKeys((current) => Object.fromEntries(Object.entries(current).filter(([key]) => key !== signature)));
-      try { setSnapshot(await actionClient.load(shiftDay(today, -31), today)); }
+      try { setSnapshot(await actionClient.load(shiftDay(today, -365), today)); }
       catch { setError("操作已保存，但列表刷新失败；请联网后刷新核对。"); }
       return true;
     } catch (failure) { setError(failure instanceof Error ? failure.message : "保存失败，草稿保留。"); return false; }
@@ -51,6 +53,8 @@ export function ActionBoard() {
       <div className="flex gap-2"><button disabled={busy || !snapshot || !title.trim()} className={`${button} bg-emerald-700 text-white`}>{editing ? "保存行动" : "添加待办"}</button>{editing && <button type="button" className={button} disabled={busy} onClick={() => { setEditing(null); setTitle(""); setNote(""); setDue(""); }}>取消编辑</button>}</div>
     </form>
     {snapshot && <HabitPanel snapshot={snapshot} busy={busy} save={save} />}
+    {snapshot && <GoalPanel snapshot={snapshot} busy={busy} save={save} />}
+    {snapshot && <ActionInsights snapshot={snapshot} />}
     {snapshot && ["pending", "overdue", "done", "paused", "archived"].map((state) => {
       const items = snapshot.items.filter((i) => i.data.kind === "todo" && todoState(i, today) === state);
       if (!items.length) return null;
