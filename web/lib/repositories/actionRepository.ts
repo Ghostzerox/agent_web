@@ -54,6 +54,15 @@ export function createActionRepository<T extends PgQueryResultHKT>(db: PgDatabas
             await validateGoal(input.goalId);
             if (input.goalId === current.id || (data.kind === "goal" && input.goalId)) throw new ActionError("目标不能嵌套或关联自己。", 400);
             if (input.dueOn && input.dueOn < data.startsOn) throw new ActionError("截止日不能早于开始日。", 400);
+            if (data.kind === "habit" && data.status !== input.status) {
+              const effectiveFrom = data.startsOn > today ? data.startsOn : shiftDay(today, 1);
+              const base = ruleFor(current, effectiveFrom);
+              if (base) {
+                const paused = input.status !== "active";
+                data.rules = [...data.rules.filter((r) => r.effectiveFrom !== effectiveFrom).map((r) => r.effectiveFrom > effectiveFrom ? { ...r, paused } : r), { ...base, effectiveFrom, paused }].sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
+                if (data.rules.length > 400) throw new ActionError("规则版本已达400，请另建新习惯。", 413);
+              }
+            }
             Object.assign(data, { title: input.title, note: input.note, dueOn: input.dueOn, goalId: input.goalId, status: input.status });
           } else if (input.operation === "record") {
             if (data.kind === "goal") throw new ActionError("目标进度来自子任务与关联习惯，不能直接打卡。", 400);

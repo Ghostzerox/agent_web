@@ -45,4 +45,26 @@ describe("action facts and CAS", () => {
     const response = await api.handle(new Request("http://localhost/api/v1/actions", { method: "POST", body: JSON.stringify({ operation: "create", mutationId: crypto.randomUUID(), data: definition(), userId: crypto.randomUUID() }) }));
     expect(response.status).toBe(400); expect(response.headers.get("cache-control")).toBe("no-store");
   });
+  it("keeps a unique daily total and historical rule across future edits", async () => {
+    const data = definition("背单词"); data.kind = "habit"; data.rules = [{ effectiveFrom: data.startsOn, cadence: "weekly-count", weekdays: [1,2,3,4,5], timesPerWeek: 5, target: 20, unit: "个", paused: false }];
+    const item = await create(data);
+    const record = { operation: "record" as const, id: item.id, expectedVersion: 1, day: "2030-01-02", value: 10, state: "done" as const, note: "" };
+    await repo.mutate({ ...record, mutationId: crypto.randomUUID() }, now);
+    const corrected = await repo.mutate({ ...record, expectedVersion: 2, value: 20, mutationId: crypto.randomUUID() }, now);
+    await repo.mutate({ operation: "rule", id: item.id, expectedVersion: corrected.version, mutationId: crypto.randomUUID(), rule: { ...data.rules[0], effectiveFrom: "2030-01-03", target: 30 } }, now);
+    const snapshot = await repo.read("2030-01-01", "2030-01-04", now), entries = snapshot.entries.filter((e) => e.itemId === item.id);
+    expect(entries).toHaveLength(1); expect(entries[0]).toMatchObject({ value: 20, rule: { target: 20 }, backfill: false });
+    await expect(repo.mutate({ operation: "rule", id: item.id, expectedVersion: 4, mutationId: crypto.randomUUID(), rule: { ...data.rules[0], target: 99 } }, now)).rejects.toThrow("未来日期");
+  });
+  it("handles scheduled weekdays, backfill, pause and excuse without changing older rules", async () => {
+    const data = definition("运动"); data.kind = "habit"; data.rules = [{ effectiveFrom: data.startsOn, cadence: "weekdays", weekdays: [3], timesPerWeek: 1, target: 30, unit: "分钟", paused: false }];
+    const item = await create(data), nextDay = new Date("2030-01-03T08:00:00Z");
+    const base = { operation: "record" as const, id: item.id, expectedVersion: 1, mutationId: crypto.randomUUID(), day: "2030-01-03", value: 30, state: "done" as const, note: "" };
+    await expect(repo.mutate(base, nextDay)).rejects.toThrow("计划内");
+    const backfilled = await repo.mutate({ ...base, day: "2030-01-02" }, nextDay);
+    expect((await repo.read("2030-01-02", "2030-01-03", nextDay)).entries.find((e) => e.itemId === item.id)?.backfill).toBe(true);
+    const paused = await repo.mutate({ operation: "update", mutationId: crypto.randomUUID(), id: item.id, expectedVersion: backfilled.version, title: data.title, note: "", dueOn: null, goalId: null, status: "paused" }, nextDay);
+    expect(paused.data.rules[0].paused).toBe(false); expect(paused.data.rules.at(-1)).toMatchObject({ effectiveFrom: "2030-01-04", paused: true });
+    await expect(repo.mutate({ ...base, expectedVersion: paused.version, day: "2030-01-02", mutationId: crypto.randomUUID() }, nextDay)).rejects.toThrow("恢复");
+  });
 });
