@@ -3,7 +3,7 @@
 > 文档类型：产品需求文档（PRD）+ 技术设计文档（TDD）+ 分阶段路线图
 > 文档版本：1.5
 > 编写日期：2026-09-02
-> 最近修订：2026-10-16
+> 最近修订：2026-10-17（真机测试暂缓并统一汇总）
 > 适用项目：AI Study Companion / Personal AI Agent Web Application
 > 状态：规划基线，后续通过 ADR 与 CHANGELOG 持续修订
 
@@ -1827,7 +1827,7 @@ Phase 5.6 的编号保留，但不再作为 Phase 7/Phase 6 的前置条件。�
 | R4 | R4.1–R4.5 首期实现✅ | 九项共享工作台工具、任务/内容工具、学习材料/抽背/逐字差异、题库搜索、分支牌堆/随机表与辅助模块核对；见 `TOOLS_GUIDE.md`、`reports/R4_REPORT.md`，不宣称实现全部候选扩展 |
 | R5 | R5.1–R5.6工程首期已交付，真机/体验保留 | 分域/来源、词项RAG/审核摘要/宫殿、用户开关/范围导出/本地预演、按需分段重建与有界原文降级已实现；真实Web+Bundle同后端验收通过，学习真链未授权保留；Embedding/自动RAG等仍待后续 |
 
-2026-10-17 R5.6新增 `memory_controls`（0032，当前33迁移），`/api/v1/memory-data/{controls,manifest,usage,export}`，资料 `POST /api/v1/knowledge/documents/:id/rebuild`。只读记忆包预演没有restore接口；最近请求仅返回上下文元数据，检索与Run校验服务端开关。按需重建/有界原文降级、资料根引用变更使摘要失效，原文/其他数据不被批量改写。见 [指南](MEMORY_CONTROL_AND_ACCEPTANCE_GUIDE.md)、[ADR-069](adr/ADR-069-memory-control-and-cross-client-acceptance.md)、[报告](reports/R5_6_REPORT.md)。备份恢复/迁移、Web+本地React同后端和APK检查通过；华为硬件与未授权的真实学习跨端保留，建议先签收再推进原发布主线。Embedding、独立工作流自动资料绑定、通用恢复写入及真实净收益仍待后续。共享¥3累计上界¥0.173498566、余额¥2.826501434，R5.6本轮¥0。
+2026-10-17 R5.6新增 `memory_controls`（0032，当前33迁移），`/api/v1/memory-data/{controls,manifest,usage,export}`，资料 `POST /api/v1/knowledge/documents/:id/rebuild`。只读记忆包预演没有restore接口；最近请求仅返回上下文元数据，检索与Run校验服务端开关。按需重建/有界原文降级、资料根引用变更使摘要失效，原文/其他数据不被批量改写。见 [指南](MEMORY_CONTROL_AND_ACCEPTANCE_GUIDE.md)、[ADR-069](adr/ADR-069-memory-control-and-cross-client-acceptance.md)、[报告](reports/R5_6_REPORT.md)。备份恢复/迁移、Web+本地React同后端和APK检查通过；按用户要求暂缓华为硬件验收，与前期和后续真机测试合并至 [统一待办](DEVICE_ACCEPTANCE_BACKLOG.md)，未授权的真实学习跨端继续保留，不把手机签收作为无关功能开发前置。Embedding、独立工作流自动资料绑定、通用恢复写入及真实净收益仍待后续。共享¥3累计上界¥0.173498566、余额¥2.826501434，R5.6本轮¥0。
 
 ### Phase 8：作品集化（2 周）
 
@@ -2007,20 +2007,13 @@ Proposed / Accepted / Superseded
 
 ## 27. 下一步执行建议
 
-Phase 0–2 已完成，后续采用 Core Track 与 Mobile Track 并行但一次只交付一个可验收任务：
+当前优先级遵循 [产品主线指导](PRODUCT_MAINLINE_GUIDE.md)。Core 3.1–3.5、Phase 4.1–4.4、Phase 5.1–5.5、Phase 7.1–7.5 与 Phase 6.1–6.5 已完成；R3/R4 与 R5.1–R5.6 工程首期已交付，真实体验、长期收益及后移能力不等于已完成。
 
-1. 完成 M0.4 真机验收：通知授权、准时弹窗、点击跳转、暂停/删除撤销与重启恢复。
-2. 在新版 APK 上完成 M1.1 本地客户端与 M1.2 Prompt 系统分享的真机回归。
-3. 完成 M1.3 华为真机验收：断网、重启、时区、划掉应用和系统省电通知回归。
-4. Core 3.2 已完成：Prompt Envelope、版本、无明文审计与安全导出已建立。
-5. 实现搜索、引用、Verifier 和评测，先保证专业回答。
-6. 在可靠搜索与引用之上实现新闻、书籍和 Reflection，而不是使用无来源生成。
-
-当前优先级遵循产品主线指导。Core 3.1–3.5、Phase 4.1–4.4、Phase 5.1–5.5、Phase 7.1–7.5 与 Phase 6.1–6.5 已完成。首个娱乐规则包沿用 Plugin API v1，在不修改 GameSession 核心循环的前提下完成配置/草稿/确认流程。R1 首轮及 R2 实现/自动验证已交付；按 2026-10-15 新需求增加 R3 提示词、R4 全模块工具、R5 分域记忆（见 `CAPABILITY_ENHANCEMENT_PLAN.md`），同时保留 R1 收益/摘要与 R2 真机/视觉验收（见 `EXPERIENCE_AND_COST_OPTIMIZATION_PLAN.md`）。之后再评估语音/移动发布需求并准备作品集交付；Phase 5.6 仍集中安排在发布前，不横向扩张插件市场或 Agent 框架。
-7. 完成新闻、书籍与 Reflection 的最小闭环后，实现 MemoryCandidate、Persona、Voice Profile 和 TTS；语音始终作为文字结果的可失败表达层。
-8. 背书与解题已验证 Capability Gateway 并冻结 Plugin API 1.0.0；后续新 Activity 只增加注册操作，不回退到直接依赖核心内部实现。
-9. 独立 GameSession 已建立；后续角色扮演与 AI 跑团必须继续使用该边界，禁止把虚构状态混入普通长期记忆；娱乐规则包用于继续验证 v1 的兼容扩展能力。
-10. M1–M3 按需穿插：正式本地 Bundle、本地提醒/Huawei Push，最后 ArkTS + ArkWeb；不重写共享业务。
+1. **真机排期已调整**：2026-10-17 按用户要求暂缓，把 M0.4、M1、语音、R2 UI、学习 / 娱乐与 R5.6 检查合并到 [真机验收统一待办](DEVICE_ACCEPTANCE_BACKLOG.md)。后续设备场景按组追加；恢复测试时用最新同批 APK 集中验收，不要求逐轮装包、不阻塞无关开发。
+2. 后续按主线评估语音 / 移动发布需求，正式移动发布前完成适用的设备门槛；Phase 5.6 仍集中安排在发布前，之后 Phase 8 作品集化。不自动开展新阶段，也不把主观语义、长期学习效果或 R1 费用净收益视为已签收。
+3. 继续复用既有搜索 / 引用 / Verifier、Memory、Persona、Speech Adapter 与 Task / Inbox；语音是文字结果的可失败表达层，不另建 Agent 框架。
+4. 背书与解题已验证 Capability Gateway 并冻结 Plugin API 1.0.0；新增 Activity 继续沿用受控能力与授权。娱乐保留独立 GameSession，虚构状态不混入普通长期记忆。
+5. Mobile 已有本地 React Bundle 与本地提醒；Huawei Push、正式签名、ArkTS + ArkWeb 按实际需求推进，未实现项不提前记通过，不重写共享业务。
 
 第一个可以对外演示的关键版本应是：
 
