@@ -53,6 +53,7 @@ export type KnowledgeCandidate = {
 };
 export type KnowledgeHit = KnowledgeCandidate & { score: number; estimatedTokens: number; reference: MemorySourceReference };
 export type KnowledgeRetrievalResult = {
+  fallback?: "source-text";
   status: "completed" | "no-match" | "too-broad";
   hits: KnowledgeHit[]; candidateCount: number; estimatedTokens: number; durationMs: number;
   version: typeof KNOWLEDGE_RETRIEVAL_VERSION;

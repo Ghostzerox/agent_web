@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
-import { conversations, messages, conversationSummaries, personaProfiles, memoryItems } from "@/lib/db/schema";
+import { conversations, messages, conversationSummaries, personaProfiles, memoryItems, knowledgeDocuments, knowledgeCollections } from "@/lib/db/schema";
 import { LOCAL_USER_ID } from "./conversationRepository";
 import { branchPath, sourceRevisions, summaryHash, summaryLayer, summarySources, validateSummary, SUMMARY_POLICY, SummaryError, DEFAULT_SUMMARY_SETTINGS, type SummarySettings, type SummaryUse, type SummaryMessage } from "@/lib/conversation/summary";
 import type { PromptMessage } from "@/lib/ai/messages";
@@ -21,14 +21,20 @@ export class ConversationSummaryRepository<T extends PgQueryResultHKT> {
     const rows = ids.length ? await this.db.select().from(messages).where(and(eq(messages.conversationId, conversationId), inArray(messages.id, ids))) : [];
     return { conversation, path: branchPath(rows, leafId) };
   }
-  async contextStamp(mode: string): Promise<string> {
-    if (mode === "entertainment") return summaryHash({ domain: "game", personal: "none" });
-    const persona = await this.db.select({ version: personaProfiles.version }).from(personaProfiles).where(eq(personaProfiles.userId, LOCAL_USER_ID));
-    const memories = await this.db.select({ id: memoryItems.id, version: memoryItems.version, validUntil: memoryItems.validUntil }).from(memoryItems).where(eq(memoryItems.userId, LOCAL_USER_ID)).orderBy(asc(memoryItems.id));
-    return summaryHash({ persona, memories: memories.map((v) => ({ ...v, validUntil: v.validUntil?.toISOString() ?? null, expired: v.validUntil ? v.validUntil <= new Date() : false })) });
+  async contextStamp(mode: string, path: SummaryMessage[] = []): Promise<string> {
+    const persona = mode === "entertainment" ? [] : await this.db.select({ version: personaProfiles.version }).from(personaProfiles).where(eq(personaProfiles.userId, LOCAL_USER_ID));
+    const memories = mode === "entertainment" ? [] : await this.db.select({ id: memoryItems.id, version: memoryItems.version, validUntil: memoryItems.validUntil }).from(memoryItems).where(eq(memoryItems.userId, LOCAL_USER_ID)).orderBy(asc(memoryItems.id));
+    const personal = mode === "entertainment" ? { domain: "game", personal: "none" } : { persona, memories: memories.map((v) => ({ ...v, validUntil: v.validUntil?.toISOString() ?? null, expired: v.validUntil ? v.validUntil <= new Date() : false })) };
+    const references = path.flatMap((row) => row.citations?.flatMap((citation) => citation.knowledge ? [citation.knowledge] : []) ?? []);
+    if (!references.length) return summaryHash(personal); // Preserve existing no-knowledge summaries.
+    const ids = [...new Set(references.map((ref) => ref.documentId))].sort();
+    if (ids.length > 200) throw new SummaryError("覆盖范围引用超过200篇资料，请缩小摘要范围。");
+    const roots = await this.db.select({ id: knowledgeDocuments.id, version: knowledgeDocuments.version, hash: knowledgeDocuments.contentHash }).from(knowledgeDocuments).innerJoin(knowledgeCollections, and(eq(knowledgeCollections.id, knowledgeDocuments.collectionId), eq(knowledgeCollections.userId, LOCAL_USER_ID))).where(and(eq(knowledgeDocuments.userId, LOCAL_USER_ID), inArray(knowledgeDocuments.id, ids)));
+    // Metadata only. A historical summary never silently imports new document bodies or receives RAG grants.
+    return summaryHash({ ...personal, references, knowledgeRoots: ids.map((id) => roots.find((root) => root.id === id) ?? { id, deletedOrUnavailable: true }) });
   }
   async valid(record: SummaryRecord, path: SummaryMessage[], mode: string, modelKey: string) {
-    if (record.policy !== SUMMARY_POLICY || record.mode !== mode || record.modelKey !== modelKey || record.contextStamp !== await this.contextStamp(mode) || record.sources.length > path.length - record.settings.recent || !record.payload) return false;
+    if (record.policy !== SUMMARY_POLICY || record.mode !== mode || record.modelKey !== modelKey || record.contextStamp !== await this.contextStamp(mode, path.slice(0, record.sources.length)) || record.sources.length > path.length - record.settings.recent || !record.payload) return false;
     if (stableJson(await sourceRevisions(path.slice(0, record.sources.length))) !== stableJson(record.sources)) return false;
     // Conservative explicit-correction signal; not claimed to understand all semantic contradictions.
     if (path.slice(record.sources.length).some((row) => row.role === "user" && /更正|纠正|撤回|忘记前|取消之前|推翻之前/u.test(row.content))) return false;
@@ -46,7 +52,7 @@ export class ConversationSummaryRepository<T extends PgQueryResultHKT> {
       const repo = new ConversationSummaryRepository(tx);
       const { conversation, path } = await repo.branch(conversationId, leafId);
       if (conversation.activeLeafMessageId !== leafId) throw new SummaryError("分支已切换，请刷新后再生成。");
-      const sources = summarySources(path, settings); const revisions = await sourceRevisions(sources); const contextStamp = await repo.contextStamp(conversation.mode);
+      const sources = summarySources(path, settings); const revisions = await sourceRevisions(sources); const contextStamp = await repo.contextStamp(conversation.mode, sources);
       const fingerprint = await summaryHash({ sources: revisions, mode: conversation.mode, modelKey, settings, contextStamp, policy: SUMMARY_POLICY });
       const rows = await tx.select().from(conversationSummaries).where(and(eq(conversationSummaries.conversationId, conversationId), eq(conversationSummaries.userId, LOCAL_USER_ID)));
       const existing = rows.find((row) => row.fingerprint === fingerprint);
@@ -67,7 +73,7 @@ export class ConversationSummaryRepository<T extends PgQueryResultHKT> {
       const repo = new ConversationSummaryRepository(tx);
       const { conversation, path } = await repo.branch(record.conversationId, conversationLeaf(sources));
       // Check source roots, mode and non-body dependencies again after the remote call.
-      if (conversation.mode !== record.mode || record.contextStamp !== await repo.contextStamp(record.mode) || stableJson(await sourceRevisions(path)) !== stableJson(record.sources)) throw new SummaryError("生成期间来源/模式已变化；结果未保存，调用费用仍计入用量。");
+      if (conversation.mode !== record.mode || record.contextStamp !== await repo.contextStamp(record.mode, path) || stableJson(await sourceRevisions(path)) !== stableJson(record.sources)) throw new SummaryError("生成期间来源/模式已变化；结果未保存，调用费用仍计入用量。");
       const [saved] = await tx.update(conversationSummaries).set({ payload, status: "draft", version: record.version + 1 }).where(and(eq(conversationSummaries.id, record.id), eq(conversationSummaries.version, record.version), eq(conversationSummaries.status, "pending"))).returning();
       if (!saved) throw new SummaryError("摘要已被清除或替换，本次结果未保存。");
       return saved;

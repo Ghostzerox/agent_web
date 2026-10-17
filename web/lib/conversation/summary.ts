@@ -3,12 +3,13 @@ import { stableJson } from "@/lib/ai/stableJson";
 import type { PromptMessage } from "@/lib/ai/messages";
 import { estimateMemoryTokens } from "@/lib/memory/memoryRetrieval";
 import { summaryModuleInstruction } from "@/lib/memory/moduleProfiles";
+import type { MessageCitation } from "@/lib/ai/messages";
 
 export const SUMMARY_POLICY = "branch-summary/r5.5-v1";
 export const summarySettingsSchema = z.object({ threshold: z.number().int().min(10).max(100).default(16), recent: z.number().int().min(4).max(20).default(6), maxCharacters: z.number().int().min(1000).max(12000).default(5000) }).strict().refine((v) => v.threshold > v.recent + 1);
 export const DEFAULT_SUMMARY_SETTINGS = summarySettingsSchema.parse({});
 export type SummarySettings = z.infer<typeof summarySettingsSchema>;
-export type SummaryMessage = { id: string; parentMessageId: string | null; role: string; content: string; status: string };
+export type SummaryMessage = { id: string; parentMessageId: string | null; role: string; content: string; status: string; citations?: MessageCitation[] };
 export type SourceRevision = { id: string; hash: string };
 export const summaryPayloadSchema = z.object({ points: z.array(z.object({ kind: z.enum(["goal", "constraint", "decision", "open", "fact", "uncertainty"]), text: z.string().trim().min(1).max(600), evidence: z.array(z.object({ messageId: z.uuid(), quote: z.string().trim().min(1).max(240) }).strict()).min(1).max(3) }).strict()).min(1).max(12) }).strict();
 export type SummaryPayload = z.infer<typeof summaryPayloadSchema>;

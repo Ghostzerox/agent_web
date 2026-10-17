@@ -5,7 +5,7 @@ import type { PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { collectionInputSchema, documentInputSchema } from "@/lib/knowledge/documents";
 import { createKnowledgeRetrievalRepository, knowledgeSearchInputSchema } from "@/lib/repositories/knowledgeRetrievalRepository";
 
-type Port = Pick<KnowledgeRepository<PgQueryResultHKT>, "listCollections" | "createCollection" | "updateCollection" | "deleteCollection" | "listDocuments" | "getDocument" | "saveDocument" | "deleteDocument">;
+type Port = Pick<KnowledgeRepository<PgQueryResultHKT>, "listCollections" | "createCollection" | "updateCollection" | "deleteCollection" | "listDocuments" | "getDocument" | "saveDocument" | "deleteDocument" | "rebuildDocument">;
 const version = z.number().int().positive();
 export function createKnowledgeApi(repository: Port | (() => Port), retrieval?: Pick<ReturnType<typeof createKnowledgeRetrievalRepository>, "search"> | (() => Pick<ReturnType<typeof createKnowledgeRetrievalRepository>, "search">)) {
   return { async handle(request: Request, path: string[] = []) {
@@ -27,6 +27,7 @@ export function createKnowledgeApi(repository: Port | (() => Port), retrieval?: 
         if (!retrieval) throw new KnowledgeError("KNOWLEDGE_CONFLICT", "资料库检索暂不可用。");
         result = await (typeof retrieval === "function" ? retrieval() : retrieval).search(query);
       }
+      else if (path.length === 3 && path[0] === "documents" && path[2] === "rebuild" && method === "POST") result = await repo.rebuildDocument(z.uuid().parse(path[1]), z.object({ expectedVersion: version }).strict().parse(body).expectedVersion);
       else if (path.length === 0 && method === "GET") result = await repo.listCollections();
       else if (path.length === 0 && method === "POST") result = await repo.createCollection(collectionInputSchema.parse(body));
       else if (path[0] === "collections" && (path.length === 2 || (path.length === 3 && path[2] === "documents"))) {

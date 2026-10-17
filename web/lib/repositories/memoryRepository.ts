@@ -12,6 +12,8 @@ import * as schema from "@/lib/db/schema";
 import type { RetrievedMemory } from "@/lib/memory/memoryRetrieval";
 import { rankMemories } from "@/lib/memory/memoryRetrieval";
 import { MEMORY_DOMAIN_POLICIES, memoryModuleForConversationMode, type MemoryModuleId } from "@/lib/memory/domainPolicy";
+import { createMemoryControlRepository } from "./memoryControlRepository";
+import { controlFor } from "@/lib/memory/controls";
 import { LOCAL_USER_ID } from "@/lib/repositories/conversationRepository";
 
 export type UpdateMemoryInput = {
@@ -69,6 +71,8 @@ export class MemoryRepository<TQueryResult extends PgQueryResultHKT>
   async retrieve(query: string, now: Date, consumer: MemoryModuleId = "professional"): Promise<RetrievedMemory[]> {
     const policy = MEMORY_DOMAIN_POLICIES[consumer]?.personal;
     if (!policy || policy.maxItems === 0 || policy.maxEstimatedTokens === 0) return [];
+    const control = controlFor((await createMemoryControlRepository(this.database).get()).settings, consumer);
+    if (!control.enabled) return [];
     const active = await this.database
       .select()
       .from(memoryItems)
@@ -76,7 +80,7 @@ export class MemoryRepository<TQueryResult extends PgQueryResultHKT>
         and(
           eq(memoryItems.userId, LOCAL_USER_ID),
           inArray(memoryItems.kind, [...policy.kinds]),
-          policy.sensitive ? undefined : inArray(memoryItems.sensitivity, ["low", "personal"]),
+          policy.sensitive && control.allowSensitive ? undefined : inArray(memoryItems.sensitivity, ["low", "personal"]),
           or(isNull(memoryItems.validUntil), gt(memoryItems.validUntil, now)),
         ),
       )

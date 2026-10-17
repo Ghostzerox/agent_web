@@ -1,8 +1,8 @@
 import { GAME_PROMPT_VERSION, TASK_PROMPT_PROFILES } from "@/lib/ai/taskPromptProfiles";
 
 /** Audit data only; runtime generation uses the actual builders below. */
-export const PROMPT_BASELINE_VERSION = "r5.5/module-memory-v1";
-export const BASELINE_SOURCE_COMMIT = "641aeb78e23cf976a14859599ca2c0bb8da61e2c";
+export const PROMPT_BASELINE_VERSION = "r5.6/user-control-v1";
+export const BASELINE_SOURCE_COMMIT = "b2f973e20d1a4fcff77e371d79366f3eac0330ab";
 
 export const PROMPT_ENTRY_POINTS = [
   { id: "chat", source: "lib/api/modelApi.ts", builder: "lib/agent/promptBuilder.ts", versions: ["r3.2/mode-prompts-v1", "mode-registry/r3.2-v1", "persona-profile/r3.2-v1", "memory-context/v2", "web-search-context/v2"], transport: "chat", format: "Markdown + optional citations", context: "server Persona, confirmed relevant memory, selected branch, optional search", fallback: "visible error / cancel, no fabricated complete answer" },
@@ -58,6 +58,7 @@ export const PROMPT_SOURCE_FILES = [...new Set([
   "lib/knowledge/retrieval.ts", "lib/knowledge/citations.ts", "lib/repositories/knowledgeRetrievalRepository.ts", "lib/repositories/knowledgeRepository.ts",
   "lib/conversation/summary.ts", "lib/repositories/conversationSummaryRepository.ts",
   "lib/memory/moduleProfiles.ts",
+  "lib/memory/controls.ts", "lib/repositories/memoryControlRepository.ts", "lib/knowledge/sourceIndex.ts", "lib/knowledge/audit.ts",
 ])].sort();
 
 export const QUALITY_DIMENSIONS = ["task-completion", "actionability", "facts-and-citations", "mode-fit", "tool-honesty", "naturalness", "continuity"] as const;

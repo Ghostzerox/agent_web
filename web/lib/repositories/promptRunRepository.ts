@@ -20,6 +20,9 @@ import { knowledgeAudit, type KnowledgeRunContext } from "@/lib/knowledge/audit"
 import { assessMemorySourceRevision, type MemoryReadContext } from "@/lib/memory/sourceReference";
 import type { SummaryUse } from "@/lib/conversation/summary";
 import { createConversationSummaryRepository, summaryModelKey } from "./conversationSummaryRepository";
+import { createMemoryControlRepository } from "./memoryControlRepository";
+import { controlFor } from "@/lib/memory/controls";
+import { documentSourceHash, sourceSegments, fallbackChunkId } from "@/lib/knowledge/sourceIndex";
 
 export class PromptRunRepositoryError extends Error {
   constructor(
@@ -80,6 +83,10 @@ export class PromptRunRepository<
         );
       }
       const memoryConsumer = memoryModuleForConversationMode(conversation.mode);
+      if (usedMemories.length) {
+        const control = controlFor((await createMemoryControlRepository(transaction).get()).settings, memoryConsumer ?? "");
+        if (!control.enabled || (!control.allowSensitive && usedMemories.some((memory) => memory.sensitivity === "sensitive"))) throw new PromptRunRepositoryError("PROMPT_CONTEXT_CONFLICT", "记忆读取开关已变化，请重新生成上下文；尚未调用模型。");
+      }
       if (summary) await createConversationSummaryRepository(transaction).verifyUse(envelope.conversation.id, envelope.conversation.activeLeafId, summaryModelKey(envelope.provider), summary);
       if (usedMemories.length > 0 && (!memoryConsumer || MEMORY_DOMAIN_POLICIES[memoryConsumer].personal.maxItems === 0)) {
         throw new PromptRunRepositoryError("PROMPT_CONTEXT_CONFLICT", "Conversation mode no longer allows personal memory; refresh before retrying.");
@@ -91,6 +98,15 @@ export class PromptRunRepository<
         if (!policy.knowledge.maxItems || selected.length !== knowledge.collectionIds.length || selected.some((value) => !policy.collectionModules.includes(value.module)) || knowledge.result.hits.length > policy.knowledge.maxItems || knowledge.result.estimatedTokens > policy.knowledge.maxEstimatedTokens) throw new PromptRunRepositoryError("PROMPT_CONTEXT_CONFLICT", "所选资料范围或预算已变更，请重新选择。");
         const context: MemoryReadContext = { ownerId: LOCAL_USER_ID, consumer: memoryConsumer, collections: selected.map((value) => ({ module: value.module, collectionId: value.id })), datasets: [], conversation: null, game: null };
         for (const hit of knowledge.result.hits) {
+          if (knowledge.result.fallback === "source-text") {
+            const [root] = await transaction.select().from(knowledgeDocuments).where(and(eq(knowledgeDocuments.id, hit.documentId), eq(knowledgeDocuments.userId, LOCAL_USER_ID), eq(knowledgeDocuments.collectionId, hit.collectionId), eq(knowledgeDocuments.version, hit.version)));
+            const part = root ? sourceSegments(root.content).find((value) => fallbackChunkId(root.id, root.version, value.ordinal) === hit.chunkId) : null;
+            const offset = part ? hit.startLine - part.startLine : -1;
+            const excerpt = part && offset >= 0 ? Array.from(part.content.split("\n").slice(offset).join("\n")).slice(0, 500).join("") : "";
+            const endLine = part ? Math.min(part.endLine, hit.startLine + excerpt.split("\n").length - 1) : -1;
+            if (!selected.some((value) => value.id === hit.collectionId && value.module === hit.module) || !root || !part || root.contentHash !== hit.contentHash || root.title !== hit.title || part.heading !== hit.heading || documentSourceHash({ title: root.title, sourceKey: root.sourceKey, format: root.format, content: root.content, sourceUrl: root.sourceUrl, fileName: root.fileName }) !== root.contentHash || part.contentHash !== hit.chunkHash || !excerpt || excerpt !== hit.content || endLine !== hit.endLine) throw new PromptRunRepositoryError("PROMPT_CONTEXT_CONFLICT", "原文降级来源已变化，未调用模型，请重新检索。");
+            continue;
+          }
           const [live] = await transaction.select({ id: knowledgeDocuments.id, version: knowledgeDocuments.version, contentHash: knowledgeDocuments.contentHash, chunkHash: knowledgeChunks.contentHash, collectionId: knowledgeDocuments.collectionId }).from(knowledgeDocuments).innerJoin(knowledgeChunks, and(eq(knowledgeChunks.documentId, knowledgeDocuments.id), eq(knowledgeChunks.documentVersion, knowledgeDocuments.version))).where(and(eq(knowledgeDocuments.userId, LOCAL_USER_ID), eq(knowledgeDocuments.id, hit.documentId), eq(knowledgeChunks.id, hit.chunkId), eq(knowledgeDocuments.collectionId, hit.collectionId))).limit(1);
           const liveReference = live ? { ...hit.reference, ownerId: LOCAL_USER_ID, sourceId: live.id, revision: { version: live.version, contentHash: live.contentHash } } : null;
           if (!assessMemorySourceRevision(context, hit.reference, liveReference, new Date()).allowed || live?.chunkHash !== hit.chunkHash) throw new PromptRunRepositoryError("PROMPT_CONTEXT_CONFLICT", "资料已更正或删除，本次尚未调用模型，请重试。");

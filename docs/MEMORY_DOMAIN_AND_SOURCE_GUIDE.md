@@ -2,6 +2,8 @@
 
 > R5.5更新：本文件保留R5.1历史。当前策略为 `memory-domain/r5.5-v1`，专业5/500、陪伴4/400、反思4/450；模块排序/摘要与宫殿见 [宫殿指南](MEMORY_PALACE_GUIDE.md)。资料/查询见 [资料库指南](KNOWLEDGE_LIBRARY_GUIDE.md)、[检索指南](KNOWLEDGE_RETRIEVAL_GUIDE.md)，摘要/失效/费用见 [摘要指南](BRANCH_SUMMARY_GUIDE.md)。向量和独立工作流自动资料绑定仍待开发；下文旧版本/预算及“没有知识库/未有摘要/指标未测”是R5.1历史。合成集开发中查看过，不冒充冻结盲测。
 
+> R5.6已实现按模式长期/敏感读取开关（默认兼容旧行为），在检索和Run前校验；下文“敏感开关待开发”现为历史。范围导出、只读预演、重建/原文降级与验收见 [最新指南](MEMORY_CONTROL_AND_ACCEPTANCE_GUIDE.md)，不将关闭读取误称删除历史。
+
 - 日期：2026-10-16；状态：R5.1 已实现，R5.2–R5.6 待实施。
 - 策略版本：`memory-domain/r5.1-v1`。
 - 决策：[ADR-064](adr/ADR-064-memory-domain-source-and-incremental-migration.md)。验收：[R5.1 报告](reports/R5_1_REPORT.md)。

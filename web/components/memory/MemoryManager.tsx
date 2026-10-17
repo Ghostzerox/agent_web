@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   deleteMemory,
   listMemories,
@@ -56,12 +56,16 @@ export function MemoryManager() {
   const [status, setStatus] = useState<string | null>(null);
   const [showExpired, setShowExpired] = useState(false);
   const [query, setQuery] = useState("");
-  const [snapshotAt] = useState(() => Date.now());
-  useNavigationGuard(busyId !== null || items.some((item) => drafts[item.id] && JSON.stringify(drafts[item.id]) !== JSON.stringify(draftFor(item))));
+  const [snapshotAt, setSnapshotAt] = useState(() => Date.now());
+  const dirty = items.some((item) => drafts[item.id] && JSON.stringify(drafts[item.id]) !== JSON.stringify(draftFor(item)));
+  const dirtyRef = useRef(false);
+  useEffect(() => { dirtyRef.current = dirty; }, [dirty]);
+  useNavigationGuard(busyId !== null || dirty);
 
   const load = useCallback(async () => {
     try {
       const loaded = await listMemories();
+      setSnapshotAt(Date.now());
       setItems(loaded);
       setDrafts(Object.fromEntries(loaded.map((item) => [item.id, draftFor(item)])));
       setError(null);
@@ -87,7 +91,7 @@ export function MemoryManager() {
       .finally(() => {
         if (active) setLoading(false);
       });
-    const refresh = () => void load();
+    const refresh = () => { if (dirtyRef.current) { setStatus("其他记忆已变化，已保留编辑草稿；请核对后手动刷新。"); return; } void load(); };
     window.addEventListener("memory-items-changed", refresh);
     return () => {
       active = false;
@@ -128,7 +132,6 @@ export function MemoryManager() {
       setStatus("记忆已更新，下一次相关问题会立即使用新版本。");
     } catch (saveError) {
       setError(friendlyError(saveError));
-      await load();
     } finally {
       setBusyId(null);
     }
@@ -145,7 +148,6 @@ export function MemoryManager() {
       setStatus("记忆已删除，后续回答不会再使用它。");
     } catch (deleteError) {
       setError(friendlyError(deleteError));
-      await load();
     } finally {
       setBusyId(null);
     }
@@ -214,7 +216,8 @@ export function MemoryManager() {
           <h2 id="confirmed-memory-title" className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">已确认的长期记忆</h2>
           <p className="mt-1 text-xs leading-5 text-zinc-500">每次回答最多检索 5 条、约 500 Token；只发送与当前问题相关且未过期的记忆。</p>
         </div>
-        <div className="flex items-center gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <button type="button" className="rounded-lg border px-3 py-1.5 disabled:opacity-40" disabled={busyId !== null} onClick={() => { if (!dirty || window.confirm("刷新将放弃未保存的记忆正文草稿，继续？")) void load(); }}>刷新已确认记忆</button>
           {expiredCount > 0 && (
             <label className="flex items-center gap-1.5 text-zinc-500">
               <input type="checkbox" checked={showExpired} onChange={(event) => setShowExpired(event.target.checked)} />

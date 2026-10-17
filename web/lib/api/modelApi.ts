@@ -328,7 +328,7 @@ export function createModelApi(dependencies: ModelApiDependencies) {
                 model: config.model,
                 envelope,
                 retrieval: knowledge ? { ...retrieval, citations: retrieval.citations.map(({ snippet, ...citation }) => { void snippet; return { ...citation, snippet: "" }; }) } : retrieval,
-                ...(knowledge ? { knowledgeRetrieval: { status: knowledge.result.status, count: knowledge.result.hits.length, candidateCount: knowledge.result.candidateCount, estimatedTokens: knowledge.result.estimatedTokens, durationMs: knowledge.result.durationMs, version: knowledge.result.version } } : {}),
+                ...(knowledge ? { knowledgeRetrieval: { ...(knowledge.result.fallback ? { fallback: knowledge.result.fallback } : {}), status: knowledge.result.status, count: knowledge.result.hits.length, candidateCount: knowledge.result.candidateCount, estimatedTokens: knowledge.result.estimatedTokens, durationMs: knowledge.result.durationMs, version: knowledge.result.version } } : {}),
                 memoryRetrieval: {
                   count: usedMemories.length,
                   estimatedTokens: usedMemories.reduce(

@@ -6,6 +6,7 @@ import { knowledgeCollections as collections, knowledgeDocuments as documents, k
 import { LOCAL_USER_ID } from "./conversationRepository";
 import { collectionInputSchema, documentInputSchema, KNOWLEDGE_CHUNK_STRATEGY, normalizeDocument, splitDocument, type CollectionInput, type DocumentInput } from "@/lib/knowledge/documents";
 import { stableJson } from "@/lib/ai/stableJson";
+import { documentSourceHash, sourceSegments, isMissingDerivedIndex } from "@/lib/knowledge/sourceIndex";
 
 export class KnowledgeError extends Error {
   constructor(readonly code: "KNOWLEDGE_NOT_FOUND" | "KNOWLEDGE_CONFLICT" | "KNOWLEDGE_LIMIT", message: string) { super(message); this.name = "KnowledgeError"; }
@@ -50,8 +51,14 @@ export class KnowledgeRepository<T extends PgQueryResultHKT> {
   async getDocument(id: string, expectedVersion?: number) {
     const [document] = await this.database.select().from(documents).where(and(eq(documents.id, id), eq(documents.userId, owner), expectedVersion === undefined ? undefined : eq(documents.version, expectedVersion)));
     if (!document) throw new KnowledgeError("KNOWLEDGE_NOT_FOUND", "找不到该版本的知识文档，可能已更正或删除；不会用新版本冒充旧引用。");
-    const segments = await this.database.select().from(chunks).where(and(eq(chunks.documentId, id), eq(chunks.documentVersion, document.version))).orderBy(asc(chunks.ordinal));
-    return { ...document, chunks: segments };
+    try {
+      const segments = await this.database.select().from(chunks).where(and(eq(chunks.documentId, id), eq(chunks.documentVersion, document.version))).orderBy(asc(chunks.ordinal));
+      return { ...document, chunks: segments, indexUnavailable: false };
+    } catch (error) {
+      if (!isMissingDerivedIndex(error)) throw error;
+      // Source remains readable when its derived table is unavailable; do not invent persisted locators.
+      return { ...document, chunks: [], indexUnavailable: true };
+    }
   }
   async saveDocument(collectionId: string, raw: DocumentInput, edit?: { id: string; expectedVersion: number }) {
     const input = documentInputSchema.parse(raw);
@@ -90,6 +97,23 @@ export class KnowledgeRepository<T extends PgQueryResultHKT> {
       const [deleted] = await tx.delete(documents).where(and(eq(documents.id, id), eq(documents.userId, owner), eq(documents.version, expectedVersion))).returning({ id: documents.id });
       if (!deleted) throw new KnowledgeError("KNOWLEDGE_CONFLICT", "文档已变更，请刷新。");
       await tx.update(collections).set({ version: sql`${collections.version} + 1`, updatedAt: new Date() }).where(eq(collections.id, current.collectionId));
+    });
+  }
+  async rebuildDocument(id: string, expectedVersion: number) {
+    const current = await this.getDocument(id, expectedVersion);
+    return this.database.transaction(async (tx) => {
+      const [parent] = await tx.select().from(collections).where(and(eq(collections.id, current.collectionId), eq(collections.userId, owner))).for("update");
+      const [row] = await tx.select().from(documents).where(and(eq(documents.id, id), eq(documents.userId, owner), eq(documents.version, expectedVersion))).for("update");
+      if (!parent || !row) throw new KnowledgeError("KNOWLEDGE_CONFLICT", "来源已变化，请刷新后重建。");
+      const root = { title: row.title, sourceKey: row.sourceKey, format: row.format, content: row.content, sourceUrl: row.sourceUrl, fileName: row.fileName };
+      if (documentSourceHash(root) !== row.contentHash || row.chunkStrategy !== KNOWLEDGE_CHUNK_STRATEGY) throw new KnowledgeError("KNOWLEDGE_CONFLICT", "原文或策略不一致，请通过原文更正保存，不静默重写事实版本。");
+      const expected = sourceSegments(row.content); if (expected.length > 256) throw new KnowledgeError("KNOWLEDGE_LIMIT", "分段过多，请拆分原文。");
+      const stored = await tx.select().from(chunks).where(eq(chunks.documentId, id)).orderBy(asc(chunks.ordinal));
+      const intact = stored.length === expected.length && stored.every((part, n) => part.documentVersion === row.version && ["ordinal", "content", "contentHash", "startLine", "endLine", "heading"].every((key) => part[key as keyof typeof part] === expected[n][key as keyof typeof expected[number]]));
+      if (intact) return { documentId: id, version: row.version, rebuilt: false, chunks: expected.length };
+      await tx.delete(chunks).where(eq(chunks.documentId, id));
+      if (expected.length) await tx.insert(chunks).values(expected.map((part) => ({ ...part, documentId: id, documentVersion: row.version })));
+      return { documentId: id, version: row.version, rebuilt: true, chunks: expected.length };
     });
   }
 }

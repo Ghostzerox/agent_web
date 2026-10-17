@@ -11,6 +11,9 @@ import { createPromptRunRepository } from "@/lib/repositories/promptRunRepositor
 import { createModelApi } from "@/lib/api/modelApi";
 import { createPromptEnvelope } from "@/lib/ai/promptEnvelope";
 import type { ModelProvider } from "@/lib/ai/server/modelProvider";
+import { createKnowledgeRepository } from "@/lib/repositories/knowledgeRepository";
+import { createKnowledgeRetrievalRepository } from "@/lib/repositories/knowledgeRetrievalRepository";
+import { knowledgeCitations } from "@/lib/knowledge/retrieval";
 const config = { apiKey: "synthetic-not-real", baseUrl: "https://example.test", model: "mock" }; const key = summaryModelKey(config);
 const session = (db: Pick<PGlite, "query">): MigrationSession => ({ execute: async (query, args = []) => (await db.query<MigrationRow>(query, [...args])).rows });
 describe("R5.4 real SQL + mock Provider", () => {
@@ -27,6 +30,20 @@ describe("R5.4 real SQL + mock Provider", () => {
     return { conversation, rows, leaf, repo, payload, conversations };
   }
   async function approved() { const s = await setup(); const begun = await s.repo.begin(s.conversation.id, s.leaf, key); const draft = await s.repo.complete(begun.record, begun.sources, s.payload); const record = await s.repo.approve(s.conversation.id, s.leaf, draft.id, draft.version, key); return { ...s, record }; }
+  it("R5.6 invalidates summaries whose covered messages cite changed/deleted documents without erasing raw history", async () => {
+    const s = await setup(); const library = createKnowledgeRepository(db); const c = await library.createCollection({ title: "引用来源", module: "professional", description: "" });
+    const input = { title: "数学资料", sourceKey: "math", format: "text" as const, content: "矩阵乘法按行列计算。", sourceUrl: "", fileName: "" }; const doc = await library.saveDocument(c.id, input);
+    const found = await createKnowledgeRetrievalRepository(db).search({ consumer: "professional", collectionIds: [c.id], query: "矩阵乘法" });
+    await db.update(schema.messages).set({ citations: knowledgeCitations(found.hits) }).where(eq(schema.messages.id, s.rows[1].id));
+    const first = await s.repo.begin(s.conversation.id, s.leaf, key); const draft = await s.repo.complete(first.record, first.sources, s.payload); await s.repo.approve(s.conversation.id, s.leaf, draft.id, draft.version, key);
+    expect((await s.repo.inspect(s.conversation.id, s.leaf, key)).summary?.id).toBe(draft.id);
+    await library.saveDocument(c.id, { ...input, content: "更正后的矩阵说明。" }, { id: doc.id, expectedVersion: 1 });
+    expect((await s.repo.inspect(s.conversation.id, s.leaf, key)).summary).toBeNull();
+    expect((await s.conversations.getConversation(s.conversation.id))?.messages).toHaveLength(20);
+    const second = await s.repo.begin(s.conversation.id, s.leaf, key); expect(second.reused).toBe(false); expect(second.record.contextStamp).not.toBe(first.record.contextStamp);
+    const renewed = await s.repo.complete(second.record, second.sources, s.payload); await s.repo.approve(s.conversation.id, s.leaf, renewed.id, renewed.version, key);
+    await library.deleteDocument(doc.id, 2); expect((await s.repo.inspect(s.conversation.id, s.leaf, key)).summary).toBeNull();
+  });
   it("generates once, reviews before use and reuses the same coverage without recursion", async () => {
     const s = await setup(); const first = await s.repo.begin(s.conversation.id, s.leaf, key);
     await expect(s.repo.begin(s.conversation.id, s.leaf, key)).rejects.toThrow("正在生成");

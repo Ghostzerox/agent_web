@@ -1,0 +1,16 @@
+{
+  "phase": "R5.6",
+  "measuredOn": "2026-10-17",
+  "measurement": "local-Docker-HTTP-plus-PostgreSQL; first-in-session-not-OS-or-DB-cold; 25-repeated-queries-not-provider-prompt-cache",
+  "documents": 10,
+  "chunks": 100,
+  "queries": 26,
+  "httpMs": { "first": 45.46350000000001, "p50Warm": 33.25479999999993, "p95Warm": 38.7115 },
+  "serverMs": { "first": 41.28165900000022, "p50Warm": 29.597538999994867, "p95Warm": 34.845956999997725 },
+  "modelCalls": 0,
+  "embeddingCalls": 0,
+  "modelCostCny": 0,
+  "exportDocuments": 10,
+  "previewWrites": 0,
+  "noOpRebuild": true
+}

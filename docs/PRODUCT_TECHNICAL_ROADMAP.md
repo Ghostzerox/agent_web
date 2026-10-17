@@ -1825,9 +1825,9 @@ Phase 5.6 的编号保留，但不再作为 Phase 7/Phase 6 的前置条件。�
 |---|---|---|
 | R3 | 工程✅；人工语义签收🟡 | 80 离线样例/270 历史对照保持；2026-10-16 修复五项问题，39 次定点复测原始 38/39、引用适配离线回放 39/39，见 `reports/R3_4_FOLLOWUP.md` |
 | R4 | R4.1–R4.5 首期实现✅ | 九项共享工作台工具、任务/内容工具、学习材料/抽背/逐字差异、题库搜索、分支牌堆/随机表与辅助模块核对；见 `TOOLS_GUIDE.md`、`reports/R4_REPORT.md`，不宣称实现全部候选扩展 |
-| R5 | R5.1–R5.5首期已交付，R5.6待开发 | 分域/来源、资料库/词项RAG、审核分支摘要、模块预算/排序/摘要特化及引用型记忆宫殿/背书训练已实现；下一步综合控制/跨端验收，Embedding与独立工作流自动资料绑定保留 |
+| R5 | R5.1–R5.6工程首期已交付，真机/体验保留 | 分域/来源、词项RAG/审核摘要/宫殿、用户开关/范围导出/本地预演、按需分段重建与有界原文降级已实现；真实Web+Bundle同后端验收通过，学习真链未授权保留；Embedding/自动RAG等仍待后续 |
 
-2026-10-16已交付R3.4/R4首期及R5.1–R5.5首期。新增 `memory_palaces` 引用布局表（0031，当前32迁移）及 `/api/v1/memory-palaces/[[...path]]`：宫殿CRUD/来源目录/绑定校验/路线/逐字复习，均复用现有owner、来源与插件Gateway。模块预算/相关排序与服务端模式摘要特化见 [宫殿指南](MEMORY_PALACE_GUIDE.md)、[ADR-068](adr/ADR-068-module-memory-and-palace.md)、[报告](reports/R5_5_REPORT.md)。真实备份/隔离恢复/up/down及Web/APK检查通过；下一步R5.6用户控制与跨端综合验收。Embedding、独立工作流自动资料绑定和真实学习/陪伴/净收益/真机/发布验收保留。共享¥3累计上界¥0.173498566、余额¥2.826501434，R5.5本轮¥0。
+2026-10-17 R5.6新增 `memory_controls`（0032，当前33迁移），`/api/v1/memory-data/{controls,manifest,usage,export}`，资料 `POST /api/v1/knowledge/documents/:id/rebuild`。只读记忆包预演没有restore接口；最近请求仅返回上下文元数据，检索与Run校验服务端开关。按需重建/有界原文降级、资料根引用变更使摘要失效，原文/其他数据不被批量改写。见 [指南](MEMORY_CONTROL_AND_ACCEPTANCE_GUIDE.md)、[ADR-069](adr/ADR-069-memory-control-and-cross-client-acceptance.md)、[报告](reports/R5_6_REPORT.md)。备份恢复/迁移、Web+本地React同后端和APK检查通过；华为硬件与未授权的真实学习跨端保留，建议先签收再推进原发布主线。Embedding、独立工作流自动资料绑定、通用恢复写入及真实净收益仍待后续。共享¥3累计上界¥0.173498566、余额¥2.826501434，R5.6本轮¥0。
 
 ### Phase 8：作品集化（2 周）
 

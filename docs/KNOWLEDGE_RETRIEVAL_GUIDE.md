@@ -2,7 +2,7 @@
 
 日期：2026-10-16。首期词项 RAG 已接入；不是向量检索，也不是全部 R5 已完成。实现与测量见 [交付报告](reports/R5_3_REPORT.md)、[ADR-066](adr/ADR-066-scoped-knowledge-retrieval.md)。
 
-> R5.4审核摘要与R5.5模块/宫殿已交付，见 [摘要指南](BRANCH_SUMMARY_GUIDE.md)、[宫殿指南](MEMORY_PALACE_GUIDE.md)；本文件保留R5.3检索证据，下一步主线为R5.6。
+> R5.6工程首期已交付：读取开关、范围导出/只读预演、分段按需重建与有界原文降级/跨端验收见 [控制与验收指南](MEMORY_CONTROL_AND_ACCEPTANCE_GUIDE.md)。本文件保留R5.3检索证据；没有向量索引，不假称已测试向量服务离线降级。
 
 ## 使用方法
 

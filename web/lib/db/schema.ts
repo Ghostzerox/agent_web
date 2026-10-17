@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { MemoryControls } from "@/lib/memory/controls";
 import type { PalaceRoom } from "@/lib/memory/palace";
 import type { SourceRevision, SummaryPayload, SummarySettings, SummaryUse } from "@/lib/conversation/summary";
 import type { KnowledgeRetrievalAudit } from "@/lib/knowledge/audit";
@@ -1020,6 +1021,11 @@ export const memoryItems = pgTable(
     check("memory_items_version_positive", sql`${table.version} > 0`),
   ],
 );
+
+export const memoryControls = pgTable("memory_controls", {
+  userId: uuid("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+  settings: jsonb("settings").$type<MemoryControls>().notNull(), version: integer("version").notNull(),
+}, (table) => [check("memory_controls_settings_check", sql`jsonb_typeof(${table.settings}) = 'object'`), check("memory_controls_version_check", sql`${table.version} > 0`)]);
 
 export const memoryPalaces = pgTable("memory_palaces", {
   id: uuid("id").defaultRandom().primaryKey(), userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
