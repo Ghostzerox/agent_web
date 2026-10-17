@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import type { ActionDefinition, ActionEntry } from "@/lib/tasks/actions";
 import type { MemoryControls } from "@/lib/memory/controls";
 import type { PalaceRoom } from "@/lib/memory/palace";
 import type { SourceRevision, SummaryPayload, SummarySettings, SummaryUse } from "@/lib/conversation/summary";
@@ -31,6 +32,20 @@ import type {
 } from "@/lib/game/state";
 
 export const conversationMode = pgEnum("conversation_mode", CORE_MODE_IDS);
+
+export const actionItems = pgTable("action_items", {
+  id: uuid("id").defaultRandom().primaryKey(), userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  data: jsonb("data").$type<ActionDefinition>().notNull(), version: integer("version").notNull().default(1),
+}, (t) => [index("action_items_owner_idx").on(t.userId), check("action_item_version", sql`${t.version} > 0`), check("action_item_data", sql`jsonb_typeof(${t.data}) = 'object'`)]);
+export const actionEntries = pgTable("action_entries", {
+  itemId: uuid("item_id").notNull().references(() => actionItems.id, { onDelete: "cascade" }), day: text("day").notNull(),
+  data: jsonb("data").$type<ActionEntry>().notNull(),
+}, (t) => [uniqueIndex("action_entry_day_unique").on(t.itemId, t.day)]);
+export const actionEvents = pgTable("action_events", {
+  id: uuid("id").primaryKey(), userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  itemId: uuid("item_id").notNull().references(() => actionItems.id, { onDelete: "cascade" }),
+  fingerprint: text("fingerprint").notNull(), data: jsonb("data").notNull(), createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("action_events_owner_idx").on(t.userId)]);
 
 export const modelUsageCalls = pgTable("model_usage_calls", {
   id: uuid("id").primaryKey(),
