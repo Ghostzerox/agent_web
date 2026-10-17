@@ -61,7 +61,7 @@ export function applyWorldEffect(state: ExplorationState, template: WorldTemplat
     if (change.important) Object.assign(character, definition.revealedCard ?? {}, { category: "important" });
     if (change.relationship) {
       // A small helpful action must not downgrade previously earned trust.
-      if (character.relationship !== "trusted" || change.relationship === "trusted") character.relationship = change.relationship;
+      if (character.relationship !== "trusted" || change.relationship !== "friendly") character.relationship = change.relationship;
       character.relationshipReason = change.reason;
     }
     if (change.locationId) character.locationId = change.locationId;
@@ -107,7 +107,15 @@ export function projectWorld(state: ExplorationState, template = getWorldTemplat
       })) : [],
       points: location.id === state.locationId ? location.points.filter((point) => meets(state, point.requires)).map(({ id, name, description }) => ({ id, name, description })) : [],
     })), items: template.items.filter((item) => state.instances.some((instance) => instance.definitionId === item.id &&
-      (instance.owner === "player" || instance.owner === state.locationId || state.characters[instance.owner]?.locationId === state.locationId))), events: [], epics: [],
+      (instance.owner === "player" || instance.owner === state.locationId || state.characters[instance.owner]?.locationId === state.locationId))),
+    events: template.events.filter((event) => state.events[event.id] && state.discovered.includes(event.locationId)).map((event) => {
+      const runtime = state.events[event.id]; const stage = event.stages.find((entry) => entry.id === runtime.stage)!;
+      return { id: event.id, name: event.name, scope: event.scope, locationId: event.scope === "character" ? state.characters[event.actorIds[0]]?.locationId ?? event.locationId : event.locationId, actorIds: event.actorIds,
+        stage: stage.id, description: stage.description, settled: runtime.settled,
+        choices: stage.choices.map((choice) => ({ id: choice.id, label: choice.label, cost: choice.cost,
+          available: meets(state, choice.requires) && state.coins >= (choice.coinCost ?? 0)
+            && (!choice.consume || state.instances.some((item) => item.owner === "player" && item.definitionId === choice.consume && !item.equippedSlot)) })) };
+    }), epics: [],
   };
   return explorationStateSchema.parse(state);
 }
@@ -133,6 +141,7 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
   const state = explorationStateSchema.parse(structuredClone(raw));
   const template = getWorldTemplate(state.templateId, state.templateVersion);
   const location = template.locations.find((item) => item.id === state.locationId)!;
+  state.tick += action.action === "inspect" ? 0 : 1;
   if (action.action === "move") {
     const exit = location.exits.find((item) => item.to === action.targetId) ?? fail("只能沿当前位置的相邻路径移动。");
     if (!meets(state, exit.requires)) fail(exit.reason);
@@ -226,11 +235,38 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
       applyWorldEffect(state, template, promise.effect); state.flags[`fulfilled-${character.id}`] = true;
       character.unresolved = character.unresolved.filter((entry) => entry !== "缺失的镜片");
     }
+  } else if (action.action === "choose") {
+    const event = template.events.find((entry) => entry.id === action.eventId) ?? fail("事件不存在。");
+    const runtime = state.events[event.id] ?? fail("事件尚未触发。");
+    // Character events follow their involved character after a world consequence moves them.
+    const eventLocation = event.scope === "character" ? state.characters[event.actorIds[0]]?.locationId ?? event.locationId : event.locationId;
+    if (eventLocation !== state.locationId) fail("需要到事件发生地点交互。");
+    if (runtime.settled) fail("事件已经结束，不重复结算。");
+    const stage = event.stages.find((entry) => entry.id === runtime.stage)!;
+    const choice = stage.choices.find((entry) => entry.id === action.choiceId) ?? fail("当前阶段没有该选项。");
+    if (!meets(state, choice.requires)) fail(`尚不符合条件：${choice.cost}`);
+    if (state.coins < (choice.coinCost ?? 0)) fail("钱币不足，事件未结算。");
+    if (choice.consume) {
+      const item = state.instances.find((entry) => entry.definitionId === choice.consume && entry.owner === "player") ?? fail("所需物品不在背包。");
+      if (item.equippedSlot) fail("请先卸下剧情所需装备。");
+      item.quantity--; state.instances = state.instances.filter((entry) => entry.quantity > 0);
+    }
+    state.coins -= choice.coinCost ?? 0;
+    applyWorldEffect(state, template, choice.effect);
+    runtime.stage = choice.next;
+    runtime.settled = event.stages.find((entry) => entry.id === choice.next)?.terminal ?? fail("事件阶段无效。");
+    state.lastResult = choice.result;
   } else if (action.action === "wait") state.lastResult = "你停留片刻，观察潮水与路人的变化。";
   else fail("该动作尚未在当前世界开放。");
-  state.tick += action.action === "inspect" ? 0 : 1;
   state.history.push({ id: `${source}:${state.tick}`, tick: state.tick, kind: "fact", origin: "play", text: state.lastResult,
-    locationId: state.locationId, actorIds: "targetId" in action && state.characters[action.targetId] ? [action.targetId] : [], eventId: null, source });
+    locationId: state.locationId, actorIds: action.action === "choose" ? template.events.find((entry) => entry.id === action.eventId)!.actorIds : "targetId" in action && state.characters[action.targetId] ? [action.targetId] : [], eventId: action.action === "choose" ? action.eventId : null, source });
+  for (const event of template.events) {
+    if (!state.events[event.id] && meets(state, event.trigger)) {
+      state.events[event.id] = { stage: event.stages[0].id, settled: false };
+      state.history.push({ id: `${source}:event-${event.id}`, tick: state.tick, kind: "fact", origin: "play", text: `事件开启：${event.name}`,
+        locationId: event.locationId, actorIds: event.actorIds, eventId: event.id, source });
+    }
+  }
   // Full records remain in immutable turn snapshots; context keeps a bounded working chronology.
   state.history = state.history.slice(-200);
   return projectWorld(state, template);

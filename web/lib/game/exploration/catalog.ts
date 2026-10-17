@@ -12,7 +12,7 @@ export type WorldCondition = { flag?: string; learned?: string; item?: string; m
 export type WorldEffect = {
   flags?: string[]; discover?: string[]; reveal?: string[]; grant?: string[];
   coins?: number; condition?: string; removeCondition?: string;
-  character?: { id: string; relationship?: "friendly" | "trusted"; reason: string; important?: boolean; locationId?: string };
+  character?: { id: string; relationship?: "wary" | "neutral" | "friendly" | "trusted"; reason: string; important?: boolean; locationId?: string };
   progress?: ExplorationState["progress"];
 };
 export type WorldTemplate = {
@@ -75,13 +75,42 @@ export const fogHarbor: WorldTemplate = {
       negotiate: { requires: { flag: "oath-shared" }, effect: { flags: ["council-supported"], character: { id: "keeper", relationship: "trusted", reason: "双方依据旧盟约协商公共维护方案" } }, result: "林汐支持召开港民共议，但不会替你选择最终方案。" }, knowledge: ["harbor-founded"], trader: false },
     { card: { ...characterCard("archivist", "闻笙", "archive", "潮历档案员"), goals: ["核对传说与档案", "保护借阅记录"], personality: "认真而好奇，明确区分证据与传闻" },
       topics: [{ id: "map", label: "询问旧海图", answer: "闻笙请你亲自核对桌上的旧海图：传说不能代替史料，地图和碑文可以交叉验证。" }], knowledge: ["light-record", "well-legend"], trader: false },
-  ], events: [], epics: [],
+  ], events: [
+    { id: "lantern-accord", name: "旧灯的未来", scope: "local", locationId: "tower", actorIds: ["keeper", "merchant"], trigger: { flag: "beacon-seen" }, stages: [
+      { id: "waiting", description: "镜片缺失。可以准备维修，也可选择不参与。", terminal: false, choices: [
+        { id: "prepare", label: "准备维修", cost: "需要携带旧灯镜片；此步不消耗", requires: { item: "lens" }, next: "decision", effect: { flags: ["repair-ready"] }, result: "镜片与灯座匹配。现在要选择旧灯的维护方式，镜片仍在你手中。" },
+        { id: "leave", label: "暂不参与这段故事", cost: "无消耗，本分支保留这个决定", next: "left", effect: { flags: ["ending-left"] }, result: "你选择保留自由行旅，不承担旧灯的未来。世界仍可继续探索。" },
+      ] },
+      { id: "decision", description: "维修准备就绪，选择将改变灯塔的归属。证据与交涉可开启公共维护方案。", terminal: false, choices: [
+        { id: "public", label: "支持港民共同维护", cost: "需分享碑文并完成交涉；消耗镜片与 2 枚钱币，获答谢 4 枚", requires: { flag: "council-supported", item: "lens" }, coinCost: 2, consume: "lens", next: "public", effect: { flags: ["light-restored", "ending-public"], coins: 4, progress: { rating: "notable", tier: "keeper", level: 1 }, character: { id: "keeper", relationship: "trusted", reason: "你支持了经共同协商的公共航标方案", important: true, locationId: "harbor" } }, result: "旧灯重新照亮开放航道。港民共同维护，林汐到码头组织夜航；公共航标的约定写入新的港史。" },
+        { id: "guild", label: "接受商会独家维护", cost: "消耗镜片；商会支付 8 枚，部分船只需付通行费", requires: { item: "lens" }, consume: "lens", next: "guild", effect: { flags: ["light-restored", "ending-guild"], coins: 8, progress: { rating: "notable", tier: "mortal", level: 2 }, character: { id: "keeper", relationship: "wary", reason: "你选择独家经营，与林汐的开放航道原则冲突", important: true } }, result: "商会修复旧灯并设立收费航道。你得到报酬，但林汐明确表达异议；这不是与公共维护相同的结局。" },
+        { id: "leave", label: "退出这次决定", cost: "保留镜片，不领取报酬", next: "left", effect: { flags: ["ending-left"] }, result: "你不替港民作出决定，保留镜片并继续自己的旅程。" },
+      ] },
+      { id: "public", description: "公共航标已恢复。", terminal: true, choices: [] },
+      { id: "guild", description: "商会经营的收费航标已恢复。", terminal: true, choices: [] },
+      { id: "left", description: "你未参与旧灯方案，仍可继续探索。", terminal: true, choices: [] },
+    ] },
+    { id: "keeper-letter", name: "守灯人的来信", scope: "character", locationId: "tower", actorIds: ["keeper"], trigger: { flag: "promise-kept" }, stages: [
+      { id: "offered", description: "兑现承诺后，林汐愿意谈谈家里的旧事。", terminal: false, choices: [
+        { id: "listen", label: "听她讲述", cost: "无消耗，不替她决定未来", next: "shared", effect: { reveal: ["keeper-family"] }, result: "林汐分享了母亲留下的信：守望不是一个人承担所有责任。她开始考虑邀请港民参与维护。" },
+        { id: "decline", label: "尊重她的私人空间", cost: "无消耗，不会降低关系", next: "declined", effect: {}, result: "你没有追问，林汐感谢你尊重她的私人空间。" },
+      ] }, { id: "shared", description: "这次自愿交流成为林汐传记的一部分。", terminal: true, choices: [] },
+      { id: "declined", description: "私人往事仍保持私人。", terminal: true, choices: [] },
+    ] },
+    { id: "turning-tide", name: "暮潮与夜航", scope: "world", locationId: "harbor", actorIds: [], trigger: { minTick: 8 }, stages: [
+      { id: "rising", description: "游戏时间来到暮潮，港口准备迎接夜航。无需现实定时器或后台模型模拟。", terminal: false, choices: [
+        { id: "observe", label: "记录暮潮见闻", cost: "无消耗", next: "recorded", effect: { flags: ["tide-recorded"], reveal: ["harbor-opinion"] }, result: "你记录了暮潮。有人认为公共维护更公平，也有人担心费用不足；这些是观点，不是已经发生的事实。" },
+      ] }, { id: "recorded", description: "本次暮潮已记入区域年表。", terminal: true, choices: [] },
+    ] },
+  ], epics: [],
   lore: [
     { id: "harbor-founded", kind: "fact", origin: "setting", text: "潮历一百二十年，雾港由渡船工与守灯人共同建立。", locationId: "harbor", actorIds: [], eventId: null, source: "港务告示 / 地方年表" },
     { id: "well-legend", kind: "legend", origin: "setting", text: "据传退潮时旧井会映出通往失落祭坛的路；尚未证实。", locationId: "market", actorIds: [], eventId: null, source: "旧井浮雕旁的传说" },
     { id: "lens-rumor", kind: "rumor", origin: "setting", text: "阿岚推测旧灯镜片可能被冲到芦苇滩，尚未亲眼确认。", locationId: "market", actorIds: ["merchant"], eventId: null, source: "阿岚口述" },
     { id: "light-record", kind: "fact", origin: "setting", text: "档案中的旧海图显示祭坛路径；旧灯最初是向所有船只开放的公共航标。", locationId: "archive", actorIds: [], eventId: null, source: "潮历档案馆旧海图" },
     { id: "keeper-oath", kind: "fact", origin: "setting", text: "守望者盟约：航标不得按船籍收费封锁，由港民共议维护。", locationId: "shrine", actorIds: [], eventId: null, source: "祭坛碑文" },
+    { id: "keeper-family", kind: "fact", origin: "setting", text: "林汐自愿展示母亲留下的信，信中写道：守望不是一个人承担所有责任。", locationId: "tower", actorIds: ["keeper"], eventId: "keeper-letter", source: "林汐出示的家信" },
+    { id: "harbor-opinion", kind: "opinion", origin: "setting", text: "夜航准备中，有港民认为共管更公平，也有港民担心维护资金不足；这是不同立场。", locationId: "harbor", actorIds: [], eventId: "turning-tide", source: "暮潮时的港民讨论" },
   ],
 };
 

@@ -57,7 +57,7 @@ const locationView = z.object({
 const eventView = z.object({
   id: worldKey, name: text, scope: z.enum(["local", "character", "world"]),
   stage: worldKey, description: text, locationId: worldKey, actorIds: keys,
-  choices: z.array(z.object({ id: worldKey, label: text, cost: text }).strict()).max(10),
+  choices: z.array(z.object({ id: worldKey, label: text, cost: text, available: z.boolean() }).strict()).max(10),
   settled: z.boolean(),
 }).strict();
 const epicView = z.object({ id: worldKey, name: text, chapters: lines,
