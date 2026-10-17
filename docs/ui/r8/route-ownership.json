@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "stage": "R8.1",
+  "date": "2026-10-17",
+  "baselineCommit": "f257ffc",
+  "status": "design-only-runtime-unchanged",
+  "sources": [
+    "web/app",
+    "web/mobile/MobileApp.tsx",
+    "web/lib/platform/workspaceNavigation.ts",
+    "web/components/ui/AppShell.tsx",
+    "web/lib/tools/workbench.ts",
+    "web/lib/plugins/activityRegistry.ts",
+    "web/lib/knowledge/citations.ts",
+    "web/lib/memory/palace.ts"
+  ],
+  "globalEntries": [
+    { "owner": "chat", "label": "对话", "path": "/chat", "kind": "business" },
+    { "owner": "tasks", "label": "任务", "path": "/tasks", "kind": "business" },
+    { "owner": "study", "label": "学习", "path": "/study", "kind": "business" },
+    { "owner": "entertainment", "label": "娱乐", "path": "/entertainment", "kind": "business" },
+    { "owner": "content", "label": "内容", "path": "/content", "kind": "business" },
+    { "owner": "inbox", "label": "收件箱", "path": "/inbox", "kind": "shared" },
+    { "owner": "settings", "label": "设置", "path": "/settings", "kind": "shared" }
+  ],
+  "currentRoutes": [
+    { "path": "/", "owner": "shell", "section": "directory", "treatment": "keep-brand-home" },
+    { "path": "/api-key", "owner": "settings", "section": "model", "treatment": "keep-local-only" },
+    { "path": "/chat", "owner": "chat", "section": "conversation", "treatment": "keep-main-entry" },
+    { "path": "/entertainment", "owner": "entertainment", "section": "worlds", "treatment": "keep-main-entry" },
+    { "path": "/entertainment/quick-adventure", "owner": "entertainment", "section": "rule-pack", "treatment": "keep-local-only" },
+    { "path": "/inbox", "owner": "inbox", "section": "results", "treatment": "keep-main-entry" },
+    { "path": "/memory", "owner": "settings", "section": "personal-data", "treatment": "split-views-preserve-query-contracts" },
+    { "path": "/notifications", "owner": "settings", "section": "notifications", "treatment": "keep-local-only" },
+    { "path": "/persona", "owner": "settings", "section": "expression", "treatment": "keep-local-only" },
+    { "path": "/plugins", "owner": "settings", "section": "extensions", "treatment": "keep-local-only" },
+    { "path": "/proactivity", "owner": "settings", "section": "contact", "treatment": "keep-local-only" },
+    { "path": "/reading", "owner": "content", "section": "books", "treatment": "keep-local-only" },
+    { "path": "/reflection", "owner": "content", "section": "questions", "treatment": "keep-local-only" },
+    { "path": "/study", "owner": "study", "section": "activities", "treatment": "keep-main-entry" },
+    { "path": "/study/memorization", "owner": "study", "section": "memorization", "treatment": "keep-local-only" },
+    { "path": "/study/problem-solving", "owner": "study", "section": "problem-solving", "treatment": "keep-local-only" },
+    { "path": "/tasks", "owner": "tasks", "section": "schedule-and-actions", "treatment": "keep-main-entry" },
+    { "path": "/tools", "owner": "settings", "section": "advanced-tools", "treatment": "keep-advanced-compatibility" },
+    { "path": "/voice", "owner": "settings", "section": "voice", "treatment": "keep-local-only" }
+  ],
+  "plannedRoutes": [
+    { "path": "/content", "owner": "content", "section": "directory", "stage": "R8.2" },
+    { "path": "/settings", "owner": "settings", "section": "directory", "stage": "R8.2" },
+    { "path": "/study/memory-palaces", "owner": "study", "section": "learning-palaces", "stage": "R8.2" }
+  ],
+  "queryContracts": [
+    { "path": "/chat", "keys": ["mode", "session"], "owner": "chat", "implementation": "preserve-existing-mode-confirmation" },
+    { "path": "/tasks", "keys": ["task", "edit"], "owner": "tasks", "implementation": "preserve-existing-task-selection" },
+    { "path": "/entertainment", "keys": ["session"], "owner": "entertainment", "implementation": "preserve-existing-session-selection" },
+    { "path": "/memory", "keys": ["document", "version", "line"], "owner": "settings", "implementation": "preserve-exact-citation-url-and-version-checks" },
+    { "path": "/memory", "keys": ["palace"], "value": "learning", "owner": "study", "target": "/study/memory-palaces", "implementation": "R8.2-alias-no-automatic-redirect" },
+    { "path": "/memory", "keys": ["view"], "values": ["personal", "candidates", "knowledge", "navigation", "controls"], "owner": "settings", "implementation": "R8.2-new-view-selector" },
+    { "path": "/inbox", "keys": ["highlight"], "owner": "inbox", "implementation": "R8.2-gap-producer-exists-consumer-missing" }
+  ],
+  "toolOwnership": [
+    { "id": "reflection.action-draft", "owner": "tasks", "section": "action-drafts" },
+    { "id": "voice.preview", "owner": "settings", "section": "voice" },
+    { "id": "plugins.inspect", "owner": "settings", "section": "extensions" },
+    { "id": "maintenance.import-preview", "owner": "study", "section": "memorization-import" },
+    { "id": "tasks.preview", "owner": "tasks", "section": "schedule-preview" },
+    { "id": "content.sources", "owner": "content", "section": "briefing-sources" },
+    { "id": "reading.bibliography", "owner": "content", "section": "books" },
+    { "id": "professional.calculate", "owner": "chat", "section": "professional-tools" },
+    { "id": "professional.locate-evidence", "owner": "chat", "section": "evidence-tools" }
+  ],
+  "runtimeRegistry": false,
+  "deviceTesting": "deferred-see-DEVICE_ACCEPTANCE_BACKLOG.md",
+  "nextImplementation": "R6.1"
+}
