@@ -30,7 +30,7 @@ describe("R7.6 epics and bounded history retrieval", () => {
     expect(old.entries.some((entry) => entry.sourceTurnId === "early-turn")).toBe(true);
     const latest = searchWorldHistory(path, { parentTurnId: null, actorId: "keeper", kind: "fact", limit: 20 });
     expect(latest.entries.length).toBeLessThanOrEqual(20); expect(latest.omitted).toBeGreaterThan(0);
-    expect(JSON.stringify(latest.entries).length).toBeLessThan(6100);
+    expect(JSON.stringify(latest.entries).length).toBeLessThanOrEqual(6000);
     expect(searchWorldHistory([], { parentTurnId: null, q: "盟约" }).entries).toEqual([]);
   });
 });

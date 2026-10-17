@@ -1,7 +1,9 @@
 // Server-side template registry. Do not import this module from client components.
 import type { ExplorationState, WorldHistory, WorldCharacter } from "./contracts";
+import { ExplorationError } from "./contracts";
+import { validateWorldTemplate } from "./validateTemplate";
 
-const characterCard = (id: string, name: string, locationId: string, identity: string): WorldCharacter => ({
+export const characterCard = (id: string, name: string, locationId: string, identity: string): WorldCharacter => ({
   id, name, locationId, identity, category: "npc", controller: "ai", faction: "雾港居民",
   personality: "谨慎但愿意交流", speech: "用具体事情说话，不做全知解说", goals: ["维持自己的日常生活"],
   appearance: "穿着适合海港生活的衣物", backstory: "你尚未了解此人的过往。", values: ["信守约定"], boundaries: ["不会无条件满足陌生人的请求"],
@@ -16,7 +18,7 @@ export type WorldEffect = {
   progress?: ExplorationState["progress"];
 };
 export type WorldTemplate = {
-  id: string; version: string; world: string; region: string; start: string;
+  id: string; version: string; hostContract: "exploration.v1"; world: string; region: string; start: string;
   ranks: ExplorationState["view"]["ranks"]; slots: string[];
   locations: { id: string; name: string; description: string; exits: { to: string; requires?: WorldCondition; reason: string }[];
     points: { id: string; name: string; description: string; requires?: WorldCondition; effect: WorldEffect; result: string }[] }[];
@@ -36,7 +38,7 @@ export type WorldTemplate = {
 };
 
 export const fogHarbor: WorldTemplate = {
-  id: "fog-harbor", version: "1.0.0", world: "潮汐群岛", region: "雾港与旧灯岬", start: "harbor",
+  id: "fog-harbor", version: "1.0.0", hostContract: "exploration.v1", world: "潮汐群岛", region: "雾港与旧灯岬", start: "harbor",
   ranks: {
     rating: [{ id: "quiet", name: "平常", meaning: "常规活动，无需检定" }, { id: "notable", name: "非凡", meaning: "影响局部局势，不是成功概率" }, { id: "legendary", name: "传奇", meaning: "跨区域影响" }],
     quality: [{ id: "common", name: "普通", meaning: "实用制品" }, { id: "fine", name: "精良", meaning: "可靠的匠作" }, { id: "relic", name: "遗珍", meaning: "独特历史工艺" }],
@@ -122,7 +124,10 @@ export const fogHarbor: WorldTemplate = {
   ],
 };
 
+const WORLD_TEMPLATES: readonly WorldTemplate[] = [fogHarbor];
 export function getWorldTemplate(id: string, version = "1.0.0"): WorldTemplate {
-  if (id !== fogHarbor.id || version !== fogHarbor.version) throw new Error("世界模板版本不可用；存档已保留，请恢复对应模板版本。");
-  return fogHarbor;
+  const template = WORLD_TEMPLATES.find((entry) => entry.id === id && entry.version === version);
+  if (!template) throw new ExplorationError("世界模板版本不可用；存档已保留，请恢复对应模板版本。");
+  validateWorldTemplate(template);
+  return template;
 }

@@ -1,5 +1,5 @@
 import { explorationActionSchema, explorationStateSchema, ExplorationError, type ExplorationAction, type ExplorationState } from "./contracts";
-import { getWorldTemplate, type WorldCondition, type WorldEffect, type WorldTemplate } from "./catalog";
+import { characterCard, getWorldTemplate, type WorldCondition, type WorldEffect, type WorldTemplate } from "./catalog";
 
 export function meets(state: ExplorationState, condition?: WorldCondition): boolean {
   return !condition || ((!condition.flag || state.flags[condition.flag] === true)
@@ -84,6 +84,7 @@ export function projectWorld(state: ExplorationState, template = getWorldTemplat
     const character = state.characters[definition.card.id];
     if ((character?.locationId ?? definition.card.locationId) !== state.locationId) continue;
     const known = state.characters[definition.card.id] ??= structuredClone(definition.card);
+    if (definition.trader) state.wallets[definition.card.id] ??= 30;
     known.topics = definition.topics.filter((topic) => meets(state, topic.requires)).map(({ id, label }) => ({ id, label }));
     known.interactions = [
       ...(definition.promise && meets(state, definition.promise.requires) ? ["promise" as const] : []),
@@ -130,8 +131,8 @@ export function startWorld(templateId: string): ExplorationState {
   const template = getWorldTemplate(templateId);
   return projectWorld({ schemaVersion: 1, templateId, templateVersion: template.version, tick: 0,
     locationId: template.start, discovered: [template.start], visited: [template.start], learned: [], flags: {},
-    coins: 12, wallets: Object.fromEntries(template.characters.map((person) => [person.card.id, 30])), conditions: [], progress: { rating: template.ranks.rating[0].id, tier: template.ranks.tier[0].id, level: 1 },
-    instances: [], characters: {}, events: {}, history: [],
+    coins: 12, wallets: {}, conditions: [], progress: { rating: template.ranks.rating[0].id, tier: template.ranks.tier[0].id, level: 1 },
+    instances: [], characters: { player: { ...characterCard("player", "行旅者", template.start, "玩家"), category: "player", controller: "user", goals: ["自由探索"], personality: "由玩家决定", boundaries: ["不替玩家决定内心与关键行动"] } }, events: {}, history: [],
     view: { world: template.world, region: template.region, ranks: template.ranks, slots: template.slots, locations: [], items: [], events: [], epics: [] },
     lastResult: "你已抵达雾港。普通行动不掷骰，地图和人物会随探索逐步开放；可以自由探索，也可以不参与灯塔故事。",
   }, template);
@@ -152,6 +153,7 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
     const exit = location.exits.find((item) => item.to === action.targetId) ?? fail("只能沿当前位置的相邻路径移动。");
     if (!meets(state, exit.requires)) fail(exit.reason);
     state.locationId = exit.to; add(state.discovered, exit.to); add(state.visited, exit.to);
+    if (state.characters.player) state.characters.player.locationId = exit.to;
     const destination = template.locations.find((item) => item.id === exit.to)!;
     state.lastResult = `抵达${destination.name}。${destination.description}`;
   } else if (action.action === "inspect") {

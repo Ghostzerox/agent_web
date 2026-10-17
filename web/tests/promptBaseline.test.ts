@@ -3,7 +3,8 @@ import { resolve } from "node:path";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { comparePromptBaselines, promptBaselineCases, promptBaselineSnapshot, runPromptBaseline } from "@/evals/r3/promptBaseline";
 import { MODEL_CALLER_FILES, MODULE_PROMPT_COVERAGE, PROMPT_ENTRY_POINTS, AUXILIARY_PROMPT_ENTRY_POINTS, PROMPT_SOURCE_FILES } from "@/evals/r3/promptInventory";
-import baseline from "@/evals/r3/baseline-r6.json";
+import baseline from "@/evals/r3/baseline-r7.json";
+import actions from "@/evals/r3/baseline-r6.json";
 import palace from "@/evals/r3/baseline-r5.5.json";
 import summaries from "@/evals/r3/baseline-r5.4.json";
 import retrieval from "@/evals/r3/baseline-r5.3.json";
@@ -15,7 +16,7 @@ import previous from "@/evals/r3/baseline-r3.2.json";
 import original from "@/evals/r3/baseline.json";
 
 vi.mock("@/lib/db/client", () => ({ getDatabase: () => { throw new Error("Database access is forbidden in prompt baseline tests"); } }));
-const controlSources = ["lib/memory/controls.ts", "lib/repositories/memoryControlRepository.ts", "lib/knowledge/sourceIndex.ts", "lib/knowledge/audit.ts"];
+const controlSources = ["lib/memory/controls.ts", "lib/repositories/memoryControlRepository.ts", "lib/knowledge/sourceIndex.ts", "lib/knowledge/audit.ts", "lib/game/exploration/prompt.ts"];
 const summarySources = ["lib/api/conversationSummaryApi.ts", "lib/conversation/summary.ts", "lib/repositories/conversationSummaryRepository.ts", "lib/memory/moduleProfiles.ts", ...controlSources];
 const knowledgeSources = ["lib/knowledge/retrieval.ts", "lib/knowledge/citations.ts", "lib/repositories/knowledgeRetrievalRepository.ts", "lib/repositories/knowledgeRepository.ts", ...summarySources];
 let result: Awaited<ReturnType<typeof runPromptBaseline>>;
@@ -24,6 +25,12 @@ beforeAll(async () => { vi.stubGlobal("fetch", fetch); result = await runPromptB
 afterAll(() => vi.unstubAllGlobals());
 
 describe("R3 offline prompt baselines", () => {
+  it("preserves all R6 legacy fixtures and requests while tracking the new exploration prompt separately", () => {
+    const comparison = comparePromptBaselines(actions, promptBaselineSnapshot(result));
+    expect(comparison).toMatchObject({ addedCases: [], removedCases: [], changedExistingRequests: [], changedExistingFixtures: [] });
+    expect(comparison.addedSourceFiles).toEqual(["lib/game/exploration/prompt.ts"]);
+    expect(comparison.changedSourceFiles.sort()).toEqual(["lib/game/gameNarrativeGenerator.ts", "lib/game/gameTurnService.ts"]);
+  });
   it("preserves R5.5 requests while tracking controls and bounded source fallback", () => {
     const comparison = comparePromptBaselines(palace, promptBaselineSnapshot(result));
     expect(comparison).toMatchObject({ addedCases: [], removedCases: [], changedExistingRequests: [], changedExistingFixtures: [] });

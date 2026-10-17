@@ -2,6 +2,8 @@
 
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import { GameToolkitPanel } from "./GameToolkitPanel";
+import { ExplorationPanel } from "./ExplorationPanel";
+import type { ExplorationAction } from "@/lib/game/exploration/contracts";
 import type { GameToolRequest } from "@/lib/game/toolkit";
 import { MarkdownMessage } from "@/components/chat/MarkdownMessage";
 import {
@@ -18,6 +20,7 @@ import { GAME_DICE_SIDES, type GameDiceRequest } from "@/lib/game/dice";
 import type { GameState } from "@/lib/game/state";
 import { getFileExportAdapter } from "@/lib/platform/fileExport";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
+import { requestNavigationPermission } from "@/lib/platform/navigationGuard";
 
 type Props = {
   detail: GameSessionDetail;
@@ -198,7 +201,7 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
     onError(null);
     onNotice("AI 正在续写所选剧情线，请稍候…");
     try {
-      const diceRequests: GameDiceRequest[] = useDice
+      const diceRequests: GameDiceRequest[] = !selectedState.exploration && useDice
         ? [{
             count: diceCount,
             sides: diceSides,
@@ -206,7 +209,7 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
             purpose: dicePurpose.trim(),
           }]
         : [];
-      const checkRequest: GameRuleCheckRequest | null = useCheck
+      const checkRequest: GameRuleCheckRequest | null = !selectedState.exploration && useCheck
         ? {
             characterId: resolvedCheckCharacterId,
             attribute: resolvedCheckAttribute,
@@ -271,9 +274,42 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
     finally { setBusy(false); }
   };
 
+  const runExploration = async (explorationAction: ExplorationAction, playerContent?: string, narrate = false) => {
+    if (busy || detail.status !== "active") return false;
+    setBusy(true); onError(null); onNotice(narrate ? "AI 正在回应；只有这次明确发送会调用模型。" : null);
+    const key = JSON.stringify({ session: detail.id, parentTurnId, version: detail.version, explorationAction, playerContent, narrate });
+    if (toolRetry.current?.key !== key) toolRetry.current = { key, requestId: crypto.randomUUID() };
+    try {
+      const next = await createGameTurn(detail.id, playerContent ?? `探索动作：${explorationAction.action}`, parentTurnId, detail.version, [], null, { requestId: toolRetry.current.requestId, explorationAction, narrate });
+      onChange(next); setBranchSelection(null); toolRetry.current = null;
+      onNotice(narrate ? "人物对话与宿主结果已保存。" : "探索动作已保存；未调用 AI。");
+      return true;
+    } catch (error) { onError(message(error)); onNotice(null); await recoverConflict(error); return false; }
+    finally { setBusy(false); }
+  };
+
+  const explorationPreset = detail.worldRules.some((rule) => rule.startsWith("exploration.v1 / fog-harbor@"));
+  const selectBranch = (parentTurnId: string | null) => {
+    if (!busy && requestNavigationPermission()) setBranchSelection({ sessionId: detail.id, parentTurnId });
+  };
+  const openWorld = async () => {
+    if (busy || turns.length || !window.confirm("开启轻数值探索规则？地图、装备和事件由宿主验证，普通动作不调用 AI。")) return;
+    setBusy(true); onError(null);
+    try {
+      const active = detail.status === "setup" ? await updateGameSessionStatus(detail.id, "active", detail.version) : detail;
+      onChange(active);
+      const key = `open:${active.id}:${active.version}`;
+      if (toolRetry.current?.key !== key) toolRetry.current = { key, requestId: crypto.randomUUID() };
+      onChange(await createGameTurn(active.id, "开启雾港探索", null, active.version, [], null, { requestId: toolRetry.current.requestId, explorationAction: { action: "start", templateId: "fog-harbor" } }));
+      toolRetry.current = null; setBranchSelection(null); onNotice("雾港已开启。从地图选择行动，或到人物页自由交流。");
+    } catch (error) { onError(message(error)); await recoverConflict(error); }
+    finally { setBusy(false); }
+  };
+
   return (
     <section className="space-y-5 rounded-2xl border border-violet-200 bg-white p-5 shadow-sm sm:p-6 dark:border-violet-900 dark:bg-zinc-950">
-      <GameToolkitPanel toolkit={selectedState.toolkit} busy={busy} enabled={detail.status === "active"} onRun={runTool} onError={onError} />
+      {selectedState.exploration ? <ExplorationPanel key={detail.id} state={selectedState.exploration} sessionId={detail.id} parentTurnId={parentTurnId} disabled={busy || detail.status !== "active"} run={runExploration} onError={onError} /> : !explorationPreset && <GameToolkitPanel toolkit={selectedState.toolkit} busy={busy} enabled={detail.status === "active"} onRun={runTool} onError={onError} />}
+      {explorationPreset && turns.length === 0 && ["setup", "active"].includes(detail.status) && <div className="rounded-xl border border-violet-200 p-4"><p className="mb-3 text-sm text-zinc-500">这份新存档尚未开启探索；不会生成收费的 AI 开场。</p><button disabled={busy} onClick={() => void openWorld()} className="rounded-lg bg-violet-700 px-4 py-2 text-sm text-white disabled:opacity-50">开启雾港探索</button></div>}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold">剧情回合</h3>
@@ -284,7 +320,7 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
         <div className="flex flex-wrap gap-2">
           <button type="button" onClick={() => void startExport("json")} disabled={Boolean(exporting)} className="rounded-lg border border-zinc-300 px-3 py-2 text-xs font-medium disabled:opacity-50 dark:border-zinc-700">{exporting === "json" ? "导出中…" : "导出 JSON"}</button>
           <button type="button" onClick={() => void startExport("markdown")} disabled={Boolean(exporting)} className="rounded-lg border border-zinc-300 px-3 py-2 text-xs font-medium disabled:opacity-50 dark:border-zinc-700">{exporting === "markdown" ? "导出中…" : "导出 Markdown"}</button>
-          {detail.status === "setup" && <button type="button" onClick={() => void changeStatus("active")} disabled={busy} className="rounded-lg bg-violet-700 px-4 py-2 text-xs font-medium text-white disabled:opacity-50">开始故事</button>}
+          {detail.status === "setup" && !explorationPreset && <button type="button" onClick={() => void changeStatus("active")} disabled={busy} className="rounded-lg bg-violet-700 px-4 py-2 text-xs font-medium text-white disabled:opacity-50">开始故事</button>}
           {detail.status === "paused" && <button type="button" onClick={() => void changeStatus("active")} disabled={busy} className="rounded-lg bg-violet-700 px-4 py-2 text-xs font-medium text-white disabled:opacity-50">继续故事</button>}
           {detail.status === "active" && <button type="button" onClick={() => void changeStatus("paused")} disabled={busy} className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-medium text-amber-900 disabled:opacity-50 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100">暂停</button>}
         </div>
@@ -292,7 +328,7 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
 
       {turns.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-          {detail.status === "setup" ? "点击“开始故事”，然后写下角色的第一个行动。" : "写下第一个行动，AI 会根据世界和角色卡开启故事。"}
+          {explorationPreset ? "点击上方“开启雾港探索”进入地图，之后可自由行动。" : detail.status === "setup" ? "点击“开始故事”，然后写下角色的第一个行动。" : "写下第一个行动，AI 会根据世界和角色卡开启故事。"}
         </div>
       ) : (
         <div className="space-y-3" aria-label="剧情分支树">
@@ -303,12 +339,13 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
             return (
               <article
                 key={turn.id}
+                id={`game-turn-${turn.id}`}
                 className={`rounded-xl border p-4 ${selected ? "border-violet-500 bg-violet-50/70 dark:bg-violet-950/30" : "border-zinc-200 dark:border-zinc-800"}`}
                 style={{ marginLeft: `${Math.min(turnDepth(turn, byId), 4) * 0.75}rem` }}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
                   <span>回合 {index + 1} · {onCurrentPath ? "当前剧情线" : "历史分支"}{current ? " · 当前叶子" : ""}</span>
-                  <button type="button" onClick={() => setBranchSelection({ sessionId: detail.id, parentTurnId: turn.id })} disabled={busy || detail.status !== "active"} className="font-medium text-violet-700 disabled:opacity-40 dark:text-violet-300">{selected ? "已选为续写起点" : "从此处分支"}</button>
+                  <button type="button" onClick={() => selectBranch(turn.id)} disabled={busy || detail.status !== "active"} className="font-medium text-violet-700 disabled:opacity-40 dark:text-violet-300">{selected ? "已选为续写起点" : "从此处分支"}</button>
                 </div>
                 <div className="mt-3 rounded-lg bg-zinc-100 px-3 py-2 text-sm dark:bg-zinc-900"><span className="mr-2 font-semibold">你</span>{turn.playerContent}</div>
                 {(eventsByTurn.get(turn.id) ?? []).map((gameEvent) => (
@@ -322,9 +359,9 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
         </div>
       )}
 
-      {detail.status === "active" && (
+      {detail.status === "active" && (!explorationPreset || selectedState.exploration) && (
         <form onSubmit={submitTurn} className="space-y-3 border-t border-zinc-200 pt-5 dark:border-zinc-800">
-          <details className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-800 dark:bg-zinc-900/60">
+          {!selectedState.exploration && <details className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-800 dark:bg-zinc-900/60">
             <summary className="cursor-pointer font-medium">所选分支的结构化状态</summary>
             <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
               <p className="sm:col-span-2"><span className="font-semibold">场景：</span>{selectedState.scene || "未记录"}</p>
@@ -338,16 +375,17 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
                 <p key={id} className="ml-2">{character.name} · 生命 {character.health}/{character.maxHealth} · {Object.entries(character.attributes).map(([key, value]) => `${key} ${value >= 0 ? "+" : ""}${value}`).join("、") || "无数值属性"}{character.conditions.length > 0 ? ` · 状态：${character.conditions.join("、")}` : ""}</p>
               ))}</div>
             </div>
-          </details>
+          </details>}
           <div className="flex flex-wrap items-center justify-between gap-2">
             <label htmlFor="game-turn-content" className="text-sm font-semibold">你的行动或台词</label>
             <div className="flex items-center gap-3 text-xs text-zinc-500">
               <span>{parentTurnId ? `续写回合 ${turns.findIndex((turn) => turn.id === parentTurnId) + 1}` : "从故事开头创建分支"}</span>
-              {turns.length > 0 && <button type="button" onClick={() => setBranchSelection({ sessionId: detail.id, parentTurnId: null })} className="font-medium text-violet-700 dark:text-violet-300">从开头分支</button>}
+              {turns.length > 0 && <button type="button" onClick={() => selectBranch(turns.find((turn) => turn.stateSnapshot.exploration)?.id ?? null)} className="font-medium text-violet-700 dark:text-violet-300">从开头分支</button>}
             </div>
           </div>
           <textarea id="game-turn-content" required maxLength={8_000} rows={4} value={content} onChange={(event) => setContent(event.target.value)} className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-3 text-sm outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-950" placeholder="例如：我把旧信放在吧台上，问老板是否认识落款的人。" />
-          <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-900 dark:bg-amber-950/20">
+          {selectedState.exploration && <p className="text-xs text-zinc-500">自由叙事会调用 AI；确定的移动、物品和事件变化请用上方动作确认，不会由文案直接改动存档。</p>}
+          {!selectedState.exploration && <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-900 dark:bg-amber-950/20">
             <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
               <input type="checkbox" checked={useDice} onChange={(event) => {
                 setUseDice(event.target.checked);
@@ -416,8 +454,8 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
                 {(!resolvedCheckCharacterId || !resolvedCheckAttribute) && <p className="col-span-2 text-xs text-red-600 sm:col-span-3">请先在角色卡中配置至少一个数值属性。</p>}
               </div>
             )}
-          </div>
-          <button type="submit" disabled={busy || !content.trim() || (useDice && !dicePurpose.trim()) || (useCheck && (!resolvedCheckCharacterId || !resolvedCheckAttribute || !checkPurpose.trim()))} className="rounded-xl bg-violet-700 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">{busy ? "AI 正在续写…" : parentTurnId === activeLeafTurnId ? "发送并继续" : "创建新分支"}</button>
+          </div>}
+          <button type="submit" disabled={busy || !content.trim() || (!selectedState.exploration && ((useDice && !dicePurpose.trim()) || (useCheck && (!resolvedCheckCharacterId || !resolvedCheckAttribute || !checkPurpose.trim()))))} className="rounded-xl bg-violet-700 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">{busy ? "AI 正在续写…" : parentTurnId === activeLeafTurnId ? "发送并继续" : "创建新分支"}</button>
         </form>
       )}
     </section>

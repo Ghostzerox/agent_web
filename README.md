@@ -62,6 +62,8 @@ Database
 
 Phase 4 主动内容闭环、Phase 5.1–5.5、Phase 7.1–7.5 与 Phase 6.1–6.5 已完成：可信记忆、Persona、设备语音、有约束的主动问候和 Plugin API 1.0.0 已经落地。娱乐模式已有独立 GameSession、可分支模型回合、结构化角色/场景/物品、可信骰子、服务端检定、命名检查点与跨端导出，以及不修改核心回合循环的轻量冒险规则包。接下来评估移动发布/语音需求、完成保留的真机验收和作品集交付；Phase 5.6 安全评测保留为发布前封版。
 
+R3 / R4 / R5 / R6 / R7 工程首期已交付：提示词 / 工具与分域记忆增强、任务行动 / 打卡 / 目标、叙事探索首区（地图、装备、NPC / 承诺、事件 / 多结局 / 来源历史）。探索入口在娱乐模块内，普通动作不调用模型，旧 d20 存档保持原规则。用法见 [探索指南](docs/R7_EXPLORATION_GUIDE.md)，验收见 [R7报告](docs/reports/R7_REPORT.md)。当前下一步为 R8.2–R8.4 模块化导航 / UI 收尾，真机统一暂缓，不把自动回归当硬件或长期效果签收。
+
 当前优先级、修订后的交付顺序与防偏移规则见 `docs/PRODUCT_MAINLINE_GUIDE.md`。运行 `npm run eval:core` 可查看模式边界、专业回答与总回归分数；该分数只表示确定性契约没有回归，不代表模型事实正确率。
 
 Phase 1 已完成：Conversation/Message 服务端 Repository/API、模型 Streaming、显式旧数据导入和 Docker Compose 单用户自托管基线均已建立。Chat 现在以 PostgreSQL 为事实来源；浏览器旧会话只有在用户确认后才会导入，重复请求由导入收据去重。随后完成的 Credential Vault 支持从网页测试和保存自有 Key，服务端使用 AES-256-GCM 加密后写入 PostgreSQL。

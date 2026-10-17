@@ -12,6 +12,9 @@ import {
 } from "@/lib/db/migrations";
 import { createGameSessionRepository } from "@/lib/repositories/gameSessionRepository";
 import { createGameTurnService } from "@/lib/game/gameTurnService";
+import { PUBLIC_JOURNEY } from "./helpers/explorationJourney";
+import { EXPLORATION_PRESET } from "@/lib/game/exploration/preset";
+import { exportGameSessionArtifact } from "@/lib/game/gameSessionExport";
 
 function session(database: Pick<PGlite, "query">): MigrationSession {
   return {
@@ -74,6 +77,38 @@ describe("GameSessionRepository", () => {
 
   afterEach(async () => {
     await pglite.close();
+  });
+
+  it("plays the complete region, rejects AI patches atomically and exports compatible saves without hidden lore", async () => {
+    const now = new Date("2026-10-18T00:00:00Z");
+    let current = await repository.create({ ...EXPLORATION_PRESET, now });
+    current = await repository.updateStatus(current.id, { status: "active", expectedVersion: current.version, now });
+    let output = '{"narrative":"林汐望向灯座，问你想听哪一段往事。","statePatch":{}}';
+    let modelCalls = 0;
+    const service = createGameTurnService(repository, { generate: async (messages) => {
+      modelCalls++; expect(JSON.stringify(messages)).not.toContain("商人私密口令");
+      return { content: output, model: "mock-r7" };
+    } });
+    const run = async (action: import("@/lib/game/exploration/contracts").ExplorationAction, narrate = false) => {
+      current = await service.create(current.id, { content: "合成区域验收", parentTurnId: current.activeLeafTurnId, expectedVersion: current.version, diceRequests: [], checkRequest: null, requestId: crypto.randomUUID(), explorationAction: action, narrate });
+    };
+    await run({ action: "start", templateId: "fog-harbor" });
+    const earlyExport = exportGameSessionArtifact(current, "json", now).content;
+    expect(earlyExport).not.toContain("母亲留下的信"); expect(earlyExport).not.toContain("守望者盟约：");
+    for (const action of PUBLIC_JOURNEY) await run(action);
+    expect(modelCalls).toBe(0);
+    await run({ action: "talk", targetId: "keeper" }, true);
+    expect(modelCalls).toBe(1); expect(current.turns.at(-1)?.assistantContent).toContain("问你");
+    expect(current.turns.at(-1)?.stateSnapshot.exploration?.characters.keeper.memories.at(-1)).toContain("对话记录");
+    const version = current.version;
+    output = '{"narrative":"凭空获得金币","statePatch":{"adjustResources":{"gold":999}}}';
+    await expect(run({ action: "talk", targetId: "keeper" }, true)).rejects.toMatchObject({ code: "GAME_OUTPUT_INVALID" });
+    expect((await repository.get(current.id))?.version).toBe(version);
+    await run({ action: "choose", eventId: "lantern-accord", choiceId: "public" });
+    const exported = JSON.parse(exportGameSessionArtifact(current, "json", now).content);
+    expect(exported.schemaVersion).toBe(3); expect(exported.session.turns.at(-1).stateSnapshot.exploration.schemaVersion).toBe(1);
+    expect(exportGameSessionArtifact(current, "markdown", now).content).toContain("### 探索记录");
+    expect((await pglite.query<{ total: number }>("SELECT (SELECT count(*) FROM action_items)::int + (SELECT count(*) FROM scheduled_tasks)::int AS total")).rows[0].total).toBe(0);
   });
 
   it("persists exploration receipts, inventory and checkpoints atomically across branches", async () => {

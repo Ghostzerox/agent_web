@@ -1,7 +1,8 @@
 import { GAME_PROMPT_VERSION, TASK_PROMPT_PROFILES } from "@/lib/ai/taskPromptProfiles";
+import { EXPLORATION_PROMPT_VERSION } from "@/lib/game/exploration/prompt";
 
 /** Audit data only; runtime generation uses the actual builders below. */
-export const PROMPT_BASELINE_VERSION = "r6/actions-v1";
+export const PROMPT_BASELINE_VERSION = "r7/exploration-v1";
 export const BASELINE_SOURCE_COMMIT = "b2f973e20d1a4fcff77e371d79366f3eac0330ab";
 
 export const PROMPT_ENTRY_POINTS = [
@@ -13,7 +14,7 @@ export const PROMPT_ENTRY_POINTS = [
   { id: "memorization", source: "lib/plugins/hostCapabilityAdapters.ts", builder: "lib/plugins/hostCapabilityAdapters.ts", versions: [TASK_PROMPT_PROFILES["memorization"].version], transport: "agent", format: "JSON score/feedback/missedPoints", context: "plugin-authorized target, recitation, localScore; no global memory", fallback: "caller retains deterministic scoring if model evaluation unavailable" },
   { id: "problem-solving", source: "lib/plugins/hostCapabilityAdapters.ts", builder: "lib/plugins/hostCapabilityAdapters.ts", versions: [TASK_PROMPT_PROFILES["problem-solving"].version], transport: "agent", format: "validated JSON; hint/guided/check/explain; optional attached image", context: "problem, answer, prior attempt, bounded deterministic tool evidence", fallback: "invalid result or unsupported-image error; service retains existing record" },
   { id: "review-card", source: "lib/plugins/hostCapabilityAdapters.ts", builder: "lib/plugins/hostCapabilityAdapters.ts", versions: [TASK_PROMPT_PROFILES["review-card"].version], transport: "agent", format: "JSON front/back/reason/tags", context: "selected problem/attempt only", fallback: "invalid result error, no automatic task creation" },
-  { id: "game", source: "lib/game/gameTurnService.ts", builder: "lib/game/gameTurnService.ts", versions: [GAME_PROMPT_VERSION], transport: "game", format: "JSON narrative/statePatch; code validates and applies patch", context: "world/characters, selected branch, authoritative state/dice/check results", fallback: "invalid/empty/provider error, no partial turn committed" },
+{ id: "game", source: "lib/game/gameTurnService.ts", builder: "lib/game/gameTurnService.ts", versions: [GAME_PROMPT_VERSION, EXPLORATION_PROMPT_VERSION], transport: "game", format: "JSON narrative/statePatch; code validates and applies patch", context: "legacy world/characters and dice/check; exploration uses bounded public scene or one NPC knowledge scope", fallback: "invalid/empty/provider error, no partial turn committed" },
 ] as const;
 export type PromptEntryId = typeof PROMPT_ENTRY_POINTS[number]["id"];
 // Auxiliary paid operation, separately tested with source/branch/approval fixtures; not a new user mode.
@@ -30,7 +31,7 @@ export const MODULE_PROMPT_COVERAGE: ReadonlyArray<{ module: string; generation:
   { module: "Inbox/通知", generation: "no", entries: [], note: "stores/displays generated results; delivery does not generate another answer" },
   { module: "背书/记忆训练", generation: "mixed", entries: ["memorization"], note: "local scoring/storage/review schedule are deterministic" },
   { module: "解题/复习卡", generation: "yes", entries: ["problem-solving", "review-card"], note: "arithmetic verification itself is not generative" },
-  { module: "角色扮演/跑团/规则包", generation: "mixed", entries: ["chat", "game"], note: "legacy entertainment chat differs from isolated GameSession; setup/dice/checkpoints do not generate" },
+  { module: "角色扮演/跑团/规则包", generation: "mixed", entries: ["chat", "game"], note: "isolated GameSession; exploration setup/map/items/events/history are deterministic, only explicit NPC/free narration generates" },
   { module: "记忆管理/Persona", generation: "no", entries: [], note: "current candidate extraction/retrieval/configuration use rules, not LLM extraction" },
   { module: "语音", generation: "no", entries: [], note: "device speech synthesis reads text; no new text-generation call" },
   { module: "插件/Activity", generation: "mixed", entries: ["memorization", "problem-solving", "review-card"], note: "only three registered model operations; storage and task drafts do not generate" },
@@ -52,7 +53,7 @@ export const PROMPT_SOURCE_FILES = [...new Set([
   "lib/agent/promptBuilder.ts", "lib/agent/modeRegistry.ts", "lib/agent/policyLayer.ts",
   "lib/persona/personaProfile.ts", "lib/memory/memoryRetrieval.ts", "lib/search/webSearch.ts",
   "lib/proactivity/proactivityPolicy.ts", "lib/api/promptExportApi.ts",
-  "lib/tools/sourceTools.ts", "lib/game/toolkit.ts",
+  "lib/tools/sourceTools.ts", "lib/game/toolkit.ts", "lib/game/exploration/prompt.ts",
   "lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts",
   "lib/repositories/conversationRepository.ts",
   "lib/knowledge/retrieval.ts", "lib/knowledge/citations.ts", "lib/repositories/knowledgeRetrievalRepository.ts", "lib/repositories/knowledgeRepository.ts",

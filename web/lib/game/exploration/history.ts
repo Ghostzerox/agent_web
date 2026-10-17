@@ -29,10 +29,10 @@ export function searchWorldHistory(path: readonly { id: string; stateSnapshot: {
     && (!query.locationId || entry.locationId === query.locationId)
     && (!query.actorId || entry.actorIds.includes(query.actorId))
     && (!needle || `${entry.text} ${entry.source}`.toLocaleLowerCase().includes(needle))).sort((a, b) => b.tick - a.tick);
-  const selected: ExplorationHistoryResult["entries"] = []; let size = 0;
+  const selected: ExplorationHistoryResult["entries"] = []; let size = 2; // JSON array brackets
   for (const entry of matches) {
     if (selected.length >= query.limit) break;
-    const length = JSON.stringify(entry).length;
+    const length = JSON.stringify(entry).length + (selected.length ? 1 : 0);
     if (size + length > 6000) continue;
     selected.push(entry); size += length;
   }

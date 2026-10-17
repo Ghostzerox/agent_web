@@ -165,7 +165,7 @@ export function gamePromptMessages(
   events: readonly TrustedToolResult[] = [],
   currentTool?: NonNullable<GameState["toolkit"]>["lastResult"],
 ): ChatCompletionMessage[] {
-  if (currentState.exploration) return explorationMessages(currentState.exploration, playerContent, undefined, gameTurnPath(session.turns, parentTurnId));
+  if (currentState.exploration) return explorationMessages(currentState.exploration, playerContent, undefined, gameTurnPath(session.turns, parentTurnId), session.safetyBoundaries);
   const candidates = gameTurnPath(session.turns, parentTurnId).slice(-MAX_HISTORY_TURNS);
   const history: GameTurnRecord[] = [];
   let historyCharacters = 0;
@@ -230,16 +230,23 @@ export function createGameTurnService(
       }
 
       let currentState = stateAtParent(session, input.parentTurnId);
+      if (!input.parentTurnId && input.explorationAction?.action !== "start" && session.turns.some((turn) => turn.stateSnapshot.exploration)) throw new ExplorationError("探索世界请从已保存的世界起点开分支，不能在空根节点混用旧规则。");
       if (input.explorationAction) {
         if (input.explorationAction.action === "start" && session.turns.some((turn) => !turn.stateSnapshot.exploration)) throw new ExplorationError("旧故事不自动转换规则，请新建一局探索。");
         const exploration = applyExplorationAction(currentState.exploration, input.explorationAction, input.requestId!);
+        if (input.explorationAction.action === "start") {
+          const player = session.characters.find((character) => character.controller === "user");
+          if (player) Object.assign(exploration.characters.player, { name: player.name, identity: player.role,
+            backstory: player.description.slice(0, 600), personality: player.personality.slice(0, 600) || "由玩家决定",
+            goals: player.goals, boundaries: player.boundaries });
+        }
         exploration.receipt = { requestId: input.requestId!, fingerprint: fingerprint! };
         currentState = { ...currentState, exploration, scene: exploration.view.locations.find((location) => location.id === exploration.locationId)!.name };
         let assistantContent = exploration.lastResult;
         let model = "host-exploration/v1";
         if (input.narrate) {
           const targetId = "targetId" in input.explorationAction ? input.explorationAction.targetId : undefined;
-          const generated = await generator.generate(explorationMessages(exploration, input.content, targetId), signal);
+          const generated = await generator.generate(explorationMessages(exploration, input.content, targetId, [], session.safetyBoundaries), signal);
           const output = parseGameModelTurn(generated.content);
           if (Object.keys(output.statePatch).length) throw new GameStateValidationError("GAME_OUTPUT_INVALID", "AI 不能改写探索动作的确定性结算；本回合未保存。");
           assistantContent = `${exploration.lastResult}\n\n---\n\n${output.narrative}`;
