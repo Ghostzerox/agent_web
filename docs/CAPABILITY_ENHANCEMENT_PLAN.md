@@ -6,6 +6,8 @@
 - 目的：让每种模式更会完成自己的任务，并通过真实工具和可追溯记忆提升连续性，不另建通用 Agent 框架。
 - 承接：R1 成本观测/预算、R2 共享 UI、Core Prompt/搜索/Verifier、Phase 5 记忆、Phase 6 GameSession、Phase 7 Plugin API v1。
 
+2026-10-17 新增后续 R6 任务深化、R7 大世界探索与 R8 模块化 UI，详见 [专项规划](TASK_WORLD_AND_MODULE_UI_PLAN.md)。它们是新增待开发阶段，不是 R3–R5 已交付能力；复用工具与记忆边界，后续实际排序以主线为准。
+
 ## 1. 基线与本轮边界
 
 代码检查显示已有：

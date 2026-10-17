@@ -2,6 +2,8 @@
 
 状态：Phase 6.5 已完成；第一方规则包使用已冻结的 Plugin API `1.0.0`。
 
+后续 R7 大世界探索已于2026-10-17加入 [专项规划](TASK_WORLD_AND_MODULE_UI_PLAN.md)，地图、装备 / 位阶、重要角色与事件 / 历史尚待开发。它将演进严格状态与规则包兼容声明，不能只改 Prompt 就让当前模板支持新系统；旧 d20 规则保留，真机检查继续暂缓合并。
+
 ## 1. 用户可用的功能
 
 首个插件 `entertainment.quick-adventure` 提供 `/entertainment/quick-adventure`，Web 与本地 Capacitor APK 共用同一 React Activity。
