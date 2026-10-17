@@ -19,7 +19,8 @@ export function localReminderFromTask(
   if (task.kind !== "reminder" || task.status !== "active" || !task.nextRunAt) {
     return null;
   }
-  const scheduledAt = new Date(task.nextRunAt);
+  if (task.localActionReminder?.nextRunAt === null) return null;
+  const scheduledAt = new Date(task.localActionReminder?.nextRunAt ?? task.nextRunAt);
   if (Number.isNaN(scheduledAt.getTime())) {
     throw new Error(`任务 ${task.id} 的下次执行时间无效`);
   }
@@ -52,12 +53,12 @@ export function localReminderFromTask(
 
   return {
     taskId: task.id,
-    occurrenceId: `${task.id}:${task.version}:${task.nextRunAt}`,
+    occurrenceId: `${task.id}:${task.version}:${task.nextRunAt}${task.localActionReminder ? `:action:${task.localActionReminder.version}:${task.localActionReminder.nextRunAt}` : ""}`,
     title: "学习提醒",
     body: task.title,
     scheduledAt: scheduledAt.toISOString(),
     deepLink: `/tasks?task=${encodeURIComponent(task.id)}`,
-    recurrence,
+    recurrence: task.localActionReminder ? undefined : recurrence,
   };
 }
 

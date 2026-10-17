@@ -166,10 +166,11 @@ describe("R5.5 memory palace and authorized learning loop", () => {
   });
   it("rolls only the new layout migration back and up, preserving source data", async () => {
     await room(); const m = await memory(); const migrations = await loadMigrations();
+    expect(await rollbackDatabase(migrationsDb(pg), migrations)).toBe("0033_task_actions.sql");
     expect(await rollbackDatabase(migrationsDb(pg), migrations)).toBe("0032_memory_controls.sql");
     expect(await rollbackDatabase(migrationsDb(pg), migrations)).toBe("0031_memory_palaces.sql");
     expect((await db.select().from(schema.memoryItems))[0].id).toBe(m.id);
-    expect(await migrateDatabase(migrationsDb(pg), migrations)).toEqual(["0031_memory_palaces.sql", "0032_memory_controls.sql"]);
+    expect(await migrateDatabase(migrationsDb(pg), migrations)).toEqual(["0031_memory_palaces.sql", "0032_memory_controls.sql", "0033_task_actions.sql"]);
     expect(await repo.list()).toEqual([]);
   });
 });

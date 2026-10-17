@@ -5,6 +5,7 @@ export function businessDay(now = new Date()): string { return new Date(now.getT
 export function shiftDay(day: string, amount: number): string { return new Date(Date.parse(`${day}T00:00:00Z`) + amount * 86400000).toISOString().slice(0, 10); }
 export function weekday(day: string): number { return new Date(`${day}T00:00:00Z`).getUTCDay() || 7; }
 export function weekStart(day: string): string { return shiftDay(day, 1 - weekday(day)); }
+export function nextRuleDay(last: string, today: string, weekly: boolean): string { const next=shiftDay(last>today?last:today,1); return weekly?shiftDay(next,(8-weekday(next))%7):next; }
 export const daySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((s) => { const n = new Date(`${s}T00:00:00Z`); return Number.isFinite(n.getTime()) && n.toISOString().slice(0, 10) === s; }, "日期无效");
 export const habitRuleSchema = z.object({
   effectiveFrom: daySchema, cadence: z.enum(["daily", "weekdays", "weekly-count"]),
@@ -38,6 +39,7 @@ export function ruleFor(item: ActionItem, day: string): HabitRule | null { retur
 export function isPlanned(item: ActionItem, day: string, rule = ruleFor(item, day)): boolean {
   return item.data.kind === "habit" && day >= item.data.startsOn && Boolean(rule && !rule.paused && (rule.cadence !== "weekdays" || rule.weekdays.includes(weekday(day))));
 }
-export function todoState(item: ActionItem, today: string): string {
-  return item.data.status !== "active" ? item.data.status : item.data.completedOn ? "done" : item.data.dueOn && item.data.dueOn < today ? "overdue" : "pending";
+export function todoState(item: ActionItem, today: string, entries: ActionEntry[] = []): string {
+  const todayEntry=entries.find((e)=>e.itemId===item.id&&e.day===today);
+  return item.data.status !== "active" ? item.data.status : item.data.completedOn ? "done" : todayEntry && ["skipped","excused"].includes(todayEntry.state) ? "skipped" : item.data.dueOn && item.data.dueOn < today ? "overdue" : "pending";
 }

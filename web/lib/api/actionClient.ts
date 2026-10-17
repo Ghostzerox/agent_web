@@ -8,5 +8,6 @@ async function request<T>(path: string, command?: ActionCommand): Promise<T> {
 }
 export const actionClient = {
   load: (from: string, to: string) => request<ActionSnapshot>(`/api/v1/actions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`),
+  export: (from: string, to: string) => request<unknown>(`/api/v1/actions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&export=1`),
   mutate: (command: ActionCommand) => request<ActionItem>("/api/v1/actions", command),
 };

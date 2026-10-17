@@ -1,7 +1,7 @@
 import { GAME_PROMPT_VERSION, TASK_PROMPT_PROFILES } from "@/lib/ai/taskPromptProfiles";
 
 /** Audit data only; runtime generation uses the actual builders below. */
-export const PROMPT_BASELINE_VERSION = "r5.6/user-control-v1";
+export const PROMPT_BASELINE_VERSION = "r6/actions-v1";
 export const BASELINE_SOURCE_COMMIT = "b2f973e20d1a4fcff77e371d79366f3eac0330ab";
 
 export const PROMPT_ENTRY_POINTS = [

@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, lt, lte } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { LOCAL_USER_ID } from "./conversationRepository";
-import { ActionError, actionCommandSchema, actionDefinitionSchema, businessDay, shiftDay, ruleFor, isPlanned, type ActionItem, type ActionEntry, type ActionSnapshot, type ActionCommand } from "@/lib/tasks/actions";
+import { ActionError, actionCommandSchema, actionDefinitionSchema, businessDay, shiftDay, weekday, ruleFor, isPlanned, type ActionItem, type ActionEntry, type ActionSnapshot, type ActionCommand } from "@/lib/tasks/actions";
 
 export function createActionRepository<T extends PgQueryResultHKT>(db: PgDatabase<T, typeof schema>) {
   const owned = eq(schema.actionItems.userId, LOCAL_USER_ID);
@@ -14,12 +14,23 @@ export function createActionRepository<T extends PgQueryResultHKT>(db: PgDatabas
       await tx.select().from(schema.users).where(eq(schema.users.id, LOCAL_USER_ID)).for("update");
       const items = await tx.select({ id: schema.actionItems.id, version: schema.actionItems.version, data: schema.actionItems.data }).from(schema.actionItems).where(owned).limit(1001);
       const entries = await tx.select({ data: schema.actionEntries.data }).from(schema.actionEntries).innerJoin(schema.actionItems, eq(schema.actionEntries.itemId, schema.actionItems.id)).where(and(owned, gte(schema.actionEntries.day, from), lte(schema.actionEntries.day, to))).limit(20001);
-      if (items.length > 1000 || entries.length > 20000) throw new ActionError("数据过多，请缩小日期范围或归档后分批处理。", 413);
+      if (items.length > 1000 || entries.length > 20000) throw new ActionError("数据过多，请缩小日期范围；事项超限需先导出并单独维护，不会静默丢弃。", 413);
       return { today: businessDay(now), items, entries: entries.map((e) => e.data) };
     });
   }
   return {
     read,
+    async export(from: string, to: string, now=new Date()) {
+      return db.transaction(async (tx) => {
+        const repo = createActionRepository(tx);
+        const snapshot = await repo.read(from,to,now);
+        const events = await tx.select({ id:schema.actionEvents.id, itemId:schema.actionEvents.itemId, data:schema.actionEvents.data, createdAt:schema.actionEvents.createdAt }).from(schema.actionEvents).where(and(eq(schema.actionEvents.userId,LOCAL_USER_ID),gte(schema.actionEvents.createdAt,new Date(`${from}T00:00:00+08:00`)),lt(schema.actionEvents.createdAt,new Date(`${shiftDay(to,1)}T00:00:00+08:00`)))).limit(5001);
+        if(events.length>5000) throw new ActionError("操作历史过多，请缩小导出时间范围。",413);
+        const file={format:"ai-study-companion.actions",schemaVersion:1,exportedAt:now.toISOString(),timezone:"Asia/Shanghai",from,to,...snapshot,events};
+        if(new TextEncoder().encode(JSON.stringify(file)).length>4*1024*1024) throw new ActionError("导出超过4MB，请缩小范围；未静默截断。",413);
+        return file;
+      });
+    },
     async mutate(raw: ActionCommand, now = new Date()): Promise<ActionItem> {
       const input = actionCommandSchema.parse(raw), today = businessDay(now);
       const fingerprint = createHash("sha256").update(JSON.stringify(input)).digest("hex");
@@ -51,7 +62,7 @@ export function createActionRepository<T extends PgQueryResultHKT>(db: PgDatabas
           if (current.version !== input.expectedVersion) throw new ActionError("另一端已更新，草稿保留；请刷新后核对并重试。");
           const data = structuredClone(current.data);
           if (input.operation === "update") {
-            await validateGoal(input.goalId);
+            if (input.goalId !== data.goalId) await validateGoal(input.goalId);
             if (input.goalId === current.id || (data.kind === "goal" && input.goalId)) throw new ActionError("目标不能嵌套或关联自己。", 400);
             if (input.dueOn && input.dueOn < data.startsOn) throw new ActionError("截止日不能早于开始日。", 400);
             if (data.kind === "habit" && data.status !== input.status) {
@@ -82,6 +93,8 @@ export function createActionRepository<T extends PgQueryResultHKT>(db: PgDatabas
           } else if (input.operation === "rule") {
             if (data.kind !== "habit" || input.rule.effectiveFrom <= today || input.rule.effectiveFrom < data.startsOn || data.rules.length >= 400) throw new ActionError("规则只允许从未来日期生效；历史不被重算，最多400个版本。", 400);
             if (input.rule.effectiveFrom <= data.rules.at(-1)!.effectiveFrom) throw new ActionError("新规则必须晚于最后一个规则版本生效。", 400);
+            if (input.rule.paused !== (data.status !== "active")) throw new ActionError("规则启停请使用习惯暂停/恢复操作，不能与当前状态矛盾。",400);
+            if ((input.rule.cadence === "weekly-count" || data.rules.at(-1)!.cadence === "weekly-count") && weekday(input.rule.effectiveFrom)!==1) throw new ActionError("涉及每周N天的目标切换或调整须从周一生效，避免同一周混用两个目标。",400);
             data.rules.push(input.rule);
           } else {
             if (data.kind === "goal") throw new ActionError("请为目标的具体行动绑定提醒。", 400);

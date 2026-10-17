@@ -12,6 +12,7 @@ import type {
   CompletedReminderRun,
 } from "@/lib/repositories/inboxRepository";
 import type { TaskRunRecord } from "@/lib/db/schema";
+import { ActionReminderSuppressed } from "@/lib/tasks/actionReminders";
 import {
   AgentPromptGenerationError,
   type AgentPromptGeneratorPort,
@@ -249,6 +250,12 @@ async function executeClaim(
       });
       return "completed";
     } catch (error) {
+      if (error instanceof ActionReminderSuppressed) {
+        try {
+          await dependencies.scheduler.finishRun({runId:running.id, workerId:options.workerId, expectedAttempt:running.attempt, now:(dependencies.now ?? (()=>new Date()))(), outcome:{status:"skipped",resultSummary:"Reminder skipped: linked action completed, paused, skipped, excused or outside its plan."}});
+          return "skipped";
+        } catch (failure) { dependencies.onRunDeferred?.(running.id,failure); return "deferred"; }
+      }
       dependencies.onRunDeferred?.(running.id, error);
       return "deferred";
     }

@@ -42,5 +42,5 @@ test("edits reflection quality controls on mobile", async ({ page }) => {
 
   await expect(page.getByRole("status")).toContainText("下一次生成立即生效");
   await expect(page.getByLabel("当前目标")).toHaveValue("完成作品集\n稳定学习节奏");
-  await expect(page.getByRole("link", { name: "创建思考问题任务" })).toHaveAttribute("href", "/tasks");
+  await expect(page.getByRole("link", { name: "创建思考问题任务" })).toHaveAttribute("href", "/tasks?section=scheduled");
 });

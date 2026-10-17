@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { comparePromptBaselines, promptBaselineCases, promptBaselineSnapshot, runPromptBaseline } from "@/evals/r3/promptBaseline";
 import { MODEL_CALLER_FILES, MODULE_PROMPT_COVERAGE, PROMPT_ENTRY_POINTS, AUXILIARY_PROMPT_ENTRY_POINTS, PROMPT_SOURCE_FILES } from "@/evals/r3/promptInventory";
-import baseline from "@/evals/r3/baseline-r5.6.json";
+import baseline from "@/evals/r3/baseline-r6.json";
 import palace from "@/evals/r3/baseline-r5.5.json";
 import summaries from "@/evals/r3/baseline-r5.4.json";
 import retrieval from "@/evals/r3/baseline-r5.3.json";

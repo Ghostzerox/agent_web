@@ -6,6 +6,10 @@ import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import { HabitPanel } from "./HabitPanel";
 import { ActionInsights } from "./ActionInsights";
 import { GoalPanel } from "./GoalPanel";
+import { ActionReminderPanel } from "./ActionReminderPanel";
+import { getCapacitorLocalNotificationAdapter } from "@/lib/platform/capacitorLocalNotifications";
+import { syncActionNotifications } from "@/lib/notifications/actionNotificationSync";
+import { listTasks } from "@/lib/api/taskClient";
 
 type ActionDraft = { [K in ActionCommand["operation"]]: Omit<Extract<ActionCommand, { operation: K }>, "mutationId"> }[ActionCommand["operation"]];
 const field = "min-h-11 rounded-lg border border-[var(--workspace-border)] bg-transparent px-3 py-2 text-sm";
@@ -35,6 +39,9 @@ export function ActionBoard() {
       if ((command.operation === "create" && command.data.kind === "todo") || (command.operation === "update" && editing?.id === command.id)) { setTitle(""); setNote(""); setDue(""); setEditing(null); } setKeys((current) => Object.fromEntries(Object.entries(current).filter(([key]) => key !== signature)));
       try { setSnapshot(await actionClient.load(shiftDay(today, -365), today)); }
       catch { setError("操作已保存，但列表刷新失败；请联网后刷新核对。"); }
+      const adapter=getCapacitorLocalNotificationAdapter();
+      const affected=[saved.data.linkedTaskId, snapshot?.items.find((i)=>i.id===saved.id)?.data.linkedTaskId].filter((id):id is string=>Boolean(id));
+      if(adapter&&affected.length) try{await syncActionNotifications(adapter,affected,listTasks);}catch{setError("行动已保存，但设备提醒同步失败；请联网刷新通知，暂不保证原提醒已撤销。");}
       return true;
     } catch (failure) { setError(failure instanceof Error ? failure.message : "保存失败，草稿保留。"); return false; }
     finally { setBusy(false); }
@@ -54,11 +61,12 @@ export function ActionBoard() {
     </form>
     {snapshot && <HabitPanel snapshot={snapshot} busy={busy} save={save} />}
     {snapshot && <GoalPanel snapshot={snapshot} busy={busy} save={save} />}
+    {snapshot && <ActionReminderPanel snapshot={snapshot} busy={busy} save={save} />}
     {snapshot && <ActionInsights snapshot={snapshot} />}
-    {snapshot && ["pending", "overdue", "done", "paused", "archived"].map((state) => {
-      const items = snapshot.items.filter((i) => i.data.kind === "todo" && todoState(i, today) === state);
+    {snapshot && ["pending", "overdue", "skipped", "done", "paused", "archived"].map((state) => {
+      const items = snapshot.items.filter((i) => i.data.kind === "todo" && todoState(i, today, snapshot.entries) === state);
       if (!items.length) return null;
-      return <section key={state} className="space-y-2"><h3 className="font-medium">{{ pending: "待完成", overdue: "逾期", done: "已完成", paused: "已暂停", archived: "已归档" }[state]}（{items.length}）</h3>{items.map((item) => <article key={item.id} className="rounded-xl border p-4 text-sm"><h4 className="break-words font-semibold">{item.data.title}</h4><p className="mt-1 whitespace-pre-wrap break-words text-zinc-500">{item.data.note}</p><p className="mt-1 text-xs">{item.data.dueOn ? `截止 ${item.data.dueOn}` : "无截止日"}{item.data.completedOn && ` · 实际完成 ${item.data.completedOn}`} · v{item.version}</p><div className="mt-3 flex flex-wrap gap-2"><button disabled={busy || (item.data.status !== "active" && !item.data.completedOn)} className={button} onClick={() => void record(item)}>{item.data.completedOn ? "撤销完成" : "标记完成"}</button><button disabled={busy || Boolean(title || note || due || editing)} className={button} onClick={() => { setEditing(item); setTitle(item.data.title); setNote(item.data.note); setDue(item.data.dueOn ?? ""); }}>编辑行动</button><button disabled={busy} className={button} onClick={() => void save({ operation: "update", id: item.id, expectedVersion: item.version, title: item.data.title, note: item.data.note, dueOn: item.data.dueOn, goalId: item.data.goalId, status: item.data.status === "active" ? "paused" : "active" } as ActionDraft)}>{item.data.status === "active" ? "暂停行动" : "恢复行动"}</button><button disabled={busy || item.data.status === "archived"} className={button} onClick={() => { if (window.confirm("归档保留行动历史，不删除原提醒。继续？")) void save({ operation: "update", id: item.id, expectedVersion: item.version, title: item.data.title, note: item.data.note, dueOn: item.data.dueOn, goalId: item.data.goalId, status: "archived" } as ActionDraft); }}>归档</button></div></article>)}</section>;
+      return <section key={state} className="space-y-2"><h3 className="font-medium">{{ pending: "待完成", overdue: "逾期", skipped: "今日跳过", done: "已完成", paused: "已暂停", archived: "已归档" }[state]}（{items.length}）</h3>{items.map((item) => <article key={item.id} className="rounded-xl border p-4 text-sm"><h4 className="break-words font-semibold">{item.data.title}</h4><p className="mt-1 whitespace-pre-wrap break-words text-zinc-500">{item.data.note}</p><p className="mt-1 text-xs">{item.data.dueOn ? `截止 ${item.data.dueOn}` : "无截止日"}{item.data.completedOn && ` · 实际完成 ${item.data.completedOn}`} · v{item.version}</p><div className="mt-3 flex flex-wrap gap-2"><button disabled={busy || (item.data.status !== "active" && !item.data.completedOn)} className={button} onClick={() => void record(item)}>{item.data.completedOn ? "撤销完成" : "标记完成"}</button><button disabled={busy || item.data.status !== "active" || Boolean(item.data.completedOn)} className={button} onClick={() => void save({ operation:"record", id:item.id, expectedVersion:item.version, day:today, value:0, state:"skipped", note:"" })}>今日跳过</button><button disabled={busy || Boolean(title || note || due || editing)} className={button} onClick={() => { setEditing(item); setTitle(item.data.title); setNote(item.data.note); setDue(item.data.dueOn ?? ""); }}>编辑行动</button><button disabled={busy} className={button} onClick={() => void save({ operation: "update", id: item.id, expectedVersion: item.version, title: item.data.title, note: item.data.note, dueOn: item.data.dueOn, goalId: item.data.goalId, status: item.data.status === "active" ? "paused" : "active" } as ActionDraft)}>{item.data.status === "active" ? "暂停行动" : "恢复行动"}</button><button disabled={busy || item.data.status === "archived"} className={button} onClick={() => { if (window.confirm("归档保留行动历史，不删除原提醒。继续？")) void save({ operation: "update", id: item.id, expectedVersion: item.version, title: item.data.title, note: item.data.note, dueOn: item.data.dueOn, goalId: item.data.goalId, status: "archived" } as ActionDraft); }}>归档</button></div></article>)}</section>;
     })}
     {snapshot && snapshot.items.length === 0 && <p className="text-sm text-zinc-500">还没有行动。从一个手动待办开始；不会因此自动创建提醒。</p>}
   </div>;

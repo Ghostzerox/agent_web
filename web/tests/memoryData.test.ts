@@ -131,9 +131,10 @@ describe("R5.6 user controls, portable data and source-index recovery", () => {
   });
   it("rolls controls down/up independently and leaves originals untouched", async () => {
     const m = await memory(); await createMemoryControlRepository(db).update(DEFAULT_MEMORY_CONTROLS, 0); const migrations = await loadMigrations();
+    expect(await rollbackDatabase(migrationsDb(pg), migrations)).toBe("0033_task_actions.sql");
     expect(await rollbackDatabase(migrationsDb(pg), migrations)).toBe("0032_memory_controls.sql");
     expect((await db.select().from(s.memoryItems))[0].id).toBe(m.id);
-    expect(await migrateDatabase(migrationsDb(pg), migrations)).toEqual(["0032_memory_controls.sql"]);
+    expect(await migrateDatabase(migrationsDb(pg), migrations)).toEqual(["0032_memory_controls.sql", "0033_task_actions.sql"]);
     expect((await createMemoryControlRepository(db).get()).version).toBe(0);
   });
 });

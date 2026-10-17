@@ -44,5 +44,5 @@ test("edits the server-side reading profile on mobile", async ({ page }) => {
 
   await expect(page.getByRole("status")).toContainText("下一次书籍推荐会使用新设置");
   await expect(page.getByLabel("当前学习与兴趣方向")).toHaveValue("认知科学\n世界史");
-  await expect(page.getByRole("link", { name: "去创建书籍推荐" })).toHaveAttribute("href", "/tasks");
+  await expect(page.getByRole("link", { name: "去创建书籍推荐" })).toHaveAttribute("href", "/tasks?section=scheduled");
 });

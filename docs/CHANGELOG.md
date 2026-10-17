@@ -4,6 +4,14 @@
 
 ---
 
+## R6.1–R6.4 — 任务深化与行动闭环（2026-10-17）
+
+- 任务内新增行动 / 打卡工作区；0033迁移的 action_items / action_entries / action_events 独立保存用户行动，不把 TaskRun / Inbox 当完成事实。
+- 待办完成 / 撤销 / 今日跳过、习惯数量 / 时长、补卡 / 请假、未来规则版本、日历与日 / 周统计、目标 / 子任务关联 / 编辑 / 归档。
+- 显式绑定已有普通提醒，Inbox最终边界复核后 skipped，撤销只恢复后续Run；关联APK提醒使用一次性快照及缓存撤销，离线 / 系统清理限制保留。范围导出含更正历史，不是完整备份 / 自动恢复。
+- Web / 移动共用UI；真实SQL、HTTP隔离副本、部署浏览器与Bundle回归，备份 / 隔离恢复 / up-down验证后更新Docker至34份迁移；未要求真机或重打APK，无模型测试费用。
+- 旧迁移预期随新增迁移补齐；保留旧Prompt基线，新R6基线只变版本 / Worker源码指纹，题目 / 请求快照不变。完整结果见 [R6报告](reports/R6_REPORT.md)，用法见 [指南](TASK_ACTIONS_GUIDE.md)。后续R7.1，不自动启动。
+
 ## R8.1 — 入口归属设计（2026-10-17）
 
 - 新增 [设计与桌面 / 手机草图](R8_1_MODULE_ENTRY_DESIGN.md)、[结构化清单](ui/r8/route-ownership.json) 和 [报告](reports/R8_1_REPORT.md)：五个业务入口 + 收件箱 / 设置，19 页、9 工具和 3 插件 Activity 全覆盖。

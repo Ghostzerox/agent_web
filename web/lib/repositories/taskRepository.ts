@@ -9,6 +9,7 @@ import {
 } from "@/lib/db/schema";
 import * as schema from "@/lib/db/schema";
 import { LOCAL_USER_ID } from "@/lib/repositories/conversationRepository";
+import { annotateActionReminders } from "@/lib/tasks/actionReminders";
 
 export type CreateTaskInput = {
   title: string;
@@ -59,11 +60,12 @@ export class TaskRepository<
 
   async list(): Promise<ScheduledTaskRecord[]> {
     await this.ensureLocalUser();
-    return this.database
+    const tasks = await this.database
       .select()
       .from(scheduledTasks)
       .where(eq(scheduledTasks.userId, LOCAL_USER_ID))
       .orderBy(desc(scheduledTasks.updatedAt), desc(scheduledTasks.id));
+    return annotateActionReminders(this.database,tasks);
   }
 
   async get(id: string): Promise<ScheduledTaskRecord | null> {

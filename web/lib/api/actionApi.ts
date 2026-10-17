@@ -11,7 +11,7 @@ export function createActionApi(repository: ReturnType<typeof createActionReposi
         const query = new URL(request.url).searchParams, today = businessDay(now());
         const from = daySchema.parse(query.get("from") ?? shiftDay(today, -31)), to = daySchema.parse(query.get("to") ?? today);
         if (to < from || Date.parse(to) - Date.parse(from) > 366 * 86400000) throw new ActionError("请选择不超过366天的有序日期范围。", 400);
-        result = await repository.read(from, to, now());
+        result = query.get("export") === "1" ? await repository.export(from,to,now()) : await repository.read(from, to, now());
       } else if (request.method === "POST") {
         const text = await request.text(); if (new TextEncoder().encode(text).length > 120000) throw new ActionError("请求过大。", 413);
         result = await repository.mutate(JSON.parse(text), now());

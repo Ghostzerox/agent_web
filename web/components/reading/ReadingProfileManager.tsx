@@ -179,7 +179,7 @@ export function ReadingProfileManager() {
           <li>在任务页新建“书籍推荐”，填写本期主题。</li>
           <li>到期后在收件箱查看带来源、门槛和试读建议的结果。</li>
         </ol>
-        <a href={appHref("/tasks")} className="inline-flex rounded-lg bg-violet-700 px-3 py-2 font-medium text-white hover:bg-violet-600">去创建书籍推荐</a>
+        <a href={appHref("/tasks?section=scheduled")} className="inline-flex rounded-lg bg-violet-700 px-3 py-2 font-medium text-white hover:bg-violet-600">去创建书籍推荐</a>
       </aside>
     </form>
   );

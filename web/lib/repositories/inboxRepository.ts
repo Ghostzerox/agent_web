@@ -14,6 +14,7 @@ import type { BriefingHistorySignal } from "@/lib/tasks/personalBriefingGenerato
 import type { ReflectionHistoryPort } from "@/lib/tasks/reflectionQuestionGenerator";
 import * as schema from "@/lib/db/schema";
 import { LOCAL_USER_ID } from "@/lib/repositories/conversationRepository";
+import { assertReminderActionPending } from "@/lib/tasks/actionReminders";
 
 export type InboxFilter = "all" | "unread" | "read";
 
@@ -311,6 +312,9 @@ export class InboxRepository<
     },
   ): Promise<CompletedReminderRun> {
     return this.database.transaction(async (transaction) => {
+      // Same ordering as action writes: user lock before task/run locks.
+      // This serializes final reminder publication with a user's completion.
+      if (completion.kind === "reminder") await transaction.select().from(schema.users).where(eq(schema.users.id,LOCAL_USER_ID)).for("update");
       const [owned] = await transaction
         .select({
           run: taskRuns,
@@ -348,6 +352,7 @@ export class InboxRepository<
         );
       }
 
+      if (completion.kind === "reminder") await assertReminderActionPending(transaction, owned.task.id, owned.run.scheduledFor);
       const [created] = await transaction
         .insert(inboxItems)
         .values({

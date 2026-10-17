@@ -12,7 +12,7 @@ async function main() {
     console.log(JSON.stringify({ version: result.version, baselineSourceCommit: result.baselineSourceCommit, currentSourceHashes: result.sourceHashes, status: "not-run", provider: null, model: null, runDate: null, approvedBudget: null,
       cases: result.cases.map(({ id, fixtureSha256, requestSha256, input, criteria }) => ({ id, fixtureSha256, requestSha256, input, criteria, scores: Object.fromEntries(result.humanReview.dimensions.map((dimension) => [dimension, null])), criticalFailure: null, rationale: null, actualInputTokens: null, actualOutputTokens: null, actualCost: null })) }, null, 2));
   } else {
-    const baseline = JSON.parse(readFileSync(new URL("../evals/r3/baseline-r5.6.json", import.meta.url), "utf8"));
+    const baseline = JSON.parse(readFileSync(new URL("../evals/r3/baseline-r6.json", import.meta.url), "utf8"));
     const tasks = JSON.parse(readFileSync(new URL("../evals/r3/baseline-r3.3.json", import.meta.url), "utf8"));
     const previous = JSON.parse(readFileSync(new URL("../evals/r3/baseline-r3.2.json", import.meta.url), "utf8"));
     const original = JSON.parse(readFileSync(new URL("../evals/r3/baseline.json", import.meta.url), "utf8"));

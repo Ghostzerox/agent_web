@@ -10,6 +10,7 @@ export type TaskKind =
   | "reflection_question";
 
 export type TaskRecord = {
+  localActionReminder?: { version: number; nextRunAt: string | null };
   id: string;
   title: string;
   prompt: string | null;

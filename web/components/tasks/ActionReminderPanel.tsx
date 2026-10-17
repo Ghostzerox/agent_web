@@ -1,0 +1,22 @@
+"use client";
+import { useState } from "react";
+import { listTasks, type TaskRecord } from "@/lib/api/taskClient";
+import { getFileExportAdapter } from "@/lib/platform/fileExport";
+import { actionClient } from "@/lib/api/actionClient";
+import { shiftDay, type ActionCommand, type ActionItem, type ActionSnapshot } from "@/lib/tasks/actions";
+import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
+type Draft = { [K in ActionCommand["operation"]]: Omit<Extract<ActionCommand, { operation: K }>, "mutationId"> }[ActionCommand["operation"]];
+const field="min-h-11 rounded-lg border bg-transparent px-3 py-2 text-sm disabled:opacity-40";
+export function ActionReminderPanel({snapshot,busy,save}:{snapshot:ActionSnapshot;busy:boolean;save:(input:Draft)=>Promise<boolean>}) {
+  const [tasks,setTasks]=useState<TaskRecord[]|null>(null),[selected,setSelected]=useState<ActionItem|null>(null),[taskId,setTaskId]=useState(""),[notice,setNotice]=useState(""),[working,setWorking]=useState(false),[error,setError]=useState("");
+  const [from,setFrom]=useState(shiftDay(snapshot.today,-31)),[to,setTo]=useState(snapshot.today),[ack,setAck]=useState(false);
+  useNavigationGuard(Boolean(selected)||working);
+  async function refresh(){setWorking(true);setError("");try{setTasks(await listTasks());}catch(failure){setError(failure instanceof Error?failure.message:"读取提醒失败。");}finally{setWorking(false);}}
+  async function exportFile(){setWorking(true);setError("");try{const file=await actionClient.export(from,to);const result=await getFileExportAdapter().export({filename:`actions-${from}-${to}.json`,mediaType:"application/json",content:JSON.stringify(file,null,2),directory:"action-exports",shareTitle:"行动记录",shareText:"含私人目标、备注和行动历史，请勿公开分享。"});setNotice(result.method==="share"?"已打开系统分享，请确认实际保存。":"已下载范围行动包；不是完整数据库备份，也没有自动恢复。");}catch(failure){setError(failure instanceof Error?failure.message:"导出失败。");}finally{setWorking(false);}}
+  return <fieldset disabled={busy||working} className="min-w-0 space-y-3 rounded-2xl border p-4"><legend className="px-1 text-lg font-semibold">提醒关联与数据导出</legend><p className="text-xs text-zinc-500">只关联现有普通提醒，不创建提醒、不改变原调度。完成 / 跳过 / 请假或暂停可抑制未产生的提醒；撤销或解绑恢复后续规则，不补发已跳过的旧提醒。已送达通知无法撤回。APK关联提醒采用一次性快照，后续安排需在线刷新，不保证长时间离线或被系统清理后送达。</p>
+    {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}{notice&&<p role="status" className="text-sm text-emerald-700">{notice}</p>}
+    <button type="button" className={field} onClick={()=>void refresh()}>读取可关联提醒</button>
+    {tasks&&<form className="grid gap-2 sm:grid-cols-3" onSubmit={(e)=>{e.preventDefault();if(!selected)return;void save({operation:"link",id:selected.id,expectedVersion:selected.version,taskId:taskId||null}).then((ok)=>{if(ok){setSelected(null);setNotice("关联已保存；原任务调度、Run与行动事实仍分开。");}});}}><label className="grid gap-1 text-sm">行动 / 习惯<select className={field} value={selected?.id??""} onChange={(e)=>{const item=snapshot.items.find((i)=>i.id===e.target.value)??null;setSelected(item);setTaskId(item?.data.linkedTaskId??"");}}><option value="">选择事项</option>{snapshot.items.filter((i)=>i.data.kind!=="goal").map((i)=><option key={i.id} value={i.id}>{i.data.title}</option>)}</select></label><label className="grid gap-1 text-sm">普通提醒<select className={field} value={taskId} onChange={(e)=>setTaskId(e.target.value)}><option value="">不关联 / 解除</option>{taskId&&!tasks.some((t)=>t.id===taskId)&&<option value={taskId}>原提醒已删除或不可用</option>}{tasks.filter((t)=>t.kind==="reminder").map((t)=><option key={t.id} value={t.id}>{t.title} · {t.status}</option>)}</select></label><button className={`${field} self-end`} disabled={!selected}>保存提醒关联</button></form>}
+    <details><summary className="cursor-pointer">导出行动与更正历史</summary><div className="mt-3 grid gap-2 sm:grid-cols-2"><label className="grid gap-1 text-sm">导出起始日<input type="date" required className={field} value={from} onChange={(e)=>setFrom(e.target.value)}/></label><label className="grid gap-1 text-sm">导出结束日<input type="date" required className={field} value={to} onChange={(e)=>setTo(e.target.value)}/></label><label className="flex min-h-11 items-center gap-2 text-xs sm:col-span-2"><input type="checkbox" checked={ack} onChange={(e)=>setAck(e.target.checked)}/>我知道文件含全部事项的目标 / 备注与所选日期记录，可能有私人内容</label><button className={field} type="button" disabled={!ack||!from||!to} onClick={()=>void exportFile()}>导出范围行动包</button></div></details>
+  </fieldset>;
+}

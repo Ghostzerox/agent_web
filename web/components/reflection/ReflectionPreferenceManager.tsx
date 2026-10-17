@@ -153,7 +153,7 @@ export function ReflectionPreferenceManager() {
       <aside className="h-fit space-y-4 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-950 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
         <h2 className="font-semibold">怎样触发</h2>
         <p>个人简报会在启用时附加经过筛选的问题；你也可以创建每周“思考问题”任务，围绕一个具体目标单独复盘。</p>
-        <a href={appHref("/tasks")} className="inline-flex rounded-lg bg-blue-700 px-3 py-2 font-medium text-white hover:bg-blue-600">创建思考问题任务</a>
+        <a href={appHref("/tasks?section=scheduled")} className="inline-flex rounded-lg bg-blue-700 px-3 py-2 font-medium text-white hover:bg-blue-600">创建思考问题任务</a>
       </aside>
     </form>
   );
