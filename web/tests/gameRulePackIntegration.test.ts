@@ -1,10 +1,11 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { describe, expect, it, vi } from "vitest";
 import { createGameRulePackApi } from "@/lib/api/gameRulePackApi";
 import { createGameSessionApi } from "@/lib/api/gameSessionApi";
 import * as schema from "@/lib/db/schema";
-import { loadMigrations, migrateDatabase, type MigrationRow, type MigrationSession } from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import { createGameTurnService } from "@/lib/game/gameTurnService";
 import { DEFAULT_QUICK_ADVENTURE_SETUP, QUICK_ADVENTURE_RULE_PACK_ID } from "@/lib/gameRulePacks/quickAdventure";
 import { gameRulePackDraftResultSchema } from "@/lib/gameRulePacks/contracts";
@@ -15,12 +16,6 @@ import { createPluginCapabilityRepository } from "@/lib/repositories/pluginCapab
 import { createPluginRepository } from "@/lib/repositories/pluginRepository";
 import { createPluginStorageRepository } from "@/lib/repositories/pluginStorageRepository";
 
-function session(database: Pick<PGlite, "query">): MigrationSession {
-  return { async execute(query, parameters = []) {
-    return (await database.query<MigrationRow>(query, [...parameters])).rows;
-  } };
-}
-
 function request(body: unknown) {
   return new Request("http://localhost/api", { method: "POST", body: JSON.stringify(body) });
 }
@@ -29,10 +24,7 @@ describe("rule pack to existing GameSession integration", () => {
   it("enforces grants and versioning, keeps previews isolated, then runs a confirmed session after the plugin is disabled", async () => {
     const pglite = new PGlite();
     try {
-      await migrateDatabase({
-        ...session(pglite),
-        transaction: (callback) => pglite.transaction((transaction) => callback(session(transaction))),
-      }, await loadMigrations());
+      await migrateDatabase(createPgliteMigrationDatabase(pglite), await loadMigrations());
       const database = drizzle(pglite, { schema });
       const registry = getFirstPartyPluginRegistry();
       const plugins = createPluginRepository(database, registry);

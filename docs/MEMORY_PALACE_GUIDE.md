@@ -60,4 +60,4 @@
 
 ## 验收与下一步
 
-实施与测试证据见 [R5.5报告](reports/R5_5_REPORT.md)、[ADR-068](adr/ADR-068-module-memory-and-palace.md)。自动检查证明流程与隔离，不证明人类学习收益、摘要语义完全忠实或陪伴体验。华为真机需安装新APK再验；下一步 R5.6 用户控制与跨端综合验收，保留导出/恢复预演、增量重建/离线降级与长期体验检查。
+实施与测试证据见 [R5.5报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R5_5_REPORT.md)、[ADR-068](adr/ADR-068-module-memory-and-palace.md)。自动检查证明流程与隔离，不证明人类学习收益、摘要语义完全忠实或陪伴体验。华为真机需安装新APK再验；下一步 R5.6 用户控制与跨端综合验收，保留导出/恢复预演、增量重建/离线降级与长期体验检查。

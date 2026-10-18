@@ -1,9 +1,10 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
-import { loadMigrations, migrateDatabase, type MigrationSession, type MigrationRow } from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import { createKnowledgeRepository } from "@/lib/repositories/knowledgeRepository";
 import { createKnowledgeRetrievalRepository } from "@/lib/repositories/knowledgeRetrievalRepository";
 import { createPromptRunRepository } from "@/lib/repositories/promptRunRepository";
@@ -13,11 +14,10 @@ import { createConversationApi } from "@/lib/api/conversationApi";
 import { createKnowledgeApi } from "@/lib/api/knowledgeApi";
 import { knowledgeCitations } from "@/lib/knowledge/retrieval";
 import { createTestPromptEnvelope } from "./helpers/promptEnvelope";
-const session = (db: Pick<PGlite, "query">): MigrationSession => ({ execute: async (query, parameters = []) => (await db.query<MigrationRow>(query, [...parameters])).rows });
 const input = { title: "缓存策略", sourceKey: "cache", content: "# 缓存\n缓存有效期为三十分钟。", format: "markdown" as const, sourceUrl: "", fileName: "" };
 describe("R5.3 real SQL and model transport integration (mock Provider)", () => {
   let pg: PGlite; let database: ReturnType<typeof drizzle<typeof schema>>;
-  beforeEach(async () => { pg = new PGlite(); await migrateDatabase({ ...session(pg), transaction: (callback) => pg.transaction((tx) => callback(session(tx))) }, await loadMigrations()); database = drizzle(pg, { schema }); });
+  beforeEach(async () => { pg = new PGlite(); await migrateDatabase(createPgliteMigrationDatabase(pg), await loadMigrations()); database = drizzle(pg, { schema }); });
   afterEach(async () => pg.close());
   async function setup() {
     const library = createKnowledgeRepository(database); const retrieval = createKnowledgeRetrievalRepository(database);

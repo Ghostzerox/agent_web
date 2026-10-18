@@ -1,16 +1,16 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { expect, it } from "vitest";
 import * as schema from "@/lib/db/schema";
-import { loadMigrations, migrateDatabase, rollbackDatabase, type MigrationSession, type MigrationRow } from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase, rollbackDatabase } from "@/lib/db/migrations";
 import { createModelUsageRepository } from "@/lib/repositories/modelUsageRepository";
 import type { ModelCallTelemetry } from "@/lib/ai/modelUsage";
 
 it("persists metadata idempotently, bounds reads and rolls back only the usage table", async () => {
   const pg = new PGlite();
-  const session = (db: Pick<PGlite, "query">): MigrationSession => ({ execute: async (query, parameters = []) => (await db.query<MigrationRow>(query, [...parameters])).rows });
   const migrations = (await loadMigrations()).filter((migration) => migration.id <= "0027_model_usage_calls.sql");
-  const migrationDb = { ...session(pg), transaction: <T>(callback: (tx: MigrationSession) => Promise<T>) => pg.transaction((tx) => callback(session(tx))) };
+  const migrationDb = createPgliteMigrationDatabase(pg);
   try {
     await migrateDatabase(migrationDb, migrations);
     const repository = createModelUsageRepository(drizzle(pg, { schema }));

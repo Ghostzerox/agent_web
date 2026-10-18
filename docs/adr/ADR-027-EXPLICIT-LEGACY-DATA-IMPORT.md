@@ -2,7 +2,7 @@
 
 ## 状态
 
-Accepted
+已被 R9.2 取代：旧浏览器导入退役，localStorage 不读取、不迁移、不清空。下文仅保留原决策背景，当前见 [R9.2报告](../reports/R9_2_REPORT.md)。
 
 ## 背景
 

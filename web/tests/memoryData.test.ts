@@ -1,9 +1,10 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import * as s from "@/lib/db/schema";
-import { loadMigrations, migrateDatabase, rollbackDatabase, type MigrationSession, type MigrationRow } from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase, rollbackDatabase } from "@/lib/db/migrations";
 import { createMemoryDataRepository } from "@/lib/repositories/memoryDataRepository";
 import { createMemoryControlRepository } from "@/lib/repositories/memoryControlRepository";
 import { createMemoryRepository } from "@/lib/repositories/memoryRepository";
@@ -16,12 +17,10 @@ import { createMemoryPalaceRepository } from "@/lib/repositories/memoryPalaceRep
 import { createConversationRepository, LOCAL_USER_ID as owner } from "@/lib/repositories/conversationRepository";
 import { createPromptRunRepository } from "@/lib/repositories/promptRunRepository";
 import { createTestPromptEnvelope } from "./helpers/promptEnvelope";
-const session = (pg: Pick<PGlite, "query">): MigrationSession => ({ execute: async (query, parameters = []) => (await pg.query<MigrationRow>(query, [...parameters])).rows });
-const migrationsDb = (pg: PGlite) => ({ ...session(pg), transaction: <T>(fn: (tx: MigrationSession) => Promise<T>) => pg.transaction((tx) => fn(session(tx))) });
 const doc = { title: "数学证据", sourceKey: "math", format: "markdown" as const, content: "# 数学\n矩阵乘法需要按行列计算。", sourceUrl: "", fileName: "" };
 describe("R5.6 user controls, portable data and source-index recovery", () => {
   let pg: PGlite; let db: ReturnType<typeof drizzle<typeof s>>;
-  beforeEach(async () => { pg = new PGlite(); await migrateDatabase(migrationsDb(pg), await loadMigrations()); db = drizzle(pg, { schema: s }); await db.insert(s.users).values({ id: owner }); });
+  beforeEach(async () => { pg = new PGlite(); await migrateDatabase(createPgliteMigrationDatabase(pg), await loadMigrations()); db = drizzle(pg, { schema: s }); await db.insert(s.users).values({ id: owner }); });
   afterEach(async () => pg.close());
   async function memory(sensitivity: "low" | "sensitive" = "low") {
     const [candidate] = await db.insert(s.memoryCandidates).values({ userId: owner, kind: "goal", content: "数学目标", evidenceQuote: "不应导出的完整证据", sensitivity, confidence: 100, reason: "合成", status: "confirmed", resolvedAt: new Date() }).returning();
@@ -131,10 +130,10 @@ describe("R5.6 user controls, portable data and source-index recovery", () => {
   });
   it("rolls controls down/up independently and leaves originals untouched", async () => {
     const m = await memory(); await createMemoryControlRepository(db).update(DEFAULT_MEMORY_CONTROLS, 0); const migrations = await loadMigrations();
-    expect(await rollbackDatabase(migrationsDb(pg), migrations)).toBe("0033_task_actions.sql");
-    expect(await rollbackDatabase(migrationsDb(pg), migrations)).toBe("0032_memory_controls.sql");
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0033_task_actions.sql");
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0032_memory_controls.sql");
     expect((await db.select().from(s.memoryItems))[0].id).toBe(m.id);
-    expect(await migrateDatabase(migrationsDb(pg), migrations)).toEqual(["0032_memory_controls.sql", "0033_task_actions.sql"]);
+    expect(await migrateDatabase(createPgliteMigrationDatabase(pg), migrations)).toEqual(["0032_memory_controls.sql", "0033_task_actions.sql"]);
     expect((await createMemoryControlRepository(db).get()).version).toBe(0);
   });
 });

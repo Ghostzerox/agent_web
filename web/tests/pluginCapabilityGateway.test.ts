@@ -1,14 +1,9 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/lib/db/schema";
-import {
-  loadMigrations,
-  migrateDatabase,
-  type MigrationDatabase,
-  type MigrationRow,
-  type MigrationSession,
-} from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import { FIRST_PARTY_PLUGIN_MANIFESTS } from "@/lib/plugins/firstPartyManifests";
 import {
   PluginCapabilityGateway,
@@ -19,23 +14,6 @@ import { createPluginCapabilityRepository } from "@/lib/repositories/pluginCapab
 import { createPluginRepository } from "@/lib/repositories/pluginRepository";
 import { createPluginStorageRepository } from "@/lib/repositories/pluginStorageRepository";
 
-function session(database: Pick<PGlite, "query">): MigrationSession {
-  return {
-    async execute(query, parameters = []) {
-      return (await database.query<MigrationRow>(query, [...parameters])).rows;
-    },
-  };
-}
-
-function migrationDatabase(database: PGlite): MigrationDatabase {
-  return {
-    ...session(database),
-    transaction(callback) {
-      return database.transaction((transaction) => callback(session(transaction)));
-    },
-  };
-}
-
 describe("Phase 7.2 plugin capability boundary", () => {
   let pglite: PGlite;
   let database: ReturnType<typeof drizzle<typeof schema>>;
@@ -43,7 +21,7 @@ describe("Phase 7.2 plugin capability boundary", () => {
 
   beforeEach(async () => {
     pglite = new PGlite();
-    await migrateDatabase(migrationDatabase(pglite), await loadMigrations());
+    await migrateDatabase(createPgliteMigrationDatabase(pglite), await loadMigrations());
     database = drizzle(pglite, { schema });
     registry = new PluginRegistry(FIRST_PARTY_PLUGIN_MANIFESTS);
   });

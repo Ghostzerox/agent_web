@@ -9,6 +9,30 @@ async function readProjectFile(relativePath: string) {
 }
 
 describe("single-user self-hosting artifacts", () => {
+  it("ships production dependencies and only the three runtime scripts", async () => {
+    const dockerfile = await readProjectFile("web/Dockerfile");
+    const manifest = JSON.parse(await readProjectFile("web/package.json"));
+    expect(manifest.dependencies.tsx).toBeTruthy();
+    expect(manifest.devDependencies.tsx).toBeUndefined();
+    expect(manifest.devDependencies["drizzle-kit"]).toBeUndefined();
+    expect(manifest.scripts["db:generate"]).toBeUndefined();
+    expect(manifest.scripts["db:check"]).toBeUndefined();
+    expect(dockerfile).toContain("npm ci --omit=dev");
+    expect(dockerfile).toContain("rmSync('node_modules/@electric-sql/pglite'");
+    const runner = dockerfile.split("AS runner")[1];
+    expect(runner).toContain("COPY --from=production-dependencies");
+    expect(runner).not.toContain("/app/scripts ./scripts");
+    expect([...runner.matchAll(/\/app\/scripts\/([^ ]+)/gu)].map((match) => match[1]).sort())
+      .toEqual(["db-migrate.ts", "db-rollback.ts", "reminder-worker.ts"]);
+  });
+
+  it("excludes native artifacts, test fixtures and paid evaluation tools from Docker context", async () => {
+    const ignore = await readProjectFile("web/.dockerignore");
+    for (const entry of ["android", "mobile-dist", "tests", "e2e", "evals", "scripts/*", "!scripts/db-migrate.ts", "!scripts/db-rollback.ts", "!scripts/reminder-worker.ts"]) {
+      expect(ignore.split(/\r?\n/u)).toContain(entry);
+    }
+  });
+
   it("keeps generated live-evaluation artifacts out of Git and Docker build contexts", async () => {
     expect(await readProjectFile(".gitignore")).toContain(".r3-eval/");
     expect(await readProjectFile("web/.dockerignore")).toMatch(/^\.r3-eval$/mu);
@@ -57,7 +81,6 @@ describe("single-user self-hosting artifacts", () => {
     const [
       migrateScript,
       rollbackScript,
-      schedulerScript,
       workerScript,
       workerEntrypoint,
       compose,
@@ -65,7 +88,6 @@ describe("single-user self-hosting artifacts", () => {
     ] = await Promise.all([
       readProjectFile("web/scripts/db-migrate.ts"),
       readProjectFile("web/scripts/db-rollback.ts"),
-      readProjectFile("web/scripts/scheduler-claim.ts"),
       readProjectFile("web/scripts/reminder-worker.ts"),
       readProjectFile("web/worker-entrypoint.sh"),
       readProjectFile("docker-compose.yml"),
@@ -75,16 +97,13 @@ describe("single-user self-hosting artifacts", () => {
     for (const script of [
       migrateScript,
       rollbackScript,
-      schedulerScript,
       workerScript,
     ]) {
       expect(script).toContain("async function main(): Promise<void>");
       expect(script).toContain("void main().catch");
     }
-    expect(packageJson).toContain('"scheduler:claim"');
+    expect(packageJson).not.toContain('"scheduler:claim"');
     expect(packageJson).toContain('"worker:reminders"');
-    expect(schedulerScript).not.toContain("run.task.prompt");
-    expect(schedulerScript).not.toContain("run.task.title");
     expect(workerScript).not.toContain("task.prompt");
     expect(workerScript).not.toContain("task.title");
     expect(workerEntrypoint.indexOf("npm run db:migrate")).toBeLessThan(

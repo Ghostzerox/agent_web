@@ -2,7 +2,7 @@
 
 - 日期：2026-10-16；实现阶段：R5.2。
 - 页面：`/memory`，Web 与本地 React APK 共用组件。
-- 关联：[分域规范](MEMORY_DOMAIN_AND_SOURCE_GUIDE.md)、[ADR-065](adr/ADR-065-knowledge-library-and-source-deletion.md)、[交付报告](reports/R5_2_REPORT.md)。
+- 关联：[分域规范](MEMORY_DOMAIN_AND_SOURCE_GUIDE.md)、[ADR-065](adr/ADR-065-knowledge-library-and-source-deletion.md)、[交付报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R5_2_REPORT.md)。
 
 > R5.6更新：范围导出/本地预演、分段按需检查/重建、原文降级与跨端结果见 [控制与验收指南](MEMORY_CONTROL_AND_ACCEPTANCE_GUIDE.md)；检索、摘要与宫殿仍见各自指南。不会仅因导入或布局绑定而自动发送资料。本文件迁移/备份段保留R5.2历史；当前33份迁移，工程首期交付、真机待验。
 

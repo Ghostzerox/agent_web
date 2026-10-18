@@ -1,35 +1,13 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { eq } from "drizzle-orm";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/lib/db/schema";
-import {
-  loadMigrations,
-  migrateDatabase,
-  type MigrationDatabase,
-  type MigrationRow,
-  type MigrationSession,
-} from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import { createConversationRepository } from "@/lib/repositories/conversationRepository";
 import { createMemoryCandidateRepository } from "@/lib/repositories/memoryCandidateRepository";
 import { createMemoryCandidateService } from "@/lib/memory/memoryCandidateService";
-
-function session(database: Pick<PGlite, "query">): MigrationSession {
-  return {
-    async execute(query, parameters = []) {
-      return (await database.query<MigrationRow>(query, [...parameters])).rows;
-    },
-  };
-}
-
-function migrationDatabase(database: PGlite): MigrationDatabase {
-  return {
-    ...session(database),
-    transaction(callback) {
-      return database.transaction((transaction) => callback(session(transaction)));
-    },
-  };
-}
 
 describe("MemoryCandidateRepository", () => {
   let pglite: PGlite;
@@ -37,7 +15,7 @@ describe("MemoryCandidateRepository", () => {
 
   beforeEach(async () => {
     pglite = new PGlite();
-    await migrateDatabase(migrationDatabase(pglite), await loadMigrations());
+    await migrateDatabase(createPgliteMigrationDatabase(pglite), await loadMigrations());
     database = drizzle(pglite, { schema });
   });
 

@@ -2,7 +2,7 @@
 
 Sprint 2.1–2.5 建立任务、调度、Durable Inbox、Push 与 Agent Prompt Task；Phase 4.1–4.2 增加有来源、可跨期去重和反馈的个人简报。当前版本在网页关闭后仍能执行普通提醒、调用服务端模型或搜索生成简报，把结果保存到应用内收件箱，并向已授权设备尝试发送通知。
 
-R6.1–R6.4 已于2026-10-17交付独立行动 / 打卡系统，使用 `/api/v1/actions` 和新增三张表，见 [使用指南](TASK_ACTIONS_GUIDE.md)、[报告](reports/R6_REPORT.md)。`/tasks` 内“行动与打卡”是用户行动事实，“定时任务”保留本文原调度；`?task=…&edit=1` 或 `?section=scheduled` 直达后者。系统已执行 / 已送达不等于用户完成。关联普通提醒会在Inbox最终保存前复核行动资格，并为APK返回一次性下一有效时间；离线 / 真机限制见指南，原生成任务不因此改成打卡。
+R6.1–R6.4 已于2026-10-17交付独立行动 / 打卡系统，使用 `/api/v1/actions` 和新增三张表，见 [使用指南](TASK_ACTIONS_GUIDE.md)、[报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R6_REPORT.md)。`/tasks` 内“行动与打卡”是用户行动事实，“定时任务”保留本文原调度；`?task=…&edit=1` 或 `?section=scheduled` 直达后者。系统已执行 / 已送达不等于用户完成。关联普通提醒会在Inbox最终保存前复核行动资格，并为APK返回一次性下一有效时间；离线 / 真机限制见指南，原生成任务不因此改成打卡。
 
 ## 1. 使用方式
 
@@ -116,27 +116,15 @@ R6.1–R6.4 已于2026-10-17交付独立行动 / 打卡系统，使用 `/api/v1/
 - 锁屏 Push 使用通用文案，不包含任务标题、正文或 prompt；完整订阅与 VAPID 私钥使用主密钥加密存库。
 - 新设备不会补推订阅前的历史 InboxItem；临时错误会重试，404/410 会自动隔离失效订阅。
 
-## 5. Scheduler Claim
+## 5. Worker 内部的 Scheduler Claim
 
-在 `web/` 中执行一次扫描：
-
-```text
-npm run scheduler:claim
-```
-
-可选环境变量：
-
-| 变量 | 默认值 | 限制 |
-|---|---:|---|
-| `SCHEDULER_WORKER_ID` | 主机名 + PID | 1–200 字符 |
-| `SCHEDULER_BATCH_SIZE` | `20` | 1–100 |
-| `SCHEDULER_LEASE_MS` | `60000` | 5000–900000 毫秒 |
+认领只通过常驻 worker:reminders 执行。旧 scheduler:claim CLI 只领取、不完成任务，R9.4 已退役，避免诊断时占住租约。REMINDER_WORKER_ID 默认主机名 + PID，批量和租约配置见下节。
 
 一次扫描先回收租约到期的 `claimed/running` Run，再锁定到期的 `active` Task。认领使用 `FOR UPDATE SKIP LOCKED`，因此多个 Worker 不会等待同一行；`(task_id, scheduled_for)` 唯一索引是第二道幂等防线。创建 Run、推进重复任务的 `nextRunAt` 或完成单次 Task 均处于同一事务。
 
 迟到的每日/每周任务只生成一个补偿 Run，并把下一次计划推进到当前时间后的第一个规则时间，避免电脑关机数日后产生补发风暴。Task 推进使用整数版本护栏，不比较经 JavaScript 往返后可能丢失微秒精度的 PostgreSQL 时间。
 
-Run 的 `workerId + attempt + 未过期 lease` 构成 fencing token。旧 Worker 在 Run 被重新认领后无法 start、续租或写入终态。命令日志不包含任务标题、提醒正文、数据库连接串或 API Key。
+Run 的 `workerId + attempt + 未过期 lease` 构成 fencing token。旧 Worker 在 Run 被重新认领后无法 start、续租或写入终态。Worker 日志不包含任务标题、提醒正文、数据库连接串或 API Key。
 
 ## 6. Reminder Worker 与 Durable Inbox
 

@@ -1,35 +1,7 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import {
-  loadMigrations,
-  migrateDatabase,
-  rollbackDatabase,
-  type MigrationDatabase,
-  type MigrationRow,
-  type MigrationSession,
-} from "@/lib/db/migrations";
-
-function createSession(
-  database: Pick<PGlite, "query">,
-): MigrationSession {
-  return {
-    async execute(query, parameters = []) {
-      const result = await database.query<MigrationRow>(query, [...parameters]);
-      return result.rows;
-    },
-  };
-}
-
-function createMigrationDatabase(database: PGlite): MigrationDatabase {
-  return {
-    ...createSession(database),
-    transaction(callback) {
-      return database.transaction((transaction) =>
-        callback(createSession(transaction)),
-      );
-    },
-  };
-}
+import { loadMigrations, migrateDatabase, rollbackDatabase, type MigrationDatabase } from "@/lib/db/migrations";
 
 describe("database migrations", () => {
   let pglite: PGlite;
@@ -37,7 +9,7 @@ describe("database migrations", () => {
 
   beforeEach(() => {
     pglite = new PGlite();
-    database = createMigrationDatabase(pglite);
+    database = createPgliteMigrationDatabase(pglite);
   });
 
   afterEach(async () => {

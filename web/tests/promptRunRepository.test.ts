@@ -1,38 +1,13 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createPromptExportApi } from "@/lib/api/promptExportApi";
-import {
-  loadMigrations,
-  migrateDatabase,
-  type MigrationDatabase,
-  type MigrationRow,
-  type MigrationSession,
-} from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import * as schema from "@/lib/db/schema";
 import { createConversationRepository } from "@/lib/repositories/conversationRepository";
 import { createPromptRunRepository } from "@/lib/repositories/promptRunRepository";
 import { createTestPromptEnvelope } from "./helpers/promptEnvelope";
-
-function migrationSession(database: Pick<PGlite, "query">): MigrationSession {
-  return {
-    async execute(query, parameters = []) {
-      const result = await database.query<MigrationRow>(query, [...parameters]);
-      return result.rows;
-    },
-  };
-}
-
-function migrationDatabase(database: PGlite): MigrationDatabase {
-  return {
-    ...migrationSession(database),
-    transaction(callback) {
-      return database.transaction((transaction) =>
-        callback(migrationSession(transaction)),
-      );
-    },
-  };
-}
 
 describe("PromptRunRepository and export API", () => {
   let pglite: PGlite;
@@ -41,7 +16,7 @@ describe("PromptRunRepository and export API", () => {
 
   beforeEach(async () => {
     pglite = new PGlite();
-    await migrateDatabase(migrationDatabase(pglite), await loadMigrations());
+    await migrateDatabase(createPgliteMigrationDatabase(pglite), await loadMigrations());
     const database = drizzle(pglite, { schema });
     conversations = createConversationRepository(database);
     runs = createPromptRunRepository(database);

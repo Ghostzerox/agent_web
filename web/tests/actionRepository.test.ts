@@ -1,8 +1,9 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import * as schema from "@/lib/db/schema";
-import { loadMigrations, migrateDatabase, type MigrationSession } from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import { createActionRepository } from "@/lib/repositories/actionRepository";
 import { createActionApi } from "@/lib/api/actionApi";
 import { businessDay, daySchema, type ActionCommand, type ActionDefinition } from "@/lib/tasks/actions";
@@ -17,8 +18,7 @@ describe("action facts and CAS", () => {
   let pg: PGlite; let repo: ReturnType<typeof createActionRepository>;
   beforeAll(async () => {
     pg = new PGlite();
-    const session = (db: Pick<PGlite, "query">): MigrationSession => ({ execute: async (q, args = []) => (await db.query(q, [...args])).rows as Record<string, unknown>[] });
-    await migrateDatabase({ ...session(pg), transaction: (fn) => pg.transaction((tx) => fn(session(tx))) }, await loadMigrations());
+    await migrateDatabase(createPgliteMigrationDatabase(pg), await loadMigrations());
     repo = createActionRepository(drizzle(pg, { schema }));
   });
   afterAll(async () => { await pg.close(); });

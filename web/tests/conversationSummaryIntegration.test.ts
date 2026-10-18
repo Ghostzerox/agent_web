@@ -1,9 +1,10 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { eq } from "drizzle-orm";
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
-import { loadMigrations, migrateDatabase, type MigrationSession, type MigrationRow } from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import { createConversationRepository, LOCAL_USER_ID } from "@/lib/repositories/conversationRepository";
 import { createConversationSummaryRepository, summaryModelKey } from "@/lib/repositories/conversationSummaryRepository";
 import { createConversationSummaryApi } from "@/lib/api/conversationSummaryApi";
@@ -15,10 +16,9 @@ import { createKnowledgeRepository } from "@/lib/repositories/knowledgeRepositor
 import { createKnowledgeRetrievalRepository } from "@/lib/repositories/knowledgeRetrievalRepository";
 import { knowledgeCitations } from "@/lib/knowledge/retrieval";
 const config = { apiKey: "synthetic-not-real", baseUrl: "https://example.test", model: "mock" }; const key = summaryModelKey(config);
-const session = (db: Pick<PGlite, "query">): MigrationSession => ({ execute: async (query, args = []) => (await db.query<MigrationRow>(query, [...args])).rows });
 describe("R5.4 real SQL + mock Provider", () => {
   let pg: PGlite; let db: ReturnType<typeof drizzle<typeof schema>>;
-  beforeEach(async () => { pg = new PGlite(); await migrateDatabase({ ...session(pg), transaction: (fn) => pg.transaction((tx) => fn(session(tx))) }, await loadMigrations()); db = drizzle(pg, { schema }); });
+  beforeEach(async () => { pg = new PGlite(); await migrateDatabase(createPgliteMigrationDatabase(pg), await loadMigrations()); db = drizzle(pg, { schema }); });
   afterEach(async () => pg.close());
   async function setup() {
     const conversations = createConversationRepository(db); const conversation = await conversations.createConversation({ title: "测试分支", mode: "professional" });

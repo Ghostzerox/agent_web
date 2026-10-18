@@ -4,27 +4,25 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint",
-    "test": "vitest run",
+    "lint": "eslint .",
+    "test": "vitest run --configLoader runner",
     "eval:core": "tsx scripts/core-quality-eval.ts",
     "eval:cost": "tsx scripts/token-cost-eval.ts",
     "eval:prompts": "tsx scripts/prompt-baseline.ts",
     "eval:prompts:live": "tsx scripts/prompt-quality-live.ts",
     "eval:prompts:report": "tsx scripts/prompt-quality-report.ts",
     "test:e2e": "playwright test",
-    "db:generate": "drizzle-kit generate",
-    "db:check": "drizzle-kit check",
     "db:migrate": "tsx scripts/db-migrate.ts",
     "db:rollback": "tsx scripts/db-rollback.ts",
-    "scheduler:claim": "tsx scripts/scheduler-claim.ts",
     "worker:reminders": "tsx scripts/reminder-worker.ts",
     "mobile:doctor": "cap doctor android",
     "mobile:client:build": "vite build --config vite.mobile.config.ts",
     "mobile:sync": "npm run mobile:client:build && cap sync android",
     "mobile:open": "cap open android",
-    "mobile:build:debug": "cd android && gradlew.bat assembleDebug"
+    "mobile:build:debug": "cd android && gradlew.bat assembleDebug",
+    "check": "npm run lint && tsc --noEmit && npm test"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
@@ -46,7 +44,8 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "web-push": "^3.6.7",
-    "zod": "4.5.4"
+    "zod": "4.5.4",
+    "tsx": "4.23.13"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.2",
@@ -57,18 +56,11 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/web-push": "^3.6.4",
-    "drizzle-kit": "0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "tailwindcss": "^4",
-    "tsx": "4.23.13",
     "typescript": "^5",
     "vite": "^7.3.6",
     "vitest": "3.2.6"
-  },
-  "overrides": {
-    "@esbuild-kit/core-utils": {
-      "esbuild": "0.25.12"
-    }
   }
 }

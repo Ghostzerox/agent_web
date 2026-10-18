@@ -1,9 +1,10 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import * as schema from "@/lib/db/schema";
-import { loadMigrations, migrateDatabase, rollbackDatabase, type MigrationRow, type MigrationSession } from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase, rollbackDatabase } from "@/lib/db/migrations";
 import { createMemoryPalaceRepository } from "@/lib/repositories/memoryPalaceRepository";
 import { createKnowledgeRepository } from "@/lib/repositories/knowledgeRepository";
 import { createMemoryPalaceApi } from "@/lib/api/memoryPalaceApi";
@@ -17,8 +18,6 @@ import { createPluginCapabilityRepository } from "@/lib/repositories/pluginCapab
 import { createPluginStorageRepository } from "@/lib/repositories/pluginStorageRepository";
 import { assertPalaceSource, validateLayout, type PalaceView, type PalaceOperation } from "@/lib/memory/palace";
 import { summaryInstructionForMode } from "@/lib/conversation/summary";
-const session = (pg: Pick<PGlite, "query">): MigrationSession => ({ execute: async (query, parameters = []) => (await pg.query<MigrationRow>(query, [...parameters])).rows });
-const migrationsDb = (pg: PGlite) => ({ ...session(pg), transaction: <T>(fn: (tx: MigrationSession) => Promise<T>) => pg.transaction((tx) => fn(session(tx))) });
 
 describe("R5.5 memory palace and authorized learning loop", () => {
   let pg: PGlite;
@@ -29,7 +28,7 @@ describe("R5.5 memory palace and authorized learning loop", () => {
   let gateway: PluginCapabilityGateway;
   let invoke: MockInstance<PluginCapabilityGateway["invoke"]>;
   beforeEach(async () => {
-    pg = new PGlite(); await migrateDatabase(migrationsDb(pg), await loadMigrations()); db = drizzle(pg, { schema });
+    pg = new PGlite(); await migrateDatabase(createPgliteMigrationDatabase(pg), await loadMigrations()); db = drizzle(pg, { schema });
     const registry = new PluginRegistry(FIRST_PARTY_PLUGIN_MANIFESTS);
     await createPluginRepository(db, registry).setEnabled({ pluginId: "study.memorization", enabled: true, expectedVersion: 0, now: new Date() });
     policy = createPluginCapabilityRepository(db, registry);
@@ -166,11 +165,11 @@ describe("R5.5 memory palace and authorized learning loop", () => {
   });
   it("rolls only the new layout migration back and up, preserving source data", async () => {
     await room(); const m = await memory(); const migrations = await loadMigrations();
-    expect(await rollbackDatabase(migrationsDb(pg), migrations)).toBe("0033_task_actions.sql");
-    expect(await rollbackDatabase(migrationsDb(pg), migrations)).toBe("0032_memory_controls.sql");
-    expect(await rollbackDatabase(migrationsDb(pg), migrations)).toBe("0031_memory_palaces.sql");
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0033_task_actions.sql");
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0032_memory_controls.sql");
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0031_memory_palaces.sql");
     expect((await db.select().from(schema.memoryItems))[0].id).toBe(m.id);
-    expect(await migrateDatabase(migrationsDb(pg), migrations)).toEqual(["0031_memory_palaces.sql", "0032_memory_controls.sql", "0033_task_actions.sql"]);
+    expect(await migrateDatabase(createPgliteMigrationDatabase(pg), migrations)).toEqual(["0031_memory_palaces.sql", "0032_memory_controls.sql", "0033_task_actions.sql"]);
     expect(await repo.list()).toEqual([]);
   });
 });

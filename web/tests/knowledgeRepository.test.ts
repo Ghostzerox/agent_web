@@ -1,9 +1,10 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { and, eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/lib/db/schema";
-import { loadMigrations, migrateDatabase, rollbackDatabase, type MigrationRow, type MigrationSession } from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase, rollbackDatabase } from "@/lib/db/migrations";
 import { createKnowledgeRepository } from "@/lib/repositories/knowledgeRepository";
 import { createKnowledgeApi } from "@/lib/api/knowledgeApi";
 import { createConversationRepository, LOCAL_USER_ID } from "@/lib/repositories/conversationRepository";
@@ -12,13 +13,11 @@ import { createMemoryCandidateService } from "@/lib/memory/memoryCandidateServic
 import { createMemoryRepository } from "@/lib/repositories/memoryRepository";
 
 const doc = { title: "学习资料", sourceKey: "chapter-1", format: "markdown" as const, content: "# 第一章\r\n本章的原文证据\r\n## 第二节\r\n更多说明", sourceUrl: "https://example.test/book", fileName: "test.md" };
-const session = (db: Pick<PGlite, "query">): MigrationSession => ({ execute: async (query, parameters = []) => (await db.query<MigrationRow>(query, [...parameters])).rows });
-const migrationDb = (db: PGlite) => ({ ...session(db), transaction: <T>(callback: (tx: MigrationSession) => Promise<T>) => db.transaction((tx) => callback(session(tx))) });
 
 describe("R5.2 knowledge lifecycle and personal source deletion", () => {
   let pg: PGlite;
   let database: ReturnType<typeof drizzle<typeof schema>>;
-  beforeEach(async () => { pg = new PGlite(); await migrateDatabase(migrationDb(pg), await loadMigrations()); database = drizzle(pg, { schema }); });
+  beforeEach(async () => { pg = new PGlite(); await migrateDatabase(createPgliteMigrationDatabase(pg), await loadMigrations()); database = drizzle(pg, { schema }); });
   afterEach(async () => pg.close());
 
   it("imports, locates, deduplicates, versions and replaces segments atomically, then deletes all derived bodies", async () => {
@@ -141,14 +140,14 @@ describe("R5.2 knowledge lifecycle and personal source deletion", () => {
     const migrations = await loadMigrations();
     const conversations = createConversationRepository(database);
     const existing = await conversations.createConversation({ title: "保留旧数据", mode: "auto" });
-    expect(await rollbackDatabase(migrationDb(pg), migrations)).toBe("0033_task_actions.sql");
-    expect(await rollbackDatabase(migrationDb(pg), migrations)).toBe("0032_memory_controls.sql");
-    expect(await rollbackDatabase(migrationDb(pg), migrations)).toBe("0031_memory_palaces.sql");
-    expect(await rollbackDatabase(migrationDb(pg), migrations)).toBe("0030_conversation_summaries.sql");
-    expect(await rollbackDatabase(migrationDb(pg), migrations)).toBe("0029_knowledge_retrieval_audit.sql");
-    expect(await rollbackDatabase(migrationDb(pg), migrations)).toBe("0028_knowledge_library.sql");
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0033_task_actions.sql");
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0032_memory_controls.sql");
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0031_memory_palaces.sql");
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0030_conversation_summaries.sql");
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0029_knowledge_retrieval_audit.sql");
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0028_knowledge_library.sql");
     expect(await conversations.getConversation(existing.id)).not.toBeNull();
-    expect(await migrateDatabase(migrationDb(pg), migrations)).toEqual(["0028_knowledge_library.sql", "0029_knowledge_retrieval_audit.sql", "0030_conversation_summaries.sql", "0031_memory_palaces.sql", "0032_memory_controls.sql", "0033_task_actions.sql"]);
+    expect(await migrateDatabase(createPgliteMigrationDatabase(pg), migrations)).toEqual(["0028_knowledge_library.sql", "0029_knowledge_retrieval_audit.sql", "0030_conversation_summaries.sql", "0031_memory_palaces.sql", "0032_memory_controls.sql", "0033_task_actions.sql"]);
     expect(await createKnowledgeRepository(database).listCollections()).toEqual([]);
   });
 });

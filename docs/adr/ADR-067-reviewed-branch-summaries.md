@@ -19,4 +19,4 @@
 
 摘要本质有损，逐字引用不证明整句推断正确。首期需用户核对，生成后审核不能恢复在途请求；24 份/对话和 500 节点路径限制适合个人学习项目。并发多用户权限、后台摘要队列、增量语义摘要和独立游戏/学习特化不在本阶段扩张。
 
-迁移/备份、使用方式与保留边界见 [指南](../BRANCH_SUMMARY_GUIDE.md)、[报告](../reports/R5_4_REPORT.md)。
+迁移/备份、使用方式与保留边界见 [指南](../BRANCH_SUMMARY_GUIDE.md)、[报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R5_4_REPORT.md)。

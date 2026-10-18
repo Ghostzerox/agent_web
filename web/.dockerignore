@@ -11,3 +11,17 @@ test-results-*
 !.env.example
 npm-debug.log*
 *.pem
+
+# Native / client artifacts and offline tests are not Web build inputs.
+android
+drizzle/meta
+mobile-dist
+.npm-cache
+*.tsbuildinfo
+tests
+e2e
+evals
+scripts/*
+!scripts/db-migrate.ts
+!scripts/db-rollback.ts
+!scripts/reminder-worker.ts

@@ -43,6 +43,6 @@ R6.1定点测试20项通过（含旧任务和通知映射），类型与定点 l
 
 ## 交付与待验
 
-R6.1–R6.4 工程首期已实现；自检、测试、恢复 / 部署记录见 [R6报告](reports/R6_REPORT.md)。本地 React 移动 Bundle 共用同一组件；未要求手机安装，未将浏览器测试记成真机通过。真机项目仍集中在 [统一清单 D03 / D04 / D05 / D07](DEVICE_ACCEPTANCE_BACKLOG.md)。
+R6.1–R6.4 工程首期已实现；自检、测试、恢复 / 部署记录见 [R6报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R6_REPORT.md)。本地 React 移动 Bundle 共用同一组件；未要求手机安装，未将浏览器测试记成真机通过。真机项目仍集中在 [统一清单 D03 / D04 / D05 / D07](DEVICE_ACCEPTANCE_BACKLOG.md)。
 
 未承诺：跨端实时推送、离线打卡写入、终身无上限统计 / 审计、复杂多时区 / 午夜作息、自动 AI 目标完成判定、完整数据恢复或公开发布。习惯长期收益仍需真实使用验证。下一阶段按主线为 R7.1，不自动开始。

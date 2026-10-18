@@ -6,7 +6,7 @@
 
 - 日期：2026-10-16；状态：R5.1 已实现，R5.2–R5.6 待实施。
 - 策略版本：`memory-domain/r5.1-v1`。
-- 决策：[ADR-064](adr/ADR-064-memory-domain-source-and-incremental-migration.md)。验收：[R5.1 报告](reports/R5_1_REPORT.md)。
+- 决策：[ADR-064](adr/ADR-064-memory-domain-source-and-incremental-migration.md)。验收：[R5.1 报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R5_1_REPORT.md)。
 
 ## 1. 本阶段解决什么
 
@@ -151,5 +151,5 @@ R5.3 固定合成基准建议为 100 篇文档、约 1,000 片段，另设 10 �
 
 - 策略：`web/lib/memory/domainPolicy.ts`；来源/派生依赖契约：`sourceReference.ts`。
 - 生产接入：`memoryRepository.ts`、`memoryCandidateService.ts`、`promptRunRepository.ts`。无新增缓存、不改调用次数、不增加收费模型。
-- 反例：`web/tests/memoryDomainPolicy.test.ts`、`memoryRepository.test.ts`；Prompt R4 历史快照保留，当前 `baseline-r5.1.json` 加入真实记忆读取边界的源码指纹，原 80 个请求/样例 hash 不变。
+- 反例：`web/tests/memoryDomainPolicy.test.ts`、`memoryRepository.test.ts`；当前 baseline-current.json 跟踪实际记忆读取边界源码，原 80 个请求 / 样例 hash 保持冻结；旧阶段对照见 [历史索引](HISTORY.md)。
 - 下一步 R5.2：先交付可见的集合/文档文本与 Markdown 导入、列表/来源、更正/删除，以及个人记忆来源删除提示；再推进 R5.3 检索。不是继续搭空框架。

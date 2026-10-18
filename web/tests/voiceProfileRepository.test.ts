@@ -1,32 +1,10 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/lib/db/schema";
-import {
-  loadMigrations,
-  migrateDatabase,
-  type MigrationDatabase,
-  type MigrationRow,
-  type MigrationSession,
-} from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import { createVoiceProfileRepository } from "@/lib/repositories/voiceProfileRepository";
-
-function session(database: Pick<PGlite, "query">): MigrationSession {
-  return {
-    async execute(query, parameters = []) {
-      return (await database.query<MigrationRow>(query, [...parameters])).rows;
-    },
-  };
-}
-
-function migrationDatabase(database: PGlite): MigrationDatabase {
-  return {
-    ...session(database),
-    transaction(callback) {
-      return database.transaction((transaction) => callback(session(transaction)));
-    },
-  };
-}
 
 describe("VoiceProfileRepository", () => {
   let pglite: PGlite;
@@ -34,7 +12,7 @@ describe("VoiceProfileRepository", () => {
 
   beforeEach(async () => {
     pglite = new PGlite();
-    await migrateDatabase(migrationDatabase(pglite), await loadMigrations());
+    await migrateDatabase(createPgliteMigrationDatabase(pglite), await loadMigrations());
     repository = createVoiceProfileRepository(drizzle(pglite, { schema }));
   });
 

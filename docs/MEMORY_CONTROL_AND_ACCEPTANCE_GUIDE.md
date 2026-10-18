@@ -61,7 +61,7 @@ R5.6摘要依赖新增「所覆盖消息所引文档的当前根版本/删除状
 
 **排期更新（2026-10-17）**：按用户要求，以下手机操作暂缓，与前期未完成和后续真机测试合并到 [真机验收统一待办 D05 / D08 / D09](DEVICE_ACCEPTANCE_BACKLOG.md)。不要求现在安装或授权，不阻塞无关功能开发；以下是恢复测试后的操作步骤，不代表已签收。
 
-工程检查包括Web与本地React同时访问同一Docker API/PostgreSQL、旧版本保存冲突、草稿保留、刷新、来源更正拒绝、选择性导出/本地预演、无授权拒绝、重复复习拦截与断线状态。结果见 [R5.6报告](reports/R5_6_REPORT.md)、[ADR-069](adr/ADR-069-memory-control-and-cross-client-acceptance.md)。本地React浏览器测试不是华为手机实测，也没有假冒测试过原生分享面板。
+工程检查包括Web与本地React同时访问同一Docker API/PostgreSQL、旧版本保存冲突、草稿保留、刷新、来源更正拒绝、选择性导出/本地预演、无授权拒绝、重复复习拦截与断线状态。结果见 [R5.6报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R5_6_REPORT.md)、[ADR-069](adr/ADR-069-memory-control-and-cross-client-acceptance.md)。本地React浏览器测试不是华为手机实测，也没有假冒测试过原生分享面板。
 
 当前真实背书跨端尝试因现有插件授权/可用性返回403而跳过；没有自动开启或新增授权。授权下的服务链路用真实PGlite+Gateway测试通过，手机需另验：
 

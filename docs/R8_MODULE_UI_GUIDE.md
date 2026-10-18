@@ -1,6 +1,6 @@
 # R8：模块入口、子页与折叠界面
 
-2026-10-18：R8.2–R8.4 本地实现及自动验收；发布状态见 [报告](reports/R8_REPORT.md)。原 [R8.1 设计](R8_1_MODULE_ENTRY_DESIGN.md) 保留为设计历史。
+2026-10-18：R8.2–R8.4 本地实现及自动验收；发布状态见 [报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R8_REPORT.md)。原 [R8.1 设计](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/R8_1_MODULE_ENTRY_DESIGN.md) 保留为设计历史。
 
 ## 如何使用
 

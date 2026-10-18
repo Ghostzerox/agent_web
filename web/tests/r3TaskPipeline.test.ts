@@ -1,8 +1,9 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
-import { loadMigrations, migrateDatabase, type MigrationSession, type MigrationRow } from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import { createTaskRepository } from "@/lib/repositories/taskRepository";
 import { createSchedulerRepository } from "@/lib/repositories/schedulerRepository";
 import { createInboxRepository } from "@/lib/repositories/inboxRepository";
@@ -30,8 +31,7 @@ describe("R3 task → real generators → measured transport → durable result 
   let database: ReturnType<typeof drizzle<typeof schema>>;
   beforeEach(async () => {
     pg = new PGlite();
-    const session = (db: Pick<PGlite, "query">): MigrationSession => ({ execute: async (query, parameters = []) => (await db.query<MigrationRow>(query, [...parameters])).rows });
-    await migrateDatabase({ ...session(pg), transaction: (callback) => pg.transaction((tx) => callback(session(tx))) }, await loadMigrations());
+    await migrateDatabase(createPgliteMigrationDatabase(pg), await loadMigrations());
     database = drizzle(pg, { schema });
   });
   afterEach(async () => { vi.unstubAllGlobals(); await pg.close(); });

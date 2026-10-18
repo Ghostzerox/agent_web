@@ -10,6 +10,6 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.{ts,tsx}"],
-    maxWorkers: 4,
+    maxWorkers: 2,
   },
 });

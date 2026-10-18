@@ -1,41 +1,14 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/lib/db/schema";
-import {
-  loadMigrations,
-  migrateDatabase,
-  type MigrationDatabase,
-  type MigrationRow,
-  type MigrationSession,
-} from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import {
   createConversationRepository,
   LOCAL_USER_ID,
   type ConversationRepositoryPort,
 } from "@/lib/repositories/conversationRepository";
-
-function createMigrationSession(
-  database: Pick<PGlite, "query">,
-): MigrationSession {
-  return {
-    async execute(query, parameters = []) {
-      const result = await database.query<MigrationRow>(query, [...parameters]);
-      return result.rows;
-    },
-  };
-}
-
-function createMigrationDatabase(database: PGlite): MigrationDatabase {
-  return {
-    ...createMigrationSession(database),
-    transaction(callback) {
-      return database.transaction((transaction) =>
-        callback(createMigrationSession(transaction)),
-      );
-    },
-  };
-}
 
 describe("ConversationRepository", () => {
   let pglite: PGlite;
@@ -44,7 +17,7 @@ describe("ConversationRepository", () => {
   beforeEach(async () => {
     pglite = new PGlite();
     await migrateDatabase(
-      createMigrationDatabase(pglite),
+      createPgliteMigrationDatabase(pglite),
       await loadMigrations(),
     );
     repository = createConversationRepository(drizzle(pglite, { schema }));

@@ -1,6 +1,6 @@
 # R5.4：分支感知压缩与总结
 
-2026-10-16 首期交付，与 R1.3 共用同一套实现。摘要是有损的历史参考，不是正式个人记忆或工具状态。详情见 [报告](reports/R5_4_REPORT.md)、[ADR-067](adr/ADR-067-reviewed-branch-summaries.md)。
+2026-10-16 首期交付，与 R1.3 共用同一套实现。摘要是有损的历史参考，不是正式个人记忆或工具状态。详情见 [报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R5_4_REPORT.md)、[ADR-067](adr/ADR-067-reviewed-branch-summaries.md)。
 
 > R5.5更新：摘要按服务端存储模式关注专业证据、陪伴时间线、反思行动或虚构边界，策略现为 `branch-summary/r5.5-v1`；旧R5.4摘要失效但不自动收费重建，可手动清除。详见 [模块与宫殿指南](MEMORY_PALACE_GUIDE.md)，下文费用样例是R5.4历史实测，不是新策略语义验收。
 
@@ -44,8 +44,8 @@
 - 官方 DeepSeek 摘要调用使用 JSON Output + 非思考；只针对摘要，不改变普通聊天，也不给其他兼容接口强塞厂商参数。首测确有思考占满预算导致截断，依据 [官方参数说明](https://api-docs.deepseek.com/api/create-chat-completion/) 修复，并保留失败费用。
 - 新表 `conversation_summaries` 保存原始节点 ID/hash、模型/策略/模式/设置/依赖指纹、结构化摘要和审核状态；原文仍在 messages。它是私人派生数据，不加密成无法查看的黑盒，也不记录到默认日志。
 - `prompt_runs.summary_usage` 仅记 ID/指纹、覆盖条数和估算前后 Token，不重复存摘要正文。Prompt Envelope 的 `source: summary` 默认导出脱敏，显式包含私人上下文才导出摘要。
-- 迁移 `0030_conversation_summaries.sql` 增表、审计列和源变更触发器，当前 31 份。已备份/隔离恢复/up/down 演练；down 会删除摘要数据，生产需先备份并单独批准，不用 `down -v` 清库。
-- 旧 `contextCompressor.compress` 已停用首尾截取，只保留空结果兼容壳；真正的摘要只有本套实现，不新增第二套 R1 压缩器。
+- 迁移 `0030_conversation_summaries.sql` 增表、审计列和源变更触发器；当前完整迁移清单以正式 SQL 为准。已备份/隔离恢复/up/down 演练；down 会删除摘要数据，生产需先备份并单独批准，不用 `down -v` 清库。
+- 旧首尾截取与 contextCompressor 空兼容壳已退出；真正的摘要只有本套实现，不新增第二套 R1 压缩器。
 
 ## 成本和质量限制
 
@@ -55,4 +55,4 @@
 
 本轮累计 ¥0.057700（包含失败及对照调用），总预算余额见 [台账](PAID_TEST_BUDGET.md)。真实探针凭据留在 Docker，只发送合成文本；普通单元/浏览器测试全为模拟模型。R1 整体生产净收益仍未封版。
 
-不自动清除已导出文件、旧备份、其他客户端已打开摘要或已发远端请求；事务提交后的删除不能撤回请求。更复杂长对话、隐含更正、高密度约束和真实使用收益仍需持续验收。R5.5宫殿已交付，下一步R5.6用户控制与跨端综合验收。
+不自动清除已导出文件、旧备份、其他客户端已打开摘要或已发远端请求；事务提交后的删除不能撤回请求。更复杂长对话、隐含更正、高密度约束和真实使用收益仍需持续验收。R5.5宫殿与R5.6用户控制工程已交付；后续顺序见 [产品主线](PRODUCT_MAINLINE_GUIDE.md)，真机继续统一暂缓。

@@ -1,40 +1,13 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import * as schema from "@/lib/db/schema";
-import {
-  loadMigrations,
-  migrateDatabase,
-  type MigrationDatabase,
-  type MigrationRow,
-  type MigrationSession,
-} from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import {
   createModelCredentialRepository,
   type ModelCredentialRepositoryPort,
 } from "@/lib/repositories/modelCredentialRepository";
-
-function createMigrationSession(
-  database: Pick<PGlite, "query">,
-): MigrationSession {
-  return {
-    async execute(query, parameters = []) {
-      const result = await database.query<MigrationRow>(query, [...parameters]);
-      return result.rows;
-    },
-  };
-}
-
-function createMigrationDatabase(database: PGlite): MigrationDatabase {
-  return {
-    ...createMigrationSession(database),
-    transaction(callback) {
-      return database.transaction((transaction) =>
-        callback(createMigrationSession(transaction)),
-      );
-    },
-  };
-}
 
 describe("ModelCredentialRepository", () => {
   let pglite: PGlite;
@@ -43,7 +16,7 @@ describe("ModelCredentialRepository", () => {
   beforeEach(async () => {
     pglite = new PGlite();
     await migrateDatabase(
-      createMigrationDatabase(pglite),
+      createPgliteMigrationDatabase(pglite),
       await loadMigrations(),
     );
     repository = createModelCredentialRepository(drizzle(pglite, { schema }));

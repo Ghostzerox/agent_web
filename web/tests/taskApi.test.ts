@@ -1,36 +1,11 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createTaskApi } from "@/lib/api/taskApi";
-import {
-  loadMigrations,
-  migrateDatabase,
-  type MigrationDatabase,
-  type MigrationRow,
-  type MigrationSession,
-} from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import * as schema from "@/lib/db/schema";
 import { createTaskRepository } from "@/lib/repositories/taskRepository";
-
-function migrationSession(database: Pick<PGlite, "query">): MigrationSession {
-  return {
-    async execute(query, parameters = []) {
-      const result = await database.query<MigrationRow>(query, [...parameters]);
-      return result.rows;
-    },
-  };
-}
-
-function migrationDatabase(database: PGlite): MigrationDatabase {
-  return {
-    ...migrationSession(database),
-    transaction(callback) {
-      return database.transaction((transaction) =>
-        callback(migrationSession(transaction)),
-      );
-    },
-  };
-}
 
 function jsonRequest(method: string, body: unknown): Request {
   return new Request("http://localhost/api/v1/tasks", {
@@ -47,7 +22,7 @@ describe("Task API", () => {
 
   beforeEach(async () => {
     pglite = new PGlite();
-    await migrateDatabase(migrationDatabase(pglite), await loadMigrations());
+    await migrateDatabase(createPgliteMigrationDatabase(pglite), await loadMigrations());
     api = createTaskApi(
       createTaskRepository(drizzle(pglite, { schema })),
       () => now,

@@ -82,4 +82,4 @@ NPC 的重要性独立于 `user / ai / shared`；晋升保留 ID。公开卡包�
 - 当前 Repository 仍整局加载回合；工作上下文有限，但超长局的数据库分页 / 冷归档留待实际规模需要，不宣称无限存档无成本。
 - Web 与本地 Capacitor React 共用此界面，历史来源滚动不改 hash 路由。本轮不重新打 APK、不进行真机；原生分享 / 系统返回 / 键盘 / 跨设备操作进入 [统一真机待办](DEVICE_ACCEPTANCE_BACKLOG.md)。
 
-R7 首期验收见 [R7报告](reports/R7_REPORT.md)，模板分层与后续 R8 模块导航见 [R8指南](R8_MODULE_UI_GUIDE.md) / [报告](reports/R8_REPORT.md)。后续按 [主线](PRODUCT_MAINLINE_GUIDE.md) 和用户指令推进，不自动启动下一阶段。
+R7 首期验收见 [R7报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R7_REPORT.md)，模板分层与后续 R8 模块导航见 [R8指南](R8_MODULE_UI_GUIDE.md) / [报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R8_REPORT.md)。后续按 [主线](PRODUCT_MAINLINE_GUIDE.md) 和用户指令推进，不自动启动下一阶段。

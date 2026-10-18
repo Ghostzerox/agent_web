@@ -12,12 +12,9 @@ async function main() {
     console.log(JSON.stringify({ version: result.version, baselineSourceCommit: result.baselineSourceCommit, currentSourceHashes: result.sourceHashes, status: "not-run", provider: null, model: null, runDate: null, approvedBudget: null,
       cases: result.cases.map(({ id, fixtureSha256, requestSha256, input, criteria }) => ({ id, fixtureSha256, requestSha256, input, criteria, scores: Object.fromEntries(result.humanReview.dimensions.map((dimension) => [dimension, null])), criticalFailure: null, rationale: null, actualInputTokens: null, actualOutputTokens: null, actualCost: null })) }, null, 2));
   } else {
-    const baseline = JSON.parse(readFileSync(new URL("../evals/r3/baseline-r7-templates.json", import.meta.url), "utf8"));
-    const tasks = JSON.parse(readFileSync(new URL("../evals/r3/baseline-r3.3.json", import.meta.url), "utf8"));
-    const previous = JSON.parse(readFileSync(new URL("../evals/r3/baseline-r3.2.json", import.meta.url), "utf8"));
-    const original = JSON.parse(readFileSync(new URL("../evals/r3/baseline.json", import.meta.url), "utf8"));
+    const baseline = JSON.parse(readFileSync(new URL("../evals/r3/baseline-current.json", import.meta.url), "utf8"));
     const drift = !isDeepStrictEqual(baseline, promptBaselineSnapshot(result));
-    console.log(JSON.stringify({ ...result, baselineDrift: drift, comparisonToR31: comparePromptBaselines(original, promptBaselineSnapshot(result)), comparisonToR32: comparePromptBaselines(previous, promptBaselineSnapshot(result)), comparisonToR33: comparePromptBaselines(tasks, promptBaselineSnapshot(result)) }, null, 2));
+    console.log(JSON.stringify({ version: result.version, total: result.total, passed: result.passed, realModelCalls: result.realModelCalls, failedCases: result.cases.filter((item) => !item.passed), baselineDrift: drift, comparisonToBaseline: comparePromptBaselines(baseline, promptBaselineSnapshot(result)) }, null, 2));
     if (drift) process.exitCode = 1;
   }
   if (result.passed !== result.total) process.exitCode = 1;

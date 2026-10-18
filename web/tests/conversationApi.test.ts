@@ -1,39 +1,12 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createConversationApi } from "@/lib/api/conversationApi";
 import { verifyResponse } from "@/lib/ai/responseVerifier";
-import {
-  loadMigrations,
-  migrateDatabase,
-  type MigrationDatabase,
-  type MigrationRow,
-  type MigrationSession,
-} from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import * as schema from "@/lib/db/schema";
 import { createConversationRepository } from "@/lib/repositories/conversationRepository";
-
-function createMigrationSession(
-  database: Pick<PGlite, "query">,
-): MigrationSession {
-  return {
-    async execute(query, parameters = []) {
-      const result = await database.query<MigrationRow>(query, [...parameters]);
-      return result.rows;
-    },
-  };
-}
-
-function createMigrationDatabase(database: PGlite): MigrationDatabase {
-  return {
-    ...createMigrationSession(database),
-    transaction(callback) {
-      return database.transaction((transaction) =>
-        callback(createMigrationSession(transaction)),
-      );
-    },
-  };
-}
 
 function jsonRequest(path: string, method: string, body: unknown): Request {
   return new Request(`http://localhost${path}`, {
@@ -50,7 +23,7 @@ describe("Conversation API", () => {
   beforeEach(async () => {
     pglite = new PGlite();
     await migrateDatabase(
-      createMigrationDatabase(pglite),
+      createPgliteMigrationDatabase(pglite),
       await loadMigrations(),
     );
     api = createConversationApi(

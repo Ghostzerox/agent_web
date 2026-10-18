@@ -1,5 +1,8 @@
 # R5.3 交付报告：接入检索与来源引用
 
+> 历史交付证据：下文只记录该阶段当时的结论、限制与后续建议，不是当前待办或可直接重跑的付费指令。当前状态见 [产品主线](../PRODUCT_MAINLINE_GUIDE.md)。
+
+
 - 日期：2026-10-16；基于 R5.2 `87b2cc8`。
 - 结论：首期授权词项 RAG、聊天引用与资料页检索已交付；Embedding/混合召回仍待开发，不宣称任意语义查询已解决。
 - 使用：[检索指南](../KNOWLEDGE_RETRIEVAL_GUIDE.md)；决策：[ADR-066](../adr/ADR-066-scoped-knowledge-retrieval.md)。

@@ -88,7 +88,7 @@ for (const width of [360, 1440]) test(`complete exploration region, ending, hist
   await expect(workspace).toContainText("既往设定"); await expect(workspace).toContainText("祭坛碑文");
   await page.getByRole("tab", { name: "地图", exact: true }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
-  if (width === 360 && !process.env.EXPLORATION_MOBILE_BUNDLE) await workspace.screenshot({ path: "../docs/ui/r7/exploration-360.png", style: ".workspace-header { visibility: hidden !important; }" });
+  if (width === 360 && !process.env.EXPLORATION_MOBILE_BUNDLE) await workspace.screenshot({ path: "test-results/exploration-360.png", style: ".workspace-header { visibility: hidden !important; }" });
   const download = page.waitForEvent("download"); await page.getByRole("button", { name: "导出 JSON", exact: true }).click(); expect((await download).suggestedFilename()).toBe("synthetic-exploration.json");
   expect(game.modelCalls()).toBe(0);
 });

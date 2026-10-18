@@ -1,40 +1,15 @@
+import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { randomBytes } from "node:crypto";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as schema from "@/lib/db/schema";
-import {
-  loadMigrations,
-  migrateDatabase,
-  type MigrationDatabase,
-  type MigrationRow,
-  type MigrationSession,
-} from "@/lib/db/migrations";
+import { loadMigrations, migrateDatabase } from "@/lib/db/migrations";
 import { createPushConfigurationService } from "@/lib/notifications/pushConfigurationService";
 import {
   createNotificationRepository,
   NotificationRepositoryError,
 } from "@/lib/repositories/notificationRepository";
-
-function migrationSession(database: Pick<PGlite, "query">): MigrationSession {
-  return {
-    async execute(query, parameters = []) {
-      const result = await database.query<MigrationRow>(query, [...parameters]);
-      return result.rows;
-    },
-  };
-}
-
-function migrationDatabase(database: PGlite): MigrationDatabase {
-  return {
-    ...migrationSession(database),
-    transaction(callback) {
-      return database.transaction((transaction) =>
-        callback(migrationSession(transaction)),
-      );
-    },
-  };
-}
 
 describe("NotificationRepository", () => {
   let pglite: PGlite;
@@ -43,7 +18,7 @@ describe("NotificationRepository", () => {
   beforeEach(async () => {
     vi.stubEnv("CREDENTIAL_MASTER_KEY", randomBytes(32).toString("base64url"));
     pglite = new PGlite();
-    await migrateDatabase(migrationDatabase(pglite), await loadMigrations());
+    await migrateDatabase(createPgliteMigrationDatabase(pglite), await loadMigrations());
     repository = createNotificationRepository(drizzle(pglite, { schema }));
   });
 

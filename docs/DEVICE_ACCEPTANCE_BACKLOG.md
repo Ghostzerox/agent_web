@@ -23,7 +23,7 @@
 | R2 与 R5.6 工程交付 | 浏览器 / 本地 React 检查通过；原生分享、文件选择、系统行为未实测 | 合并至 D03 / D05 / D08 / D09，不冒充真机签收 |
 | R5.6 真实学习跨端尝试 | 当前插件授权 / 可用性返回 403，未代用户开启或授权 | 保留为授权前提未满足，之后由用户决定是否开启再验 |
 
-证据入口：[移动端指南](MOBILE_ANDROID.md)、[R2 报告](reports/R2_UI_REPORT.md)、[R5.5 报告](reports/R5_5_REPORT.md)、[R5.6 报告](reports/R5_6_REPORT.md)。长期学习收益、语义质量和费用净收益不是单次手机验收能证明的，仍单独保留。
+证据入口：[移动端指南](MOBILE_ANDROID.md)、[R2 报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R2_UI_REPORT.md)、[R5.5 报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R5_5_REPORT.md)、[R5.6 报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R5_6_REPORT.md)。长期学习收益、语义质量和费用净收益不是单次手机验收能证明的，仍单独保留。
 
 ## 3. 合并后的验收矩阵
 
@@ -49,7 +49,7 @@
 | 候选阶段 | 未来需补充的设备检查 | 当前状态 |
 |---|---|---|
 | R6 任务深化（工程已交付，真机暂缓） | D03 打卡 / 日历与局部切换，D04 / D07 完成 / 跳过 / 暂停 / 撤销后的关联一次性提醒、缓存撤销与跨端刷新，D05 原生文件实际保存 | Web与本地React自动检查不替代硬件；关联快照需在线更新，离线 / 系统清理仍待验。恢复测试时统一构建最新APK，不现在执行 |
-| R7 大世界探索（R7.1–R7.7 工程首期交付） | D10 开启存档、地图 / 背包装备 / 交易、人物卡 / 承诺 / 事件历史 / 多结局、来源定位与分支 / 检查点；D05 原生导出；D03 返回 / 软键盘 / 草稿 | Web 与本地React自动检查不替代硬件和旧d20回归，合并至恢复测试时最新APK，不现在执行。见 [指南](R7_EXPLORATION_GUIDE.md)、[报告](reports/R7_REPORT.md) |
+| R7 大世界探索（R7.1–R7.7 工程首期交付） | D10 开启存档、地图 / 背包装备 / 交易、人物卡 / 承诺 / 事件历史 / 多结局、来源定位与分支 / 检查点；D05 原生导出；D03 返回 / 软键盘 / 草稿 | Web 与本地React自动检查不替代硬件和旧d20回归，合并至恢复测试时最新APK，不现在执行。见 [指南](R7_EXPLORATION_GUIDE.md)、[报告](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/reports/R7_REPORT.md) |
 | R8 模块化 UI（工程实现） | D03 七入口 / 模块目录与子页链接 / 折叠保留草稿 / 返回 / 键盘，D07 通知深链直达并展开正确结果，D08 学习宫殿与个人数据分域 | Web / 本地React 自动检查不替代硬件；恢复时同批最新 APK 集中验收，不现在重打包。见 [指南](R8_MODULE_UI_GUIDE.md) |
 | Huawei Push Kit / HMS | 卓易通是否支持 SDK、Token 注册 / 更新、后台收取、主动消息 / 新闻 / 书籍投递、点击深链与撤销 | 未完成集成，不当作已存在的推送通道 |
 | ArkTS + ArkWeb 原生适配 | 原生桥接、权限、通知、文件、语音和已有 Web 数据兼容 | 后续按需，不启动双端业务重写 |
