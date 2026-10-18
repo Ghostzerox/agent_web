@@ -11,7 +11,7 @@
 - 第一方背书 / 解题插件、独立角色扮演 / 跑团与区域探索。
 - Web 和共享 React 的 Capacitor Android 客户端；真机测试统一暂缓，APK 不是正式签名发布版本。
 
-R9.1–R9.4 已交付；本轮已完成依赖 / 运行镜像、测试和文档收敛，见 [R9.4报告](docs/reports/R9_4_REPORT.md)。完整状态、限制和后续顺序只维护在 [产品主线](docs/PRODUCT_MAINLINE_GUIDE.md)，文档入口见 [目录](docs/README.md)。工程实现不等于真实质量、成本收益或设备体验全部通过。
+R9.1–R9.5 精简重构已封版：兼容退役、职责 / 工具链收敛、双端回归与合成数据冷重启验收完成，见 [R9封版报告](docs/reports/R9_5_REPORT.md)。完整状态、限制和后续顺序只维护在 [产品主线](docs/PRODUCT_MAINLINE_GUIDE.md)，文档入口见 [目录](docs/README.md)。工程实现不等于真实质量、成本收益或设备体验全部通过。
 
 ## 开发
 

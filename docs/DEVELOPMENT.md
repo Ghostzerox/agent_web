@@ -39,6 +39,8 @@ npm run mobile:client:build
 
 使用 `db:migrate` / `db:rollback` 与 `worker:reminders`。新迁移手写前向 / 回滚 SQL，更新 ORM Schema 并执行完整迁移集成测试；见 [数据库手册](DATABASE_OPERATIONS.md)。不再使用停在 0017 的 Drizzle 生成器 / 元数据检查，也不运行旧 `scheduler:claim` 单次认领脚本，常驻 Worker 是实际执行入口。
 
+`npm test -- releasePersistence.test.ts` 可单独复现 R9.5 的跨模块持久化冷重启检查：仅用合成 PGlite 快照，不读取真实库、不调用模型、不替代生产灾备或真机验收。整体封版范围见 [R9报告](reports/R9_5_REPORT.md)。
+
 ## 构建边界与依赖取舍
 
 - Docker builder 安装构建依赖；runner 只安装 `npm ci --omit=dev`、复制 Web 产物、业务源文件、SQL 和三个运行脚本。构建缓存、Android、测试与评测不进入发布镜像。
