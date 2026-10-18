@@ -13,7 +13,7 @@
 | 模式与模块入口 | [导航规范](UI_NAVIGATION_GUIDE.md)、[模块层级](R8_MODULE_UI_GUIDE.md) |
 | 工具与学习插件 | [工具](TOOLS_GUIDE.md)、[插件系统](PLUGIN_SYSTEM.md)、[插件API](PLUGIN_API_V1.md) |
 | 娱乐 / 探索 / 规则包 | [游戏会话](GAME_SESSIONS.md)、[探索](R7_EXPLORATION_GUIDE.md)、[规则包](GAME_RULE_PACKS.md) |
-| 娱乐后续创作能力（待排期） | [R10世界 / 道具 / 抽卡 / 人物 / 事件与认知隔离规划](ENTERTAINMENT_CREATION_AND_CHARACTER_PLAN.md) |
+| 娱乐创作后续与语义基线 | [R10规划](ENTERTAINMENT_CREATION_AND_CHARACTER_PLAN.md)、[R10.1语义 / 审计 / 验收样例](R10_SEMANTIC_BOUNDARY_BASELINE.md)；功能实现从R10.2开始 |
 | 记忆 / 资料 / 摘要 | [记忆域](MEMORY_DOMAIN_AND_SOURCE_GUIDE.md)、[知识库](KNOWLEDGE_LIBRARY_GUIDE.md)、[检索](KNOWLEDGE_RETRIEVAL_GUIDE.md)、[分支摘要](BRANCH_SUMMARY_GUIDE.md)、[宫殿](MEMORY_PALACE_GUIDE.md)、[用户控制](MEMORY_CONTROL_AND_ACCEPTANCE_GUIDE.md) |
 | Prompt、Token与费用 | [当前Prompt基线](PROMPT_INVENTORY_AND_BASELINE.md)、[Token](TOKEN_COST_GUIDE.md)、[付费账本](PAID_TEST_BUDGET.md) |
 | 移动构建与暂缓真机测试 | [Android](MOBILE_ANDROID.md)、[统一验收待办](DEVICE_ACCEPTANCE_BACKLOG.md) |
