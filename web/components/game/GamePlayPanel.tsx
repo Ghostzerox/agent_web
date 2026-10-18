@@ -7,19 +7,17 @@ import type { ExplorationAction } from "@/lib/game/exploration/contracts";
 import { sessionExplorationTemplate } from "@/lib/game/exploration/templateReference";
 import { findExplorationTemplate } from "@/lib/game/exploration/templateCatalog";
 import type { GameToolRequest } from "@/lib/game/toolkit";
-import { MarkdownMessage } from "@/components/chat/MarkdownMessage";
+import { GameTurnHistory } from "./GameTurnHistory";
 import {
   createGameTurn,
   exportGameSession,
   getGameSession,
   updateGameSessionStatus,
-  type GameEvent,
   type GameSessionDetail,
-  type GameTurn,
 } from "@/lib/api/gameSessionClient";
 import type { GameRuleCheckRequest } from "@/lib/game/checks";
 import { GAME_DICE_SIDES, type GameDiceRequest } from "@/lib/game/dice";
-import type { GameState } from "@/lib/game/state";
+import { initialGameState, type GameState } from "@/lib/game/state";
 import { getFileExportAdapter } from "@/lib/platform/fileExport";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import { requestNavigationPermission } from "@/lib/platform/navigationGuard";
@@ -38,68 +36,8 @@ const STATUS_LABELS = {
   archived: "已归档",
 } as const;
 
-const OUTCOME_LABELS = {
-  "critical-success": "大成功",
-  success: "成功",
-  failure: "失败",
-  "critical-failure": "大失败",
-} as const;
-
-function GameEventCard({ event }: { event: GameEvent }) {
-  if (event.kind === "rule_check") {
-    const check = event.payload;
-    return (
-      <div className="mt-3 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs text-cyan-950 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-100">
-        <span className="font-semibold">规则检定 · {check.characterName} / {check.attribute}</span>
-        <span className="ml-2">{check.dice.notation} → [{check.dice.results.join(", ")}] = {check.total} / 难度 {check.difficulty} · {OUTCOME_LABELS[check.outcome]}</span>
-        <details className="mt-1 text-[11px] opacity-70">
-          <summary className="cursor-pointer">复现信息</summary>
-          <div className="mt-1 break-all">seed: {check.dice.seed} · {check.dice.algorithm} · 差值 {check.margin}</div>
-        </details>
-      </div>
-    );
-  }
-  const roll = event.payload;
-  return (
-    <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
-      <span className="font-semibold">可信骰子 · {roll.purpose}</span>
-      <span className="ml-2">{roll.notation} → [{roll.results.join(", ")}] = {roll.total}</span>
-      <details className="mt-1 text-[11px] opacity-70">
-        <summary className="cursor-pointer">复现信息</summary>
-        <div className="mt-1 break-all">seed: {roll.seed} · {roll.algorithm}</div>
-      </details>
-    </div>
-  );
-}
-
 function message(error: unknown): string {
   return error instanceof Error ? error.message : "游戏操作失败，请稍后重试。";
-}
-
-function turnDepth(turn: GameTurn, byId: Map<string, GameTurn>): number {
-  let depth = 0;
-  let current = turn;
-  const visited = new Set<string>();
-  while (current.parentTurnId) {
-    if (visited.has(current.id)) break;
-    visited.add(current.id);
-    const parent = byId.get(current.parentTurnId);
-    if (!parent) break;
-    depth += 1;
-    current = parent;
-  }
-  return depth;
-}
-
-function activePath(turns: readonly GameTurn[], leafId: string | null): Set<string> {
-  const result = new Set<string>();
-  const byId = new Map(turns.map((turn) => [turn.id, turn]));
-  let current = leafId ? byId.get(leafId) : undefined;
-  while (current && !result.has(current.id)) {
-    result.add(current.id);
-    current = current.parentTurnId ? byId.get(current.parentTurnId) : undefined;
-  }
-  return result;
 }
 
 export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
@@ -128,41 +66,9 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
   const [exporting, setExporting] = useState<"json" | "markdown" | null>(null);
   useNavigationGuard(busy || Boolean(content.trim()), busy ? "游戏回合尚未完成；离开不会取消服务端处理，可返回查看结果。" : "有游戏行动尚未发送，离开后需要重新输入。");
   const byId = useMemo(() => new Map(turns.map((turn) => [turn.id, turn])), [turns]);
-  const currentPath = useMemo(
-    () => activePath(turns, activeLeafTurnId),
-    [turns, activeLeafTurnId],
-  );
-  const eventsByTurn = useMemo(() => {
-    const result = new Map<string, NonNullable<GameSessionDetail["events"]>>();
-    for (const item of detail.events ?? []) {
-      const items = result.get(item.turnId) ?? [];
-      items.push(item);
-      result.set(item.turnId, items);
-    }
-    return result;
-  }, [detail.events]);
   const selectedState = useMemo<GameState>(() => {
     const parent = parentTurnId ? byId.get(parentTurnId) : null;
-    return parent?.stateSnapshot ?? {
-      scene: `${detail.worldName}：${detail.worldPremise}`.slice(0, 1_000),
-      sceneFacts: [],
-      sceneExits: [],
-      objectives: [],
-      flags: {},
-      resources: {},
-      inventory: {},
-      characters: Object.fromEntries(detail.characters.map((character) => [
-        character.id,
-        {
-          name: character.name,
-          health: character.maxHealth,
-          maxHealth: character.maxHealth,
-          attributes: character.attributes,
-          conditions: [],
-        },
-      ])),
-      items: {},
-    };
+    return parent?.stateSnapshot ?? initialGameState(detail.worldName, detail.worldPremise, detail.characters);
   }, [byId, detail.characters, detail.worldName, detail.worldPremise, parentTurnId]);
   const checkCharacters = Object.entries(selectedState.characters);
   const resolvedCheckCharacterId = checkCharacters.some(([id]) => id === checkCharacterId)
@@ -330,38 +236,7 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
         </div>
       </div>
 
-      {turns.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-          {explorationPreset ? "点击上方“开启探索世界”进入地图，之后可自由行动。" : detail.status === "setup" ? "点击“开始故事”，然后写下角色的第一个行动。" : "写下第一个行动，AI 会根据世界和角色卡开启故事。"}
-        </div>
-      ) : (
-        <div className="space-y-3" aria-label="剧情分支树">
-          {turns.map((turn, index) => {
-            const current = turn.id === activeLeafTurnId;
-            const selected = turn.id === parentTurnId;
-            const onCurrentPath = currentPath.has(turn.id);
-            return (
-              <article
-                key={turn.id}
-                id={`game-turn-${turn.id}`}
-                className={`rounded-xl border p-4 ${selected ? "border-violet-500 bg-violet-50/70 dark:bg-violet-950/30" : "border-zinc-200 dark:border-zinc-800"}`}
-                style={{ marginLeft: `${Math.min(turnDepth(turn, byId), 4) * 0.75}rem` }}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-zinc-500">
-                  <span>回合 {index + 1} · {onCurrentPath ? "当前剧情线" : "历史分支"}{current ? " · 当前叶子" : ""}</span>
-                  <button type="button" onClick={() => selectBranch(turn.id)} disabled={busy || detail.status !== "active"} className="font-medium text-violet-700 disabled:opacity-40 dark:text-violet-300">{selected ? "已选为续写起点" : "从此处分支"}</button>
-                </div>
-                <div className="mt-3 rounded-lg bg-zinc-100 px-3 py-2 text-sm dark:bg-zinc-900"><span className="mr-2 font-semibold">你</span>{turn.playerContent}</div>
-                {(eventsByTurn.get(turn.id) ?? []).map((gameEvent) => (
-                  <GameEventCard key={gameEvent.id} event={gameEvent} />
-                ))}
-                <div className="mt-3 text-sm leading-7"><MarkdownMessage content={turn.assistantContent} /></div>
-                <p className="mt-3 text-[11px] text-zinc-400">模型：{turn.model}</p>
-              </article>
-            );
-          })}
-        </div>
-      )}
+      <GameTurnHistory detail={detail} parentTurnId={parentTurnId} busy={busy} explorationPreset={explorationPreset} selectBranch={selectBranch} />
 
       {detail.status === "active" && (!explorationPreset || selectedState.exploration) && (
         <form onSubmit={submitTurn} className="space-y-3 border-t border-zinc-200 pt-5 dark:border-zinc-800">

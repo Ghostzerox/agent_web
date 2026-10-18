@@ -4,8 +4,8 @@ import {
   isoToShanghaiLocal,
   scheduleFromTask,
   shanghaiLocalToIso,
-  TaskManager,
-} from "@/components/tasks/TaskManager";
+} from "@/components/tasks/taskForm";
+import { TaskManager } from "@/components/tasks/TaskManager";
 import type { TaskRecord } from "@/lib/api/taskClient";
 
 describe("task presentation", () => {

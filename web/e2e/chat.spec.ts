@@ -252,6 +252,43 @@ test("chat session lifecycle survives reloads", async ({ page }) => {
   await expect(page.getByPlaceholder("请输入你的问题")).toHaveCount(0);
 });
 
+for (const action of ["stop", "delete"] as const) test(`a late reply cannot be saved after ${action}`, async ({ page }) => {
+  await installServerDataMock(page);
+  let assistantWrites = 0;
+  page.on("request", (request) => {
+    if (request.method() === "POST" && new URL(request.url()).pathname.endsWith("/messages") && request.postDataJSON()?.role === "assistant") assistantWrites++;
+  });
+  let release = async () => {};
+  let started!: () => void;
+  const pending = new Promise<void>((resolve) => { started = resolve; });
+  await page.route("**/api/v1/model/stream", async (route) => {
+    release = async () => {
+      await route.fulfill({ contentType: "text/event-stream", body: 'event: delta\ndata: {"text":"不能保存的晚到回答"}\n\nevent: done\ndata: {}\n\n' }).catch(() => {
+        // Browser cancellation may have already closed this synthetic request.
+      });
+    };
+    started();
+  });
+  await page.goto("/chat");
+  await page.getByRole("button", { name: "+ 新建对话" }).click();
+  await page.getByPlaceholder("请输入你的问题").fill("等待中的合成问题");
+  await page.getByPlaceholder("请输入你的问题").press("Enter");
+  await pending;
+  if (action === "stop") {
+    await page.getByRole("button", { name: "停止生成" }).click();
+    await expect(page.getByRole("button", { name: "发送", exact: true })).toBeVisible();
+  } else {
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByTitle("删除对话").click({ force: true });
+    await expect(page.getByText("暂无对话，点击上方按钮开始")).toBeVisible();
+  }
+  await release();
+  await expect(page.getByText("不能保存的晚到回答", { exact: true })).toHaveCount(0);
+  await page.reload();
+  await expect(action === "stop" ? page.getByRole("main").getByText("等待中的合成问题", { exact: true }) : page.getByText("暂无对话，点击上方按钮开始")).toBeVisible();
+  expect(assistantWrites).toBe(0);
+});
+
 test("mobile chat uses a collapsible conversation drawer", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await installServerDataMock(page);

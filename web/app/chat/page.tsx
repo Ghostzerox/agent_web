@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ChatComposer } from "@/components/chat/ChatComposer";
 import { ChatErrorBanner } from "@/components/chat/ChatErrorBanner";
 import { ChatHeader } from "@/components/chat/ChatHeader";
@@ -21,33 +21,24 @@ import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import { currentAppSearchParams } from "@/lib/platform/appNavigation";
 import { coreModeRegistry, isCoreModeId } from "@/lib/agent/modeRegistry";
 import type { CoreModeId } from "@/lib/agent/modeRegistry";
-import { buildAgentPrompt } from "@/lib/agent/promptBuilder";
-import { applyRetryReply, applySendReply, sendChatMessage } from "@/lib/ai/chatService";
+import type { Session } from "@/lib/conversation/session";
+import { streamSessionReply } from "@/lib/ai/sessionReply";
+import { useChatRuns } from "@/components/chat/useChatRuns";
+import { useChatSessions } from "@/components/chat/useChatSessions";
+import { applyRetryReply, applySendReply } from "@/lib/ai/chatService";
 import type { PromptEnvelope } from "@/lib/ai/promptEnvelope";
-import type {
-  MessageCitation,
-  ResponseVerification,
-} from "@/lib/ai/messages";
 import type { SearchMode } from "@/lib/search/webSearch";
 import {
   appendServerMessage,
-  createServerSession,
-  deleteServerSession,
   getServerSession,
-  listServerSessions,
   renameServerSession,
   serverRecordToMessage,
-  setServerActiveLeaf,
   type ServerSession,
-  updateServerSession,
 } from "@/lib/api/conversationClient";
 import { extractMemoryCandidateFromMessage } from "@/lib/api/memoryCandidateClient";
-import type { ChatMessage } from "@/lib/ai/messages";
 import {
   appendMessage,
   checkoutSessionAt,
-  getActiveMessages,
-  switchAssistantVersion,
 } from "@/lib/conversation/tree";
 
 function isAbortError(error: unknown): boolean {
@@ -61,20 +52,11 @@ export default function ChatPage() {
 }
 
 function ChatWorkspace() {
-  const [sessions, setSessions] = useState<ServerSession[]>([]);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [runningSessionIds, setRunningSessionIds] = useState<Set<string>>(
-    new Set(),
-  );
-  const controllers = useRef(new Map<string, AbortController>());
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const { runningSessionIds, startRun, finishRun, cancelRun } = useChatRuns();
   const [requestedMode, setRequestedMode] = useState<CoreModeId | null>(null);
   const [searchMode, setSearchMode] = useState<SearchMode>("auto");
   const [knowledgeSelections, setKnowledgeSelections] = useState<Record<string, string[]>>({});
   const [summarySelections, setSummarySelections] = useState<Record<string, boolean>>({});
-  const [updatingModeSessionId, setUpdatingModeSessionId] = useState<
-    string | null
-  >(null);
   const [error, setError] = useState<string | null>(null);
   const [memoryCandidateReady, setMemoryCandidateReady] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -82,119 +64,29 @@ function ChatWorkspace() {
     Record<string, PromptEnvelope>
   >({});
 
-  const replaceSession = (next: ServerSession) => {
-    setSessions((current) =>
-      current.map((session) => (session.id === next.id ? next : session)),
-    );
-  };
-
-  const refreshSessions = async (preferredId?: string | null) => {
-    const loaded = await listServerSessions();
-    setSessions(loaded);
-    setActiveSessionId((current) => {
-      const candidate = preferredId ?? current ?? window.sessionStorage.getItem("active-chat-session");
-      return candidate && loaded.some((session) => session.id === candidate)
-        ? candidate
-        : loaded[0]?.id ?? null;
-    });
-  };
-
+  const { sessions, activeSession, resolvedActiveSessionId, setActiveSessionId, input, setInput, messages, loading,
+    updatingModeSessionId, replaceSession, handleNewSession: createSession, handleDeleteSession, handleSwitchVersion, handleModeChange, hasDrafts } =
+    useChatSessions(runningSessionIds, cancelRun, setError);
+  const handleNewSession = async () => { if (await createSession()) setSidebarOpen(false); };
+  useNavigationGuard(hasDrafts || runningSessionIds.size > 0,
+    runningSessionIds.size > 0 ? "有对话正在生成。离开会取消生成，未完成的回答不会保存。" : "有会话草稿尚未发送，离开页面后需要重新输入。");
+  const requestReply = (session: Session, trigger: "send" | "retry", signal: AbortSignal, onDelta: (text: string, provisionalId: string) => void) =>
+    streamSessionReply({ session, trigger, signal, searchMode, knowledgeCollectionIds: knowledgeSelections[session.id] ?? [],
+      useSummary: summarySelections[session.id] ?? false, onDelta,
+      onEnvelope: (envelope) => setPromptEnvelopes((current) => ({ ...current, [session.id]: envelope })) });
   useEffect(() => {
-    let disposed = false;
     const readModeIntent = () => {
       const requested = currentAppSearchParams().get("mode");
       setRequestedMode(isCoreModeId(requested) && requested !== "entertainment" ? requested : null);
     };
     window.addEventListener("hashchange", readModeIntent);
-    const initialize = async () => {
-      readModeIntent();
-      try {
-        await refreshSessions(currentAppSearchParams().get("session"));
-      } catch (loadError) {
-        if (!disposed) {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "无法读取服务端会话",
-          );
-        }
-      }
-    };
-    void initialize();
+    const frame = requestAnimationFrame(readModeIntent);
 
-    const activeControllers = controllers.current;
     return () => {
-      disposed = true;
+      cancelAnimationFrame(frame);
       window.removeEventListener("hashchange", readModeIntent);
-      for (const controller of activeControllers.values()) controller.abort();
-      activeControllers.clear();
     };
   }, []);
-
-  const resolvedActiveSessionId =
-    activeSessionId && sessions.some((session) => session.id === activeSessionId)
-      ? activeSessionId
-      : sessions[0]?.id ?? null;
-  const activeSession = resolvedActiveSessionId
-    ? sessions.find((session) => session.id === resolvedActiveSessionId) ?? null
-    : null;
-  const messages: ChatMessage[] = activeSession
-    ? getActiveMessages(activeSession)
-    : [];
-  const loading = resolvedActiveSessionId
-    ? runningSessionIds.has(resolvedActiveSessionId)
-    : false;
-  const input = resolvedActiveSessionId ? drafts[resolvedActiveSessionId] ?? "" : "";
-  const setInput = (value: string) => {
-    if (resolvedActiveSessionId) setDrafts((current) => ({ ...current, [resolvedActiveSessionId]: value }));
-  };
-  useNavigationGuard(Object.values(drafts).some((draft) => draft.trim().length > 0) || runningSessionIds.size > 0,
-    runningSessionIds.size > 0 ? "有对话正在生成。离开会取消生成，未完成的回答不会保存。" : "有会话草稿尚未发送，离开页面后需要重新输入。");
-  useEffect(() => {
-    if (resolvedActiveSessionId) window.sessionStorage.setItem("active-chat-session", resolvedActiveSessionId);
-  }, [resolvedActiveSessionId]);
-
-  const markRunning = (sessionId: string, controller: AbortController) => {
-    controllers.current.set(sessionId, controller);
-    setRunningSessionIds((current) => new Set(current).add(sessionId));
-  };
-
-  const markFinished = (sessionId: string) => {
-    controllers.current.delete(sessionId);
-    setRunningSessionIds((current) => {
-      const next = new Set(current);
-      next.delete(sessionId);
-      return next;
-    });
-  };
-
-  const handleNewSession = async () => {
-    try {
-      setError(null);
-      const session = await createServerSession();
-      setSessions((current) => [session, ...current]);
-      setActiveSessionId(session.id);
-      setSidebarOpen(false);
-    } catch (createError) {
-      setError(
-        createError instanceof Error ? createError.message : "无法创建会话",
-      );
-    }
-  };
-
-  const handleDeleteSession = async (id: string) => {
-    if (!window.confirm("确定要删除这个对话吗？已确认记忆独立保留，但来源证据副本会清除。若要连同关联记忆删除，可在记忆页的来源操作中执行。")) return;
-    try {
-      controllers.current.get(id)?.abort();
-      await deleteServerSession(id);
-      setSessions((current) => current.filter((session) => session.id !== id));
-      if (id === resolvedActiveSessionId) setActiveSessionId(null);
-    } catch (deleteError) {
-      setError(
-        deleteError instanceof Error ? deleteError.message : "无法删除会话",
-      );
-    }
-  };
 
   const sendMessage = async () => {
     const trimmed = input.trim();
@@ -203,8 +95,7 @@ function ChatWorkspace() {
     setInput("");
     setError(null);
     const sessionId = resolvedActiveSessionId;
-    const controller = new AbortController();
-    markRunning(sessionId, controller);
+    const controller = startRun(sessionId);
 
     let persistedUserSession = activeSession;
     try {
@@ -247,48 +138,8 @@ function ChatWorkspace() {
       }
       replaceSession(persistedUserSession);
 
-      const prompt = buildAgentPrompt({
-        session: persistedUserSession,
-        memory: [],
-      });
-      const provisionalId = crypto.randomUUID();
-      let citations: MessageCitation[] = [];
-      let verification: ResponseVerification | null = null;
-      const reply = await sendChatMessage(
-        prompt,
-        {
-          trigger: "send",
-          conversation: {
-            id: persistedUserSession.id,
-            title: persistedUserSession.title,
-            activeLeafId: persistedUserSession.activeLeafId ?? null,
-          },
-          searchMode,
-          knowledgeCollectionIds: knowledgeSelections[sessionId] ?? [],
-          useSummary: summarySelections[sessionId] ?? false,
-        },
-        controller.signal,
-        (_delta, accumulated) => {
-          replaceSession(
-            applySendReply(
-              persistedUserSession,
-              accumulated,
-              provisionalId,
-            ) as ServerSession,
-          );
-        },
-        (envelope) =>
-          setPromptEnvelopes((current) => ({
-            ...current,
-            [sessionId]: envelope,
-          })),
-        (nextCitations) => {
-          citations = nextCitations;
-        },
-        (nextVerification) => {
-          verification = nextVerification;
-        },
-      );
+      const { reply, citations, verification } = await requestReply(persistedUserSession, "send", controller.signal,
+        (text, provisionalId) => replaceSession(applySendReply(persistedUserSession, text, provisionalId) as ServerSession));
       const assistantResult = await appendServerMessage(sessionId, {
         parentMessageId: userMessage.id ?? null,
         role: "assistant",
@@ -312,7 +163,7 @@ function ChatWorkspace() {
         );
       }
     } finally {
-      markFinished(sessionId);
+      finishRun(sessionId, controller);
     }
   };
 
@@ -324,51 +175,12 @@ function ChatWorkspace() {
 
     const sessionId = resolvedActiveSessionId;
     const retrySession = checkoutSessionAt(activeSession, message.parentId ?? null);
-    const controller = new AbortController();
-    const provisionalId = crypto.randomUUID();
-    markRunning(sessionId, controller);
+    const controller = startRun(sessionId);
     setError(null);
 
     try {
-      const prompt = buildAgentPrompt({ session: retrySession, memory: [] });
-      let citations: MessageCitation[] = [];
-      let verification: ResponseVerification | null = null;
-      const reply = await sendChatMessage(
-        prompt,
-        {
-          trigger: "retry",
-          conversation: {
-            id: retrySession.id,
-            title: retrySession.title,
-            activeLeafId: retrySession.activeLeafId ?? null,
-          },
-          searchMode,
-          knowledgeCollectionIds: knowledgeSelections[sessionId] ?? [],
-          useSummary: summarySelections[sessionId] ?? false,
-        },
-        controller.signal,
-        (_delta, accumulated) => {
-          replaceSession(
-            applyRetryReply(
-              activeSession,
-              accumulated,
-              messageId,
-              provisionalId,
-            ) as ServerSession,
-          );
-        },
-        (envelope) =>
-          setPromptEnvelopes((current) => ({
-            ...current,
-            [sessionId]: envelope,
-          })),
-        (nextCitations) => {
-          citations = nextCitations;
-        },
-        (nextVerification) => {
-          verification = nextVerification;
-        },
-      );
+      const { reply, citations, verification } = await requestReply(retrySession, "retry", controller.signal,
+        (text, provisionalId) => replaceSession(applyRetryReply(activeSession, text, messageId, provisionalId) as ServerSession));
       await appendServerMessage(sessionId, {
         parentMessageId: message.parentId ?? null,
         role: "assistant",
@@ -385,81 +197,9 @@ function ChatWorkspace() {
         );
       }
     } finally {
-      markFinished(sessionId);
+      finishRun(sessionId, controller);
     }
   };
-
-  const handleSwitchVersion = async (
-    messageId: string,
-    direction: "prev" | "next",
-  ) => {
-    if (!activeSession || !resolvedActiveSessionId || loading) return;
-    const switched = switchAssistantVersion(activeSession, messageId, direction);
-    if (switched.activeLeafId === activeSession.activeLeafId) return;
-    try {
-      const updated = await setServerActiveLeaf(
-        resolvedActiveSessionId,
-        switched.activeLeafId ?? null,
-        activeSession.serverVersion,
-      );
-      replaceSession({
-        ...switched,
-        updatedAt: new Date(updated.updatedAt).getTime(),
-        serverVersion: updated.version,
-      } as ServerSession);
-    } catch (switchError) {
-      setError(
-        switchError instanceof Error ? switchError.message : "无法切换回答版本",
-      );
-      try {
-        replaceSession(await getServerSession(resolvedActiveSessionId));
-      } catch {
-        // 保留原始错误，避免恢复请求覆盖更有用的诊断信息。
-      }
-    }
-  };
-
-  const handleModeChange = async (mode: CoreModeId) => {
-    if (
-      !activeSession ||
-      !resolvedActiveSessionId ||
-      loading ||
-      updatingModeSessionId ||
-      (activeSession.mode ?? "auto") === mode
-    ) {
-      return;
-    }
-
-    const sessionId = resolvedActiveSessionId;
-    setUpdatingModeSessionId(sessionId);
-    setError(null);
-    try {
-      const updated = await updateServerSession(sessionId, {
-        mode,
-        expectedVersion: activeSession.serverVersion,
-      });
-      replaceSession({
-        ...activeSession,
-        mode,
-        updatedAt: new Date(updated.updatedAt).getTime(),
-        serverVersion: updated.version,
-      });
-    } catch (modeError) {
-      setError(
-        modeError instanceof Error ? modeError.message : "无法更新对话模式",
-      );
-      try {
-        replaceSession(await getServerSession(sessionId));
-      } catch {
-        // 保留模式更新的原始错误，避免恢复请求覆盖诊断信息。
-      }
-    } finally {
-      setUpdatingModeSessionId((current) =>
-        current === sessionId ? null : current,
-      );
-    }
-  };
-
 
   return (
     <AppShell route="/chat" title="AI 对话" description="自动 · 专业 · 陪伴 · 反思" chat actions={<ChatHeader
@@ -560,7 +300,7 @@ function ChatWorkspace() {
               onSearchModeChange={setSearchMode}
               onSend={sendMessage}
               onStop={() =>
-                controllers.current.get(resolvedActiveSessionId)?.abort()
+                cancelRun(resolvedActiveSessionId)
               }
             />
           )}
