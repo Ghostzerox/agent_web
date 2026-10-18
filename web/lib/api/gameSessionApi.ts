@@ -8,11 +8,8 @@ import {
   updateGameCharacterSchema,
   updateGameSessionSchema,
 } from "@/lib/game/contracts";
-import {
-  createGameSessionRepository,
-  GameSessionRepositoryError,
-  type GameSessionRepositoryPort,
-} from "@/lib/repositories/gameSessionRepository";
+import { createGameSessionRepository, type GameSessionRepositoryPort } from "@/lib/repositories/gameSessionRepository";
+import { GameSessionRepositoryError } from "@/lib/game/errors";
 
 type GameSessionApiErrorCode =
   | "INVALID_JSON"

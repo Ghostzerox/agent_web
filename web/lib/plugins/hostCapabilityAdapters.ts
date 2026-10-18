@@ -4,7 +4,7 @@ import {
   type AgentPromptGeneratorPort,
 } from "@/lib/tasks/agentPromptGenerator";
 import { normalizeTaskSchedule } from "@/lib/tasks/schedule";
-import type { PluginCapabilityAdapter } from "@/lib/plugins/capabilityGateway";
+import type { PluginCapabilityAdapter } from "@/lib/plugins/capabilityAdapter";
 import { ownsRegisteredActivity } from "@/lib/plugins/activityRegistry";
 import {
   learningCardContentSchema,

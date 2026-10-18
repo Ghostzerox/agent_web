@@ -3,7 +3,7 @@
  * 系统指令、记忆上下文和工具过程不得写入这个类型。
  */
 export type MessageCitation = {
-  knowledge?: import("@/lib/knowledge/citations").KnowledgeCitationMetadata;
+  knowledge?: import("@/lib/knowledge/citationMetadata").KnowledgeCitationMetadata;
   id?: string;
   title: string;
   url: string;

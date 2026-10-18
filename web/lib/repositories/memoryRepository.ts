@@ -1,13 +1,7 @@
 import { and, desc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import {
-  conversations,
-  memoryCandidates,
-  memoryItems,
-  messages,
-  type MemoryCandidateKind,
-  type MemoryItemRecord,
-} from "@/lib/db/schema";
+import { conversations, memoryCandidates, memoryItems, messages, type MemoryItemRecord } from "@/lib/db/schema";
+import { type MemoryCandidateKind } from "@/lib/memory/types";
 import * as schema from "@/lib/db/schema";
 import type { RetrievedMemory } from "@/lib/memory/memoryRetrieval";
 import { rankMemories } from "@/lib/memory/memoryRetrieval";

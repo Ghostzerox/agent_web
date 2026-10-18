@@ -1,7 +1,8 @@
 import { z, ZodError, type ZodType } from "zod";
 import { CORE_MODE_IDS } from "@/lib/agent/modeRegistry";
 import { getDatabase } from "@/lib/db/client";
-import { isLocalKnowledgeUrl, knowledgeCitationMetadataSchema, knowledgeCitationUrl } from "@/lib/knowledge/citations";
+import { isLocalKnowledgeUrl, knowledgeCitationUrl } from "@/lib/knowledge/citations";
+import { knowledgeCitationMetadataSchema } from "@/lib/knowledge/citationMetadata";
 import {
   createConversationRepository,
   RepositoryError,

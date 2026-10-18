@@ -12,7 +12,7 @@ import type { MemorizationUnit } from "@/lib/memorization/domain";
 import type { RecallStrategy } from "@/lib/memorization/learningTools";
 type LearningPort = Pick<ReturnType<typeof createMemorizationService>, "list" | "get" | "review">;
 type MaterialReads = Map<string, ReturnType<LearningPort["get"]>>;
-export type PalaceSourceView = { status: "ready" | "changed" | "missing" | "expired"; revision?: string; title?: string; text?: string; url?: string; useCount?: number; lastUsedAt?: string | null; unit?: MemorizationUnit; storageVersion?: number };
+import type { PalaceSourceView, PalaceCatalog, PalaceRecallPlan } from "@/lib/memory/palace";
 export class MemoryPalaceRepository<T extends PgQueryResultHKT> {
   constructor(private readonly db: PgDatabase<T, typeof schema>, private readonly learning: LearningPort) {}
   async list() { return this.db.select().from(memoryPalaces).where(eq(memoryPalaces.userId, LOCAL_USER_ID)).orderBy(desc(memoryPalaces.updatedAt)); }
@@ -50,7 +50,7 @@ export class MemoryPalaceRepository<T extends PgQueryResultHKT> {
     if (expected && revision !== expected) return { status: "changed" };
     return { status: "ready", revision, title: stored.material.title, text: unit.content, url: "/study/memorization", unit, storageVersion: stored.storageVersion };
   }
-  async catalog(module: PalaceRoom["module"]) {
+  async catalog(module: PalaceRoom["module"]): Promise<PalaceCatalog> {
     const memories = ["professional", "companion", "reflection"].includes(module) ? await this.db.select({ id: memoryItems.id, content: memoryItems.content }).from(memoryItems).where(and(eq(memoryItems.userId, LOCAL_USER_ID), or(isNull(memoryItems.validUntil), gt(memoryItems.validUntil, new Date())))).orderBy(desc(memoryItems.updatedAt)).limit(101) : [];
     const documents = module !== "companion" ? await this.db.select({ id: knowledgeDocuments.id, title: knowledgeDocuments.title }).from(knowledgeDocuments).innerJoin(knowledgeCollections, and(eq(knowledgeDocuments.collectionId, knowledgeCollections.id), eq(knowledgeDocuments.userId, knowledgeCollections.userId))).where(and(eq(knowledgeDocuments.userId, LOCAL_USER_ID), eq(knowledgeCollections.userId, LOCAL_USER_ID), eq(knowledgeCollections.module, module as typeof knowledgeCollections.$inferSelect.module))).orderBy(desc(knowledgeDocuments.updatedAt)).limit(201) : [];
     const materials = module === "memorization" ? await this.learning.list() : [];
@@ -95,7 +95,7 @@ export class MemoryPalaceRepository<T extends PgQueryResultHKT> {
   async delete(id: string, expectedVersion: number) { const removed = await this.db.delete(memoryPalaces).where(and(eq(memoryPalaces.id, id), eq(memoryPalaces.userId, LOCAL_USER_ID), eq(memoryPalaces.version, expectedVersion))).returning({ id: memoryPalaces.id }); if (!removed.length) throw new PalaceError("宫殿已变化或不存在，请刷新。"); }
   async locate(id: string, locusId: string) { const palace = await this.get(id); const room = palaceRoomForLocus(palace, locusId); const locus = room.loci.find((v) => v.id === locusId)!; return { palace, room, locus }; }
   async resolve(id: string, locusId: string) { const { palace, room, locus } = await this.locate(id, locusId); return this.source(palace.purpose, room.module, locus.binding.source, locus.binding.revision); }
-  async route(id: string, roomId: string, strategy: RecallStrategy, seed: string, count: number) {
+  async route(id: string, roomId: string, strategy: RecallStrategy, seed: string, count: number): Promise<PalaceRecallPlan> {
     const palace = await this.get(id); const room = palace.rooms.find((r) => r.id === roomId); if (!room || room.module !== "memorization") throw new PalaceError("只能在背书房间开始路线训练。");
     const items: { locus: PalaceLocus; unit: MemorizationUnit }[] = []; const blocked: string[] = [];
     const reads: MaterialReads = new Map();

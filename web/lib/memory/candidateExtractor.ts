@@ -1,7 +1,4 @@
-import type {
-  MemoryCandidateKind,
-  MemorySensitivity,
-} from "@/lib/db/schema";
+import type { MemoryCandidateKind, MemorySensitivity } from "@/lib/memory/types";
 
 const MAX_CANDIDATE_LENGTH = 500;
 

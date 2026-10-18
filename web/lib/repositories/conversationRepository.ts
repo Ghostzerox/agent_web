@@ -7,9 +7,9 @@ import {
   memoryCandidates,
   memoryItems,
   type ConversationRecord,
-  type MessageCitation,
   type MessageRecord,
 } from "@/lib/db/schema";
+import type { MessageCitation } from "@/lib/ai/messages";
 import type { ResponseVerification } from "@/lib/ai/messages";
 import * as schema from "@/lib/db/schema";
 

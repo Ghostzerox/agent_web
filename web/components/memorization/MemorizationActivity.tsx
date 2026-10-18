@@ -19,10 +19,7 @@ import {
   type MemorizationMaterialSummary,
   type MemorizationUnitInput,
 } from "@/lib/memorization/domain";
-import type {
-  MemorizationReviewResult,
-  MemorizationTaskDraft,
-} from "@/lib/memorization/service";
+import type { MemorizationReviewResult, MemorizationTaskDraft } from "@/lib/memorization/domain";
 import { exportMaterial, materialTransferSchema, sampleRecallUnits, type RecallStrategy } from "@/lib/memorization/learningTools";
 import { getFileExportAdapter } from "@/lib/platform/fileExport";
 

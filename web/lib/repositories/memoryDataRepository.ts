@@ -1,3 +1,4 @@
+import type { MemoryUsageRecord } from "@/lib/memory/controls";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as s from "@/lib/db/schema";
@@ -35,7 +36,7 @@ export function createMemoryDataRepository<T extends PgQueryResultHKT>(db: PgDat
         return file;
       }, { isolationLevel: "repeatable read", accessMode: "read only" });
     },
-    async usage() {
+    async usage(): Promise<MemoryUsageRecord<Date>[]> {
       const runs = await db.select({ id: s.promptRuns.id, conversationId: s.promptRuns.conversationId, status: s.promptRuns.status, createdAt: s.promptRuns.createdAt, summary: s.promptRuns.summaryUsage, knowledge: s.promptRuns.knowledgeRetrieval }).from(s.promptRuns).innerJoin(s.conversations, and(eq(s.conversations.id, s.promptRuns.conversationId), eq(s.conversations.userId, owner))).where(eq(s.promptRuns.userId, owner)).orderBy(desc(s.promptRuns.createdAt)).limit(20);
       const used = runs.length ? await db.select({ runId: s.memoryUsages.promptRunId, memoryId: s.memoryUsages.memoryItemId, rank: s.memoryUsages.rank, estimatedTokens: s.memoryUsages.estimatedTokens, liveId: s.memoryItems.id, validUntil: s.memoryItems.validUntil }).from(s.memoryUsages).leftJoin(s.memoryItems, and(eq(s.memoryItems.id, s.memoryUsages.memoryItemId), eq(s.memoryItems.userId, owner))).where(and(eq(s.memoryUsages.userId, owner), inArray(s.memoryUsages.promptRunId, runs.map((r) => r.id)))).limit(100) : [];
       return runs.map((run) => ({ ...run, memories: used.filter((u) => u.runId === run.id).map((u) => ({ id: u.memoryId, rank: u.rank, estimatedTokens: u.estimatedTokens, currentState: !u.liveId ? "deleted-or-unavailable" : u.validUntil && u.validUntil <= new Date() ? "expired" : "present" })) }));

@@ -9,7 +9,8 @@ import { estimateMemoryTokens } from "@/lib/memory/memoryRetrieval";
 import { stableJson } from "@/lib/ai/stableJson";
 
 type Database<T extends PgQueryResultHKT> = PgDatabase<T, typeof schema>;
-export type SummaryRecord = typeof conversationSummaries.$inferSelect;
+import type { SummarySnapshot } from "@/lib/conversation/summary";
+type SummaryRecord = SummarySnapshot<Date>;
 export class ConversationSummaryRepository<T extends PgQueryResultHKT> {
   constructor(private readonly db: Database<T>) {}
   async branch(conversationId: string, leafId: string | null) {

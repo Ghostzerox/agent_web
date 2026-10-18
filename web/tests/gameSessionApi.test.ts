@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createGameSessionApi } from "@/lib/api/gameSessionApi";
-import { GameSessionRepositoryError } from "@/lib/repositories/gameSessionRepository";
+import { GameSessionRepositoryError } from "@/lib/game/errors";
 import type { GameSessionRepositoryPort } from "@/lib/repositories/gameSessionRepository";
 
 function repository(

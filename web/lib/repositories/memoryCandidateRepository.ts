@@ -1,14 +1,7 @@
 import { and, desc, eq, ne, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
-import {
-  conversations,
-  memoryCandidates,
-  memoryItems,
-  messages,
-  type ConversationRecord,
-  type MemoryCandidateRecord,
-  type MemoryCandidateStatus,
-} from "@/lib/db/schema";
+import { conversations, memoryCandidates, memoryItems, messages, type ConversationRecord, type MemoryCandidateRecord } from "@/lib/db/schema";
+import { type MemoryCandidateStatus } from "@/lib/memory/types";
 import type { MemoryCandidateDraft } from "@/lib/memory/candidateExtractor";
 import * as schema from "@/lib/db/schema";
 import { LOCAL_USER_ID } from "@/lib/repositories/conversationRepository";

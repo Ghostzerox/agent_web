@@ -3,7 +3,8 @@ import type { WebCitation } from "@/lib/search/webSearch";
 import { stableJson } from "@/lib/ai/stableJson";
 import { estimateMemoryTokens } from "@/lib/memory/memoryRetrieval";
 import type { MemorySourceReference } from "@/lib/memory/sourceReference";
-import { knowledgeCitationUrl, type KnowledgeCitationMetadata } from "./citations";
+import { knowledgeCitationUrl } from "./citations";
+import { type KnowledgeCitationMetadata } from "@/lib/knowledge/citationMetadata";
 import type { KNOWLEDGE_MODULES } from "./documents";
 
 export const KNOWLEDGE_RETRIEVAL_VERSION = "lexical/r5.3-v1";

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { PluginCapabilityGateway } from "@/lib/plugins/capabilityGateway";
-import { checkSpelling, spellingOptionsSchema, type SpellingResult } from "./learningTools";
+import { checkSpelling, spellingOptionsSchema } from "@/lib/memorization/spelling";
 import { PLUGIN_STORAGE_MAX_VALUE_BYTES } from "@/lib/repositories/pluginStorageRepository";
 import {
   memorizationMaterialSchema,
@@ -50,23 +50,7 @@ export const deleteMemorizationMaterialInputSchema = z
   .object({ expectedVersion: z.number().int().positive() })
   .strict();
 
-export type MemorizationTaskDraft = z.infer<typeof taskDraftResultSchema>;
-
-export type MemorizationReviewResult = {
-  material: MemorizationMaterial;
-  storageVersion: number;
-  evaluation: {
-    score: number;
-    localScore: number;
-    source: "model" | "deterministic";
-    feedback: string;
-    missedPoints: string[];
-    model: string | null;
-    spelling?: SpellingResult;
-  };
-  taskDraft: MemorizationTaskDraft | null;
-  taskDraftUnavailable: boolean;
-};
+import type { MemorizationTaskDraft, MemorizationReviewResult } from "@/lib/memorization/domain";
 
 export type MemorizationGatewayPort = Pick<PluginCapabilityGateway, "invoke">;
 

@@ -44,3 +44,7 @@ export function orderPalaceRecall(items: { locus: PalaceLocus; unit: Memorizatio
   const plan = sampleRecallUnits(items.map(({ locus, unit }) => ({ ...unit, id: locus.id })), strategy, seed, now, count);
   return plan.map((step) => { const item = items.find(({ locus }) => locus.id === step.unitId)!; return { locusId: item.locus.id, label: item.locus.label, association: item.locus.association, cue: item.unit.cue, reason: step.reason }; });
 }
+
+export type PalaceSourceView = { status: "ready" | "changed" | "missing" | "expired"; revision?: string; title?: string; text?: string; url?: string; useCount?: number; lastUsedAt?: string | null; unit?: MemorizationUnit; storageVersion?: number };
+export type PalaceCatalog = { memories: { id: string; title: string }[]; documents: { id: string; title: string }[]; materials: import("@/lib/memorization/domain").MemorizationMaterialSummary[]; truncated: boolean };
+export type PalaceRecallPlan = { version: number; steps: ReturnType<typeof orderPalaceRecall>; blocked: string[] };

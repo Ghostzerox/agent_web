@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  createGameTurnService,
-  gamePromptMessages,
-  gameTurnPath,
-} from "@/lib/game/gameTurnService";
+import { createGameTurnService, gamePromptMessages } from "@/lib/game/gameTurnService";
+import { gameTurnPath } from "@/lib/game/turnTree";
 import type { GameSessionDetail, GameSessionRepositoryPort } from "@/lib/repositories/gameSessionRepository";
 
 const sessionId = "11111111-1111-4111-8111-111111111111";

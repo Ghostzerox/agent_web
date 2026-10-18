@@ -7,8 +7,10 @@ import ts from "typescript";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 }).trim();
-// Track the committed file set; ignored build output / local private files are never source inputs.
-const files = git("ls-tree", "-r", "--name-only", "HEAD").split("\n").filter(Boolean);
+// Optional working-tree audit includes new sources and excludes deleted paths; ignored private files stay excluded.
+const workingTree = process.argv.includes("--working-tree");
+const files = (workingTree ? git("ls-files", "--cached", "--others", "--exclude-standard") : git("ls-tree", "-r", "--name-only", "HEAD"))
+  .split("\n").filter(Boolean).filter((file) => !workingTree || existsSync(path.join(root, file)));
 const fileSet = new Set(files);
 const code = files.filter((file) => file.startsWith("web/") && /\.(?:ts|tsx|js|mjs)$/u.test(file) && !file.endsWith(".d.ts"));
 const texts = new Map(code.map((file) => [file, readFileSync(path.join(root, file), "utf8")]));
@@ -87,8 +89,8 @@ const artifactSize = (relative) => {
   return walk(directory);
 };
 const report = {
-  schemaVersion: 1, baselineCommit: git("rev-parse", "HEAD"),
-  method: "Committed file set, current tracked contents; TS AST static import/export/dynamic-string-import graph (type edges included separately). No application execution, network, database, or private env reads.",
+  schemaVersion: 1, baselineCommit: git("rev-parse", "HEAD"), ...(workingTree ? { sourceSet: "working-tree" } : {}),
+  method: (workingTree ? "Working-tree source set; " : "Committed file set, current tracked contents; ") + " TS AST static import/export/dynamic-string-import graph (type edges included separately). No application execution, network, database, or private env reads.",
   limitations: ["Not a bundler, symbol liveness proof, CPU/complexity profiler or authorization audit.", "CLI, framework routes, native registration, dynamic non-literal imports and external callers need manual verification.", "Physical nonblank lines are a size signal; dense JSX may have few lines but many responsibilities.", "Build byte counts describe existing ignored local output, not a fresh build; timestamps and previous test durations are recorded separately."],
   counts: { trackedFiles: files.length, codeFiles: code.length, productSourceFiles: projectSource.length, productNonblankLines: projectSource.reduce((sum, file) => sum + metrics(file).lines, 0), pages: group("web/app/").filter((file) => file.endsWith("/page.tsx")).length, apiRouteFiles: group("web/app/api/", "/route.ts").length, unitTestFiles: code.filter((file) => /^web\/tests\/.*\.test\.tsx?$/u.test(file)).length, e2eSpecFiles: group("web/e2e/", ".spec.ts").length, dependencies: Object.keys(packageJson.dependencies).length, devDependencies: Object.keys(packageJson.devDependencies).length, npmScripts: Object.keys(packageJson.scripts).length, upMigrations: files.filter((file) => /^web\/drizzle\/[^/]+\.sql$/u.test(file)).length, rollbackMigrations: group("web/drizzle/rollback/", ".sql").length, markdownDocs: group("docs/", ".md").length, promptBaselineFiles: files.filter((file) => /^web\/evals\/r3\/baseline[^/]*\.json$/u.test(file)).length },
   largestProductFiles: projectSource.map(metrics).sort((a, b) => b.lines - a.lines).slice(0, 15),

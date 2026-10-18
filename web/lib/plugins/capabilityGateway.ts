@@ -27,21 +27,7 @@ import {
 
 export type { PluginExecutionContext } from "@/lib/plugins/pluginApiV1";
 
-type PreparedCapabilityCall = {
-  operation: string;
-  units: number;
-  input: unknown;
-};
-
-export interface PluginCapabilityAdapter {
-  readonly capabilityId: PluginCapabilityId;
-  prepare(input: unknown, context: { pluginId: string }): PreparedCapabilityCall;
-  execute(input: {
-    pluginId: string;
-    prepared: PreparedCapabilityCall;
-    now: Date;
-  }): Promise<unknown>;
-}
+import type { PluginCapabilityAdapter, PreparedCapabilityCall } from "@/lib/plugins/capabilityAdapter";
 
 export type PluginCapabilityGatewayErrorCode =
   | "CAPABILITY_CONTEXT_INVALID"

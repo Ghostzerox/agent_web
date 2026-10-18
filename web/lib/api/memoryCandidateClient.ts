@@ -1,8 +1,6 @@
 import { requestJson } from "@/lib/api/jsonRequest";
 
-export type MemoryCandidateKind = "preference" | "goal" | "profile" | "fact";
-export type MemoryCandidateStatus = "pending" | "confirmed" | "rejected";
-export type MemorySensitivity = "low" | "personal" | "sensitive";
+import type { MemoryCandidateKind, MemoryCandidateStatus, MemorySensitivity } from "@/lib/memory/types";
 
 export type MemoryCandidate = {
   id: string;

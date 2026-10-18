@@ -1,12 +1,6 @@
-import { z } from "zod";
 import type { MessageCitation } from "@/lib/ai/messages";
 
-export const knowledgeCitationMetadataSchema = z.object({
-  collectionId: z.uuid(), documentId: z.uuid(), chunkId: z.uuid(),
-  version: z.number().int().positive(), contentHash: z.string().regex(/^[a-f0-9]{64}$/u),
-  startLine: z.number().int().positive(), endLine: z.number().int().positive(),
-}).strict().refine((value) => value.endLine >= value.startLine);
-export type KnowledgeCitationMetadata = z.infer<typeof knowledgeCitationMetadataSchema>;
+import { knowledgeCitationMetadataSchema, type KnowledgeCitationMetadata } from "@/lib/knowledge/citationMetadata";
 export function knowledgeCitationUrl(value: Pick<KnowledgeCitationMetadata, "documentId" | "version" | "startLine">): string {
   return `/memory?document=${value.documentId}&version=${value.version}&line=${value.startLine}`;
 }

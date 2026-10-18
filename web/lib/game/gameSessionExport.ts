@@ -1,5 +1,5 @@
 import type { GameSessionExportFormat } from "@/lib/game/contracts";
-import { gameTurnPath } from "@/lib/game/gameTurnService";
+import { gameTurnPath } from "@/lib/game/turnTree";
 import type { GameSessionDetail } from "@/lib/repositories/gameSessionRepository";
 import type { PromptExportArtifact } from "@/lib/platform/capabilities";
 

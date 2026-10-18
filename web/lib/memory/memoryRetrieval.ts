@@ -3,9 +3,9 @@ import { stableJson } from "@/lib/ai/stableJson";
 import { personalMemoryBonus } from "./moduleProfiles";
 import type {
   MemoryCandidateKind,
-  MemoryItemRecord,
+  MemoryRetrievalItem,
   MemorySensitivity,
-} from "@/lib/db/schema";
+} from "@/lib/memory/types";
 
 export const MEMORY_RETRIEVAL_LIMIT = 5;
 export const MEMORY_TOKEN_BUDGET = 500;
@@ -71,7 +71,7 @@ function intentBonus(kind: MemoryCandidateKind, query: string): number {
   return 0;
 }
 
-function relevanceScore(memory: MemoryItemRecord, query: string, now: Date): number {
+function relevanceScore(memory: MemoryRetrievalItem, query: string, now: Date): number {
   const normalizedQuery = normalize(query);
   const normalizedContent = normalize(memory.content);
   const queryTerms = memoryTerms(normalizedQuery);
@@ -89,7 +89,7 @@ function relevanceScore(memory: MemoryItemRecord, query: string, now: Date): num
 }
 
 export function rankMemories(
-  memories: readonly MemoryItemRecord[],
+  memories: readonly MemoryRetrievalItem[],
   query: string,
   now: Date,
   options: { limit?: number; tokenBudget?: number; consumer?: string } = {},

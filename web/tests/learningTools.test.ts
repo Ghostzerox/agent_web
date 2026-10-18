@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { checkSpelling, sampleRecallUnits, materialTransferSchema } from "@/lib/memorization/learningTools";
+import { checkSpelling } from "@/lib/memorization/spelling";
+import { sampleRecallUnits, materialTransferSchema } from "@/lib/memorization/learningTools";
 import type { MemorizationUnit } from "@/lib/memorization/domain";
 
 const units: MemorizationUnit[] = Array.from({ length: 8 }, (_, i) => ({ id: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`, cue: `单元 ${i}`, content: "内容", reviewCount: i ? 1 : 0, lastScore: i ? 100 - i * 10 : null, nextReviewAt: i ? `2026-10-${String(10 + i).padStart(2, "0")}T00:00:00Z` : null, weakPoints: [] }));

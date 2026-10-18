@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { createGameRandom, GAME_DICE_ALGORITHM } from "./dice";
+import { GAME_DICE_ALGORITHM } from "./dice";
+import { createSeededRandom } from "@/lib/shared/random";
 
 const key = z.string().trim().min(1).max(40).regex(/^[\p{L}\p{N}_-]+$/u).refine((value) => !["__proto__", "constructor", "prototype"].includes(value));
 const card = z.object({ id: z.string().max(80), label: z.string().trim().min(1).max(160) }).strict();
@@ -24,7 +25,7 @@ export type GameToolkit = z.infer<typeof gameToolkitSchema>;
 export type GameToolRequest = z.infer<typeof gameToolRequestSchema>;
 
 function shuffled(ids: readonly string[], seed: string) {
-  const next = [...ids]; const random = createGameRandom(seed);
+  const next = [...ids]; const random = createSeededRandom(seed);
   for (let index = next.length - 1; index > 0; index--) { const other = Math.floor(random() * (index + 1)); [next[index], next[other]] = [next[other], next[index]]; }
   return next;
 }
@@ -35,7 +36,7 @@ export function applyGameTool(raw: GameToolkit | undefined, rawRequest: GameTool
   z.string().min(1).max(200).parse(seed);
   let labels: string[] = [];
   if (request.action === "random-table") {
-    labels = [request.entries[Math.floor(createGameRandom(seed)() * request.entries.length)]];
+    labels = [request.entries[Math.floor(createSeededRandom(seed)() * request.entries.length)]];
   } else if (request.action === "deck-create") {
     if (Object.hasOwn(current.decks, request.deckId)) throw new Error("牌堆已存在，请重置或使用其他名字。");
     const cards = request.cards.map((label, index) => ({ id: `${request.deckId}:${index + 1}`, label }));

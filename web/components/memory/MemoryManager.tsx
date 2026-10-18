@@ -7,7 +7,7 @@ import {
   updateMemory,
   type MemoryItem,
 } from "@/lib/api/memoryClient";
-import type { MemoryCandidateKind } from "@/lib/api/memoryCandidateClient";
+import type { MemoryCandidateKind } from "@/lib/memory/types";
 import { deleteServerSession } from "@/lib/api/conversationClient";
 import { AppLink } from "@/components/platform/AppLink";
 import { getFileExportAdapter } from "@/lib/platform/fileExport";

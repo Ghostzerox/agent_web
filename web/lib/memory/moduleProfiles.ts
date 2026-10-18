@@ -1,4 +1,4 @@
-import type { MemoryCandidateKind } from "@/lib/db/schema";
+import type { MemoryCandidateKind } from "@/lib/memory/types";
 export const MODULE_MEMORY_VERSION = "module-memory/r5.5-v1";
 export const MODULE_MEMORY_PROFILES = {
   professional: { label: "专业", href: "/chat?mode=professional", focus: "证据版本、数字/否定约束、事实与推断分开；资料不足保留未知。", source: "所选资料 / 当前分支 / 相关确认事实" },

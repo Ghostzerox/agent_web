@@ -2,14 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
-import {
-  confirmMemoryCandidate,
-  listMemoryCandidates,
-  rejectMemoryCandidate,
-  type MemoryCandidate,
-  type MemoryCandidateKind,
-  type MemorySensitivity,
-} from "@/lib/api/memoryCandidateClient";
+import { confirmMemoryCandidate, listMemoryCandidates, rejectMemoryCandidate, type MemoryCandidate } from "@/lib/api/memoryCandidateClient";
+import { type MemoryCandidateKind, type MemorySensitivity } from "@/lib/memory/types";
 
 const KIND_LABELS: Record<MemoryCandidateKind, string> = {
   preference: "偏好",

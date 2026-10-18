@@ -1,7 +1,8 @@
+import { createSeededRandom, SEEDED_RANDOM_ALGORITHM } from "@/lib/shared/random";
 import { z } from "zod";
 
 export const GAME_DICE_SIDES = [2, 4, 6, 8, 10, 12, 20, 100] as const;
-export const GAME_DICE_ALGORITHM = "fnv1a-mulberry32-v1" as const;
+export const GAME_DICE_ALGORITHM = SEEDED_RANDOM_ALGORITHM;
 
 export const gameDiceRequestSchema = z
   .object({
@@ -25,31 +26,6 @@ export const gameDiceRollSchema = gameDiceRequestSchema
 export type GameDiceRequest = z.infer<typeof gameDiceRequestSchema>;
 export type GameDiceRoll = z.infer<typeof gameDiceRollSchema>;
 
-function fnv1a(value: string): number {
-  let hash = 0x811c9dc5;
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return hash >>> 0;
-}
-
-function mulberry32(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) | 0;
-    let value = state;
-    value = Math.imul(value ^ (value >>> 15), value | 1);
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-    return ((value ^ (value >>> 14)) >>> 0) / 4_294_967_296;
-  };
-}
-
-/** Reproducible tabletop randomness, not suitable for gambling or security tokens. */
-export function createGameRandom(seed: string): () => number {
-  return mulberry32(fnv1a(`${GAME_DICE_ALGORITHM}:${seed}`));
-}
-
 export function diceNotation(request: GameDiceRequest): string {
   const modifier = request.modifier === 0
     ? ""
@@ -65,7 +41,7 @@ export function rollGameDice(
 ): GameDiceRoll {
   const request = gameDiceRequestSchema.parse(rawRequest);
   const normalizedSeed = z.string().trim().min(1).max(200).parse(seed);
-  const random = createGameRandom(normalizedSeed);
+  const random = createSeededRandom(normalizedSeed);
   const results = Array.from(
     { length: request.count },
     () => Math.floor(random() * request.sides) + 1,

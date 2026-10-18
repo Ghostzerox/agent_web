@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { checkSpelling } from "../lib/memorization/learningTools";
+import { checkSpelling } from "@/lib/memorization/spelling";
 import { summarizeMaterial, type MemorizationMaterial } from "../lib/memorization/domain";
 
 test("previews material import, submits explicit spelling mode, and edits with an expected version", async ({ page }) => {

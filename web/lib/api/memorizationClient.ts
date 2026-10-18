@@ -1,14 +1,12 @@
 import { requestJson } from "@/lib/api/jsonRequest";
 import type { z } from "zod";
-import type { spellingOptionsSchema } from "@/lib/memorization/learningTools";
+import type { spellingOptionsSchema } from "@/lib/memorization/spelling";
 import type {
   MemorizationMaterial,
   MemorizationMaterialSummary,
   MemorizationUnitInput,
 } from "@/lib/memorization/domain";
-import type {
-  MemorizationReviewResult,
-} from "@/lib/memorization/service";
+import type { MemorizationReviewResult } from "@/lib/memorization/domain";
 
 export class MemorizationClientError extends Error {
   constructor(

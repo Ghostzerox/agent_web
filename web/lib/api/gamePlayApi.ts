@@ -16,12 +16,9 @@ import { createGameTurnService, type GameTurnService } from "@/lib/game/gameTurn
 import { GameStateValidationError } from "@/lib/game/state";
 import { ExplorationError } from "@/lib/game/exploration/contracts";
 import { explorationHistoryQuerySchema, searchWorldHistory } from "@/lib/game/exploration/history";
-import { gameTurnPath } from "@/lib/game/gameTurnService";
-import {
-  createGameSessionRepository,
-  GameSessionRepositoryError,
-  type GameSessionRepositoryPort,
-} from "@/lib/repositories/gameSessionRepository";
+import { gameTurnPath } from "@/lib/game/turnTree";
+import { createGameSessionRepository, type GameSessionRepositoryPort } from "@/lib/repositories/gameSessionRepository";
+import { GameSessionRepositoryError } from "@/lib/game/errors";
 
 class GamePlayInputError extends Error {
   constructor(

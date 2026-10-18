@@ -13,11 +13,8 @@ import {
   createGameNarrativeGenerator,
   type GameNarrativeGeneratorPort,
 } from "@/lib/game/gameNarrativeGenerator";
-import {
-  GameSessionRepositoryError,
-  type GameSessionDetail,
-  type GameSessionRepositoryPort,
-} from "@/lib/repositories/gameSessionRepository";
+import { GameSessionRepositoryError } from "@/lib/game/errors";
+import { type GameSessionDetail, type GameSessionRepositoryPort } from "@/lib/repositories/gameSessionRepository";
 import type { GameTurnRecord } from "@/lib/db/schema";
 import {
   applyGameStatePatch,
@@ -32,33 +29,7 @@ const MAX_HISTORY_TURNS = 30;
 const MAX_HISTORY_CHARACTERS = 48_000;
 const MAX_CHARACTER_CONTEXT_CHARACTERS = 24_000;
 
-export function gameTurnPath(
-  turns: readonly GameTurnRecord[],
-  leafId: string | null,
-): GameTurnRecord[] {
-  if (!leafId) return [];
-  const byId = new Map(turns.map((turn) => [turn.id, turn]));
-  const path: GameTurnRecord[] = [];
-  const visited = new Set<string>();
-  let current: GameTurnRecord | undefined = byId.get(leafId);
-  if (!current) {
-    throw new GameSessionRepositoryError(
-      "GAME_TURN_NOT_FOUND",
-      "Selected game branch was not found in this session.",
-    );
-  }
-  while (current) {
-    if (visited.has(current.id)) {
-      throw new Error("Game turn tree contains a cycle.");
-    }
-    visited.add(current.id);
-    path.push(current);
-    current = current.parentTurnId
-      ? byId.get(current.parentTurnId)
-      : undefined;
-  }
-  return path.reverse();
-}
+import { gameTurnPath } from "@/lib/game/turnTree";
 
 function listLines(items: readonly string[], empty: string): string {
   return items.length > 0 ? items.map((item) => `- ${item}`).join("\n") : empty;

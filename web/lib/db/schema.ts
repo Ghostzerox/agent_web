@@ -21,7 +21,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import type { ResponseVerification } from "@/lib/ai/messages";
+import type { MessageCitation, ResponseVerification } from "@/lib/ai/messages";
 import type { ModelCallTelemetry } from "@/lib/ai/modelUsage";
 import type { GameRuleCheck } from "@/lib/game/checks";
 import type { GameDiceRoll } from "@/lib/game/dice";
@@ -137,9 +137,7 @@ export type ReflectionQuestionType =
   | "alternative"
   | "future"
   | "action";
-export type MemoryCandidateKind = "preference" | "goal" | "profile" | "fact";
-export type MemoryCandidateStatus = "pending" | "confirmed" | "rejected";
-export type MemorySensitivity = "low" | "personal" | "sensitive";
+import type { MemoryCandidateKind, MemoryCandidateStatus, MemorySensitivity } from "@/lib/memory/types";
 export type PluginInstallationStatus = "enabled" | "disabled" | "incompatible";
 export type PluginCapabilityGrantStatus = "granted" | "revoked";
 export type PluginCapabilityAuditOutcome =
@@ -185,16 +183,6 @@ export type BriefingSourceSignal = {
   publishedAt: string | null;
   urlKey: string;
   titleKey: string;
-};
-
-export type MessageCitation = {
-  id?: string;
-  title: string;
-  url: string;
-  snippet?: string;
-  source?: string;
-  publishedAt?: string | null;
-  fetchedAt?: string;
 };
 
 export const users = pgTable(

@@ -1,5 +1,7 @@
+import type { SpellingResult } from "./spelling";
+import type { taskDraftResultSchema } from "@/lib/plugins/pluginApiV1";
 import { z } from "zod";
-import { spellingResultSchema } from "./learningTools";
+import { spellingResultSchema } from "@/lib/memorization/spelling";
 
 export const MEMORIZATION_PLUGIN_ID = "study.memorization";
 export const MAX_MEMORIZATION_MATERIALS = 12;
@@ -187,3 +189,21 @@ export function summarizeMaterial(
 export function materialStorageKey(id: string): string {
   return `memorization/materials/${id}`;
 }
+
+export type MemorizationTaskDraft = z.infer<typeof taskDraftResultSchema>;
+
+export type MemorizationReviewResult = {
+  material: MemorizationMaterial;
+  storageVersion: number;
+  evaluation: {
+    score: number;
+    localScore: number;
+    source: "model" | "deterministic";
+    feedback: string;
+    missedPoints: string[];
+    model: string | null;
+    spelling?: SpellingResult;
+  };
+  taskDraft: MemorizationTaskDraft | null;
+  taskDraftUnavailable: boolean;
+};

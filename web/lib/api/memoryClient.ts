@@ -1,5 +1,5 @@
 import { requestJson } from "@/lib/api/jsonRequest";
-import type { MemoryCandidateKind, MemorySensitivity } from "@/lib/api/memoryCandidateClient";
+import type { MemoryCandidateKind, MemorySensitivity } from "@/lib/memory/types";
 
 export type MemoryItem = {
   id: string;

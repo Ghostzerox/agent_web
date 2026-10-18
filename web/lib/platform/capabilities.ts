@@ -1,8 +1,3 @@
-export type ClientPlatformId =
-  | "web"
-  | "capacitor-android"
-  | "harmony-arkweb";
-
 export type PromptExportArtifact = {
   filename: string;
   mediaType: "application/json" | "text/markdown" | "text/plain";
@@ -84,11 +79,3 @@ export interface NativePushAdapter {
   register(): Promise<NativePushRegistration>;
   unregister(): Promise<void>;
 }
-
-export type ClientPlatformAdapters = {
-  platform: ClientPlatformId;
-  files: FileExportAdapter;
-  speech: SpeechOutputAdapter;
-  localNotifications?: LocalNotificationAdapter;
-  nativePush?: NativePushAdapter;
-};

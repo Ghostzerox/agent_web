@@ -1,12 +1,12 @@
 "use client";
 import { useState } from "react";
 import { conversationSummaryClient as client } from "@/lib/api/conversationSummaryClient";
-import type { SummaryRecord } from "@/lib/repositories/conversationSummaryRepository";
+import type { SummarySnapshot } from "@/lib/conversation/summary";
 import type { PromptEnvelope } from "@/lib/ai/promptEnvelope";
 const labels = { goal: "目标", constraint: "约束", decision: "决定", open: "未决事项", fact: "历史陈述", uncertainty: "不确定" };
 type Props = { conversationId: string; leafId: string | null; enabled: boolean; onChange: (value: boolean) => void; disabled: boolean; envelope?: PromptEnvelope };
 export function ConversationSummaryControl({ conversationId, leafId, enabled, onChange, disabled, envelope }: Props) {
-  const [summary, setSummary] = useState<SummaryRecord | null>(null); const [busy, setBusy] = useState(false); const [note, setNote] = useState("");
+  const [summary, setSummary] = useState<SummarySnapshot | null>(null); const [busy, setBusy] = useState(false); const [note, setNote] = useState("");
   const act = async (operation: () => Promise<void>) => { setBusy(true); try { await operation(); } catch (error) { setNote(error instanceof Error ? error.message : "摘要失败；原始历史保留。"); } finally { setBusy(false); } };
   return <details className="mx-3 mb-2 shrink-0 rounded-xl border border-zinc-200 px-3 py-2 text-xs dark:border-zinc-800 sm:mx-6">
     <summary className="cursor-pointer">分支摘要 · {enabled ? "已允许复用" : "默认关闭"}</summary>

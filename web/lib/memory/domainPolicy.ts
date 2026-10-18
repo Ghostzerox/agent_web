@@ -1,5 +1,5 @@
 import { MEMORY_RETRIEVAL_LIMIT, MEMORY_TOKEN_BUDGET } from "./memoryRetrieval";
-import type { MemoryCandidateKind } from "@/lib/db/schema";
+import type { MemoryCandidateKind } from "@/lib/memory/types";
 
 export const MEMORY_DOMAIN_POLICY_VERSION = "memory-domain/r5.5-v1";
 export const MEMORY_MODULE_IDS = ["professional", "companion", "reflection", "news", "reading", "tasks", "inbox", "memorization", "problem-solving", "game", "memory", "voice", "plugins", "configuration", "navigation", "maintenance"] as const;
