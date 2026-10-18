@@ -11,29 +11,9 @@ import { NativeNotificationBridge } from "@/components/platform/NativeNotificati
 import { apiFetch, getApiBaseUrl } from "@/lib/api/clientRuntime";
 import { requestNavigationPermission } from "@/lib/platform/navigationGuard";
 
-type MobileRoute =
-  | "/"
-  | "/chat"
-  | "/tools"
-  | "/study"
-  | "/tasks"
-  | "/inbox"
-  | "/reading"
-  | "/reflection"
-  | "/memory"
-  | "/persona"
-  | "/voice"
-  | "/proactivity"
-  | "/plugins"
-  | "/entertainment"
-  | "/entertainment/quick-adventure"
-  | "/study/memorization"
-  | "/study/problem-solving"
-  | "/notifications"
-  | "/api-key";
-type ModuleRoute = "/content" | "/settings" | "/study/memory-palaces" | "/study/tools";
+import type { AppRoute } from "@/lib/platform/appRoutes";
 
-const ROUTES: Record<MobileRoute | ModuleRoute, LazyExoticComponent<ComponentType>> = {
+const ROUTES: Record<AppRoute, LazyExoticComponent<ComponentType>> = {
   "/content": lazy(() => import("@/app/content/page")),
   "/settings": lazy(() => import("@/app/settings/page")),
   "/study/memory-palaces": lazy(() => import("@/app/study/memory-palaces/page")),
@@ -86,7 +66,7 @@ export function MobileApp() {
     return () => window.removeEventListener("hashchange", updateRoute);
   }, []);
 
-  const Page = ROUTES[route as MobileRoute | ModuleRoute];
+  const Page = ROUTES[route as AppRoute];
 
   return (
     <div className="mobile-host">

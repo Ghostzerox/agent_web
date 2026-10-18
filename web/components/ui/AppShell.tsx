@@ -2,7 +2,8 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { AppLink } from "@/components/platform/AppLink";
-import { WORKSPACE_SECTIONS, MODULE_LINKS, workspaceOwner, isWorkspaceRouteActive } from "@/lib/platform/workspaceNavigation";
+import { WORKSPACE_SECTIONS, MODULE_LINKS, isWorkspaceRouteActive } from "@/lib/platform/workspaceNavigation";
+import { workspaceOwner } from "@/lib/platform/appRoutes";
 import { useAppQuery } from "@/components/platform/useAppQuery";
 import { Drawer } from "./Drawer";
 

@@ -1,3 +1,5 @@
+import { workspaceOwner, type WorkspaceOwner } from "./appRoutes";
+
 export const WORKSPACE_SECTIONS = [
   { label: "你的空间", items: [
     { href: "/chat", label: "对话", mark: "聊", description: "专业解答、陪伴与反思" },
@@ -12,7 +14,6 @@ export const WORKSPACE_SECTIONS = [
   ] },
 ] as const;
 
-export type WorkspaceOwner = "chat" | "tasks" | "study" | "entertainment" | "content" | "inbox" | "settings";
 export type ModuleLink = { href: string; label: string; description?: string };
 export const MODULE_LINKS: Record<WorkspaceOwner, readonly ModuleLink[]> = {
   chat: [{ href: "/chat", label: "对话空间" }, { href: "/chat?view=tools", label: "专业工具" }],
@@ -30,11 +31,6 @@ export const MODULE_LINKS: Record<WorkspaceOwner, readonly ModuleLink[]> = {
   settings: [{ href: "/settings", label: "设置首页" }, { href: "/api-key", label: "模型服务", description: "Provider、凭据与用量" }, { href: "/memory", label: "个人数据", description: "记忆、资料与读取控制" }, { href: "/persona", label: "人格与表达" }, { href: "/proactivity", label: "主动联系" }, { href: "/voice", label: "语音" }, { href: "/notifications", label: "通知与设备" }, { href: "/plugins", label: "插件" }, { href: "/tools", label: "高级工具" }],
 };
 
-export function workspaceOwner(path: string): WorkspaceOwner | null {
-  if (["/reading", "/reflection"].includes(path)) return "content";
-  if (["/memory", "/api-key", "/persona", "/proactivity", "/voice", "/notifications", "/plugins", "/tools"].includes(path)) return "settings";
-  return (WORKSPACE_SECTIONS.flatMap((section) => [...section.items]).find((item) => path === item.href || path.startsWith(`${item.href}/`))?.href.slice(1) as WorkspaceOwner | undefined) ?? null;
-}
 export function isWorkspaceRouteActive(current: string, target: string): boolean {
   return workspaceOwner(current) === target.slice(1);
 }

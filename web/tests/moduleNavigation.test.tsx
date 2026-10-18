@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MODULE_LINKS, MODULE_TOOL_IDS, WORKSPACE_SECTIONS, workspaceOwner } from "@/lib/platform/workspaceNavigation";
+import { MODULE_LINKS, MODULE_TOOL_IDS, WORKSPACE_SECTIONS } from "@/lib/platform/workspaceNavigation";
+import { workspaceOwner } from "@/lib/platform/appRoutes";
 import { resolveMemoryView } from "@/lib/platform/memoryView";
 import { WORKBENCH_TOOLS } from "@/lib/tools/workbench";
 import { Disclosure } from "@/components/ui/Disclosure";

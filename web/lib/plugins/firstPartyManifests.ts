@@ -1,6 +1,7 @@
+import { FIRST_PARTY_PLUGIN_ACTIVITIES } from "./activityRegistry";
 import { FIRST_PARTY_PLUGIN_API_RANGE } from "@/lib/plugins/pluginApiV1";
 
-export const FIRST_PARTY_PLUGIN_MANIFESTS: readonly unknown[] = [
+const manifestDefinitions = [
   {
     schemaVersion: "1",
     id: "study.memorization",
@@ -15,7 +16,6 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS: readonly unknown[] = [
     contributions: {
       skills: ["memorization.feedback"],
       tools: [],
-      activities: ["memorization.review"],
       backgroundJobs: [],
     },
     requestedCapabilities: [
@@ -38,7 +38,6 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS: readonly unknown[] = [
     contributions: {
       skills: ["problem-solving.guidance"],
       tools: [],
-      activities: ["problem-solving.practice"],
       backgroundJobs: [],
     },
     requestedCapabilities: [
@@ -61,9 +60,13 @@ export const FIRST_PARTY_PLUGIN_MANIFESTS: readonly unknown[] = [
     contributions: {
       skills: [],
       tools: [],
-      activities: ["quick-adventure.setup"],
       backgroundJobs: [],
     },
     requestedCapabilities: ["storage.read-write"],
   },
 ] as const;
+
+export const FIRST_PARTY_PLUGIN_MANIFESTS: readonly unknown[] = manifestDefinitions.map((manifest) => ({
+  ...manifest,
+  contributions: { ...manifest.contributions, activities: FIRST_PARTY_PLUGIN_ACTIVITIES.filter((activity) => activity.pluginId === manifest.id).map((activity) => activity.id) },
+}));
