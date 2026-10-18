@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api/clientRuntime";
+import { requestJson } from "@/lib/api/jsonRequest";
 import {
   gameRulePackDraftResultSchema,
   gameRulePackSetupResultSchema,
@@ -12,19 +12,7 @@ export class GameRulePackClientError extends Error {
 }
 
 async function request(id: string, init?: RequestInit): Promise<unknown> {
-  const response = await apiFetch(`/api/v1/game-rule-packs/${encodeURIComponent(id)}`, {
-    ...init,
-    headers: { ...(init?.body ? { "content-type": "application/json" } : {}), ...init?.headers },
-  });
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new GameRulePackClientError(
-      typeof body?.error?.message === "string" ? body.error.message : `服务端请求失败：${response.status}`,
-      typeof body?.error?.code === "string" ? body.error.code : "UNKNOWN_ERROR",
-      response.status,
-    );
-  }
-  return body?.data;
+  return requestJson("/api/v1/game-rule-packs/"+encodeURIComponent(id), init, { error: ({ message, code, status }) => new GameRulePackClientError(message, code, status) });
 }
 
 export async function getGameRulePackSetup(id: string) {

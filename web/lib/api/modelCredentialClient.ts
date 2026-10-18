@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api/clientRuntime";
+import { requestJson } from "@/lib/api/jsonRequest";
 
 export type ModelCredentialStatus = {
   configured: boolean;
@@ -23,8 +23,6 @@ export type ModelCredentialTestResult = {
   modelAvailable: boolean;
 };
 
-type ApiEnvelope<T> = { data: T };
-
 export class ModelCredentialClientError extends Error {
   constructor(
     message: string,
@@ -37,26 +35,7 @@ export class ModelCredentialClientError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: {
-      ...(init?.body ? { "content-type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new ModelCredentialClientError(
-      typeof body?.error?.message === "string"
-        ? body.error.message
-        : `凭据服务请求失败：${response.status}`,
-      typeof body?.error?.code === "string" ? body.error.code : "REQUEST_FAILED",
-      body?.error?.retryable === true,
-    );
-  }
-  if (response.status === 204) return undefined as T;
-  const body = (await response.json()) as ApiEnvelope<T>;
-  return body.data;
+  return requestJson(path, init, { fallbackMessage: (status) => `凭据服务请求失败：${status}`, fallbackCode: "REQUEST_FAILED", error: ({ message, code, retryable }) => new ModelCredentialClientError(message, code, retryable) });
 }
 
 export function getModelCredentialStatus(): Promise<ModelCredentialStatus> {

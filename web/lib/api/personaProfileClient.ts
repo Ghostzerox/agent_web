@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api/clientRuntime";
+import { requestJson } from "@/lib/api/jsonRequest";
 
 export type PersonaProfile = {
   userId: string;
@@ -31,24 +31,7 @@ export class PersonaProfileClientError extends Error {
 }
 
 async function request<T>(init?: RequestInit): Promise<T> {
-  const response = await apiFetch("/api/v1/persona-profile", {
-    ...init,
-    headers: {
-      ...(init?.body ? { "content-type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new PersonaProfileClientError(
-      typeof body?.error?.message === "string"
-        ? body.error.message
-        : `服务端请求失败：${response.status}`,
-      typeof body?.error?.code === "string" ? body.error.code : "UNKNOWN_ERROR",
-      response.status,
-    );
-  }
-  return (body as { data: T }).data;
+  return requestJson("/api/v1/persona-profile", init, { error: ({ message, code, status }) => new PersonaProfileClientError(message, code, status) });
 }
 
 export function getPersonaProfile(): Promise<PersonaProfile> {

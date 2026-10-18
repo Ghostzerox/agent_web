@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api/clientRuntime";
+import { requestJson } from "@/lib/api/jsonRequest";
 
 export type VoiceProfile = {
   userId: string;
@@ -30,24 +30,7 @@ export class VoiceProfileClientError extends Error {
 }
 
 async function request<T>(init?: RequestInit): Promise<T> {
-  const response = await apiFetch("/api/v1/voice-profile", {
-    ...init,
-    headers: {
-      ...(init?.body ? { "content-type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new VoiceProfileClientError(
-      typeof body?.error?.message === "string"
-        ? body.error.message
-        : `服务端请求失败：${response.status}`,
-      typeof body?.error?.code === "string" ? body.error.code : "UNKNOWN_ERROR",
-      response.status,
-    );
-  }
-  return (body as { data: T }).data;
+  return requestJson("/api/v1/voice-profile", init, { error: ({ message, code, status }) => new VoiceProfileClientError(message, code, status) });
 }
 
 export function getVoiceProfile(): Promise<VoiceProfile> {

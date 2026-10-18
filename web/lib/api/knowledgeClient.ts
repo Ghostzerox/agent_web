@@ -1,13 +1,11 @@
-import { apiFetch } from "./clientRuntime";
+import { requestJson } from "@/lib/api/jsonRequest";
 import type { CollectionInput, DocumentInput } from "@/lib/knowledge/documents";
 export type KnowledgeCollection = CollectionInput & { id: string; version: number; updatedAt: string };
 export type KnowledgeDocumentSummary = Omit<DocumentInput, "content"> & { id: string; collectionId: string; version: number; contentHash: string; updatedAt: string };
 export type KnowledgeDocument = KnowledgeDocumentSummary & { content: string; chunkStrategy: string; indexUnavailable?: boolean; chunks: { id: string; ordinal: number; content: string; startLine: number; endLine: number; heading: string; documentVersion: number }[] };
 async function request<T>(path = "", method = "GET", body?: unknown): Promise<T> {
-  const response = await apiFetch(`/api/v1/knowledge${path}`, { method, cache: "no-store", ...(body === undefined ? {} : { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }) });
-  const parsed = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(parsed?.error?.message ?? "知识库连接失败，请重试。");
-  return parsed.data;
+  return requestJson("/api/v1/knowledge"+path, { method, cache: "no-store", ...(body === undefined ? {} : { body: JSON.stringify(body) }) },
+    { fallbackMessage: "知识库连接失败，请重试。" });
 }
 export const knowledgeClient = {
   collections: () => request<KnowledgeCollection[]>(),

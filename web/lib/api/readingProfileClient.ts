@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api/clientRuntime";
+import { requestJson } from "@/lib/api/jsonRequest";
 
 export type ReadingDifficulty = "introductory" | "intermediate" | "advanced";
 export type ReadingGoal = "beginner" | "systematic" | "broaden" | "literary";
@@ -34,24 +34,7 @@ export class ReadingProfileClientError extends Error {
 }
 
 async function request<T>(init?: RequestInit): Promise<T> {
-  const response = await apiFetch("/api/v1/reading-profile", {
-    ...init,
-    headers: {
-      ...(init?.body ? { "content-type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new ReadingProfileClientError(
-      typeof body?.error?.message === "string"
-        ? body.error.message
-        : `服务端请求失败：${response.status}`,
-      typeof body?.error?.code === "string" ? body.error.code : "UNKNOWN_ERROR",
-      response.status,
-    );
-  }
-  return (body as { data: T }).data;
+  return requestJson("/api/v1/reading-profile", init, { error: ({ message, code, status }) => new ReadingProfileClientError(message, code, status) });
 }
 
 export function getReadingProfile(): Promise<ReadingProfile> {

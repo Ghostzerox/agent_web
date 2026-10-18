@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api/clientRuntime";
+import { requestJson } from "@/lib/api/jsonRequest";
 
 export type InboxStatus = "unread" | "read";
 export type InboxFilter = "all" | InboxStatus;
@@ -66,26 +66,7 @@ export class InboxClientError extends Error {
 }
 
 async function inboxRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: {
-      ...(init?.body ? { "content-type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new InboxClientError(
-      typeof body?.error?.message === "string"
-        ? body.error.message
-        : `服务端请求失败：${response.status}`,
-      typeof body?.error?.code === "string" ? body.error.code : "UNKNOWN_ERROR",
-      response.status,
-    );
-  }
-  if (response.status === 204) return undefined as T;
-  const body = (await response.json()) as { data: T };
-  return body.data;
+  return requestJson(path, init, { error: ({ message, code, status }) => new InboxClientError(message, code, status) });
 }
 
 export function listInboxItems(filter: InboxFilter = "all"): Promise<InboxItem[]> {

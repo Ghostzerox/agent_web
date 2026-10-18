@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api/clientRuntime";
+import { requestJson } from "@/lib/api/jsonRequest";
 import type { GameToolRequest } from "@/lib/game/toolkit";
 import type { ExplorationAction } from "@/lib/game/exploration/contracts";
 import type { ExplorationHistoryQuery, ExplorationHistoryResult } from "@/lib/game/exploration/history";
@@ -107,25 +107,7 @@ export class GameSessionClientError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: {
-      ...(init?.body ? { "content-type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  const body = await response.json().catch(() => null);
-  if (!response.ok) {
-    throw new GameSessionClientError(
-      typeof body?.error?.message === "string"
-        ? body.error.message
-        : `服务端请求失败：${response.status}`,
-      typeof body?.error?.code === "string" ? body.error.code : "UNKNOWN_ERROR",
-      response.status,
-    );
-  }
-  if (response.status === 204) return undefined as T;
-  return (body as { data: T }).data;
+  return requestJson(path, init, { error: ({ message, code, status }) => new GameSessionClientError(message, code, status) });
 }
 
 export function listGameSessions(): Promise<GameSessionSummary[]> {

@@ -6,7 +6,7 @@ import type {
 import { isResponseVerification } from "@/lib/ai/responseVerifier";
 import { isCoreModeId, type CoreModeId } from "@/lib/agent/modeRegistry";
 import { CONVERSATION_SCHEMA_VERSION, type Session } from "@/lib/conversation/session";
-import { apiFetch } from "@/lib/api/clientRuntime";
+import { requestJson } from "@/lib/api/jsonRequest";
 import { isSafeCitation } from "@/lib/knowledge/citations";
 
 type ConversationRecord = {
@@ -32,29 +32,8 @@ type ConversationDetail = ConversationRecord & { messages: MessageRecord[] };
 
 export type ServerSession = Session & { serverVersion: number };
 
-type ApiEnvelope<T> = { data: T };
-
-async function apiRequest<T>(
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: {
-      ...(init?.body ? { "content-type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    const message = body?.error?.message;
-    throw new Error(
-      typeof message === "string" ? message : `服务端请求失败：${response.status}`,
-    );
-  }
-  if (response.status === 204) return undefined as T;
-  const body = (await response.json()) as ApiEnvelope<T>;
-  return body.data;
+async function apiRequest<T>(path: string, init?: RequestInit): Promise<T> {
+  return requestJson(path, init);
 }
 
 function toTimestamp(value: string): number {

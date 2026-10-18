@@ -1,9 +1,9 @@
-import { apiFetch } from "./clientRuntime";
+import { requestJson } from "@/lib/api/jsonRequest";
 import type { SummaryRecord } from "@/lib/repositories/conversationSummaryRepository";
 import type { SummarySettings } from "@/lib/conversation/summary";
 async function request<T>(conversationId: string, method: string, body?: unknown, leafId?: string): Promise<T> {
-  const response = await apiFetch(`/api/v1/conversations/${conversationId}/summary${leafId ? `?leafId=${leafId}` : ""}`, { method, cache: "no-store", ...(body ? { headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {}) });
-  const result = await response.json(); if (!response.ok) throw new Error(result.error?.message ?? "摘要服务不可用；完整历史保留。"); return result.data;
+  return requestJson("/api/v1/conversations/"+conversationId+"/summary"+(leafId ? "?leafId="+leafId : ""), { method, cache: "no-store", ...(body ? { body: JSON.stringify(body) } : {}) },
+    { fallbackMessage: "摘要服务不可用；完整历史保留。" });
 }
 export const conversationSummaryClient = {
   inspect: (id: string, leaf: string) => request<{ summary: SummaryRecord | null; messageCount: number; reason: string; settings: SummarySettings }>(id, "GET", undefined, leaf),

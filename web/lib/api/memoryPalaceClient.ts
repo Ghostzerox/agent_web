@@ -1,9 +1,12 @@
-import { apiFetch } from "./clientRuntime";
+import { requestJson } from "@/lib/api/jsonRequest";
 import type { PalaceView, PalaceOperation, PalaceRoom } from "@/lib/memory/palace";
 import type { PalaceSourceView, MemoryPalaceRepository } from "@/lib/repositories/memoryPalaceRepository";
 import type { PgQueryResultHKT } from "drizzle-orm/pg-core";
 type Repo = MemoryPalaceRepository<PgQueryResultHKT>;
-async function request<T>(path = "", method = "GET", body?: unknown): Promise<T> { const result = await apiFetch(`/api/v1/memory-palaces${path}`, { method, cache: "no-store", ...(body ? { headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {}) }); const parsed = await result.json(); if (!result.ok) throw new Error(parsed.error?.message ?? "宫殿不可用，请重试。"); return parsed.data; }
+async function request<T>(path = "", method = "GET", body?: unknown): Promise<T> {
+  return requestJson("/api/v1/memory-palaces"+path, { method, cache: "no-store", ...(body ? { body: JSON.stringify(body) } : {}) },
+    { fallbackMessage: "宫殿不可用，请重试。" });
+}
 export const memoryPalaceClient = {
   list: () => request<PalaceView[]>(), create: (title: string, purpose: PalaceView["purpose"]) => request<PalaceView>("", "POST", { title, purpose }),
   mutate: (id: string, input: PalaceOperation) => request<PalaceView>(`/${id}`, "PATCH", input), delete: (id: string, expectedVersion: number) => request(`/${id}`, "DELETE", { expectedVersion }),

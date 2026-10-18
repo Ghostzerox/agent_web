@@ -1,5 +1,5 @@
 import { Capacitor } from "@capacitor/core";
-import { apiFetch } from "@/lib/api/clientRuntime";
+import { requestJson } from "@/lib/api/jsonRequest";
 
 export type NotificationPreferences = {
   pushEnabled: boolean;
@@ -40,25 +40,7 @@ export class PushClientError extends Error {
 }
 
 async function pushRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await apiFetch(path, {
-    ...init,
-    headers: {
-      ...(init?.body ? { "content-type": "application/json" } : {}),
-      ...init?.headers,
-    },
-  });
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new PushClientError(
-      typeof body?.error?.message === "string"
-        ? body.error.message
-        : `服务端请求失败：${response.status}`,
-      typeof body?.error?.code === "string" ? body.error.code : "UNKNOWN_ERROR",
-      response.status,
-    );
-  }
-  if (response.status === 204) return undefined as T;
-  return ((await response.json()) as { data: T }).data;
+  return requestJson(path, init, { error: ({ message, code, status }) => new PushClientError(message, code, status) });
 }
 
 export function getPushState(): Promise<PushPublicState> {
