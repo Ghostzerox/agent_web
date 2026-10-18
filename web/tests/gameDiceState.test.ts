@@ -3,7 +3,7 @@ import { rollGameRuleCheck } from "@/lib/game/checks";
 import { rollGameDice } from "@/lib/game/dice";
 import {
   applyGameStatePatch,
-  normalizeGameState,
+  parseGameState,
   parseGameModelTurn,
   type GameState,
 } from "@/lib/game/state";
@@ -131,31 +131,9 @@ describe("Phase 6.3 dice and structured state", () => {
     expect(["critical-success", "success", "failure", "critical-failure"]).toContain(first.outcome);
   });
 
-  it("upgrades Phase 6.3 snapshots without rewriting their historical rows", () => {
-    const legacy = {
-      scene: "旧码头",
-      objectives: ["找到船长"],
-      flags: {},
-      resources: {},
-      inventory: { 船票: 1 },
-    };
-    expect(normalizeGameState(legacy, [{
-      id: "22222222-2222-4222-8222-222222222222",
-      name: "阿岚",
-      maxHealth: 8,
-      attributes: { 敏捷: 2 },
-    }])).toMatchObject({
-      sceneFacts: [],
-      sceneExits: [],
-      items: { 船票: { name: "船票" } },
-      characters: {
-        "22222222-2222-4222-8222-222222222222": {
-          name: "阿岚",
-          health: 8,
-          attributes: { 敏捷: 2 },
-        },
-      },
-    });
+  it("rejects incomplete old snapshots instead of silently upgrading them", () => {
+    expect(() => parseGameState({ scene: "旧码头", objectives: [], flags: {}, resources: {}, inventory: {} })).toThrow("current schema");
+    expect(() => parseGameState({ ...state, items: undefined })).toThrow("current schema");
   });
 
   it("does not inject a later character into an existing Phase 6.4 branch", () => {
@@ -165,7 +143,7 @@ describe("Phase 6.3 dice and structured state", () => {
       maxHealth: 10,
       attributes: { 力量: 1 },
     };
-    const normalized = normalizeGameState(state, [laterCharacter]);
+    const normalized = parseGameState(state);
     expect(normalized.characters[laterCharacter.id]).toBeUndefined();
     expect(normalized.characters["11111111-1111-4111-8111-111111111111"]?.name).toBe("林舟");
   });

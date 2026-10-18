@@ -22,7 +22,7 @@
 
 - `/memory` 默认只打开正式长期记忆；`view=candidates / knowledge / navigation / controls` 分别打开候选、资料、AI 记忆导航、读取控制与导出，互不常驻。
 - `/study/memory-palaces` 仅呈现 `purpose=learning` 宫殿；AI 记忆导航仅呈现 `purpose=navigation`。共用组件和现有 API，列表展示按用途筛选，不新增授权或把个人事实转换成学习材料。
-- 旧 `/memory?palace=learning` 原地显示学习助记，归属学习；保留 URL 与历史，不自动重定向，不展示个人数据子菜单。
+- R9.2 起退役 `/memory?palace=learning` 别名，旧参数显示无效链接，不读取学习或现实记忆；使用 `/study/memory-palaces`。知识原文深链不变。
 - 知识引用原样使用 `/memory?document=<uuid>&version=<n>&line=<n>`。引用打开知识视图并沿用服务端版本校验；不加 `view`、不重写历史引用。重复关键参数、无版本、无效值、`document / palace / view` 冲突会显示错误，不挂载其他域的编辑器。
 - 子页切换沿用 Navigation Guard，确认后才离开；折叠不触发离开。取消返回时本地 React 的查询读取延后到所有导航确认监听器结束之后，保留原 URL 与草稿。
 

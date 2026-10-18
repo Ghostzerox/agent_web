@@ -22,7 +22,7 @@ import {
 import type { GameRuleCheck } from "@/lib/game/checks";
 import type { GameDiceRoll } from "@/lib/game/dice";
 import {
-  normalizeGameState,
+  parseGameState,
   type GameState,
   type GameStatePatch,
 } from "@/lib/game/state";
@@ -210,16 +210,14 @@ export class GameSessionRepository<
       .from(gameCheckpoints)
       .where(eq(gameCheckpoints.sessionId, id))
       .orderBy(desc(gameCheckpoints.createdAt), desc(gameCheckpoints.id));
-    // Phase 6.3 snapshots predate structured scenes, items and runtime
-    // characters. Normalize at the repository boundary so old campaigns stay
-    // playable without rewriting their immutable historical rows.
+    // Only the current explicit snapshot schema is supported.
     const turns = storedTurns.map((turn) => ({
       ...turn,
-      stateSnapshot: normalizeGameState(turn.stateSnapshot, characters),
+      stateSnapshot: parseGameState(turn.stateSnapshot),
     }));
     const checkpoints = storedCheckpoints.map((checkpoint) => ({
       ...checkpoint,
-      stateSnapshot: normalizeGameState(checkpoint.stateSnapshot, characters),
+      stateSnapshot: parseGameState(checkpoint.stateSnapshot),
     }));
     return { ...session, characters, turns, events, checkpoints };
   }

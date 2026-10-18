@@ -25,7 +25,7 @@ describe("GamePlay API", () => {
     const { startWorld, applyExplorationAction } = await import("@/lib/game/exploration/engine");
     const { ExplorationError } = await import("@/lib/game/exploration/contracts");
     const id = crypto.randomUUID(); const root = crypto.randomUUID(); const left = crypto.randomUUID(); const right = crypto.randomUUID();
-    const state = startWorld("fog-harbor");
+    const state = startWorld("fog-harbor", "1.0.0");
     const leftState = applyExplorationAction(state, { action: "move", targetId: "market" }, "left-only");
     const rightState = applyExplorationAction(state, { action: "move", targetId: "marsh" }, "right-only");
     const get = vi.fn().mockResolvedValue({ turns: [

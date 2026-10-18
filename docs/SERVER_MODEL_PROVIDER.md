@@ -17,26 +17,15 @@ CREDENTIAL_MASTER_KEY=<32 个随机字节的无填充 base64url 字符串>
 3. 保存后，服务端使用 AES-256-GCM 加密 Key 并写入 PostgreSQL；Provider、Base URL 和 Model 作为可读取的普通文本列保存。
 4. 页面及读取接口返回三个非敏感配置字段，但 Key 只显示末四位提示，永不返回明文或密文。
 
-数据库凭据优先。以下服务端环境变量只在数据库中没有已保存凭据时作为管理员兜底：
+R9.2 起只使用网页保存的数据库凭据，不再读取 AI_API_KEY、AI_BASE_URL、AI_MODEL。删除后明确返回未配置（missing: [modelCredential]），不会切回旧环境配置；已有 Vault 数据无需迁移。
 
-```dotenv
-AI_API_KEY=<真实 Key>
-AI_BASE_URL=https://api.deepseek.com
-AI_MODEL=deepseek-v4-flash-vision-exp
-AI_ALLOW_INSECURE_HTTP=false
-```
-
-- `AI_*` 与 `CREDENTIAL_MASTER_KEY` 均不能添加 `NEXT_PUBLIC_` 前缀。
-- Base URL 默认只接受 HTTPS，并拒绝 URL 中内嵌账号或密码。
-- 管理员确实需要连接可信 HTTP 模型服务时，才可设置 `AI_ALLOW_INSECURE_HTTP=true`；网页提交的自定义配置仍应优先使用 HTTPS。
-- 修改服务端环境变量后必须重启服务。
-- 删除数据库凭据后，如果 `AI_*` 完整，运行时会回退到环境变量配置。
+Base URL 默认只接受 HTTPS、拒绝内嵌凭据。仅可信 HTTP 服务可设置 AI_ALLOW_INSECURE_HTTP=true；修改该策略或主密钥需重启。CREDENTIAL_MASTER_KEY、数据库连接和 Token 预算仍由服务端环境管理，不得公开到客户端。
 
 ## 2. 凭据端点
 
 ### `GET /api/v1/model/credentials`
 
-返回非敏感状态，包括 `configured`、`source`、`provider`、`baseUrl`、`model`、`apiKeyHint`、`version` 和 `missing`。`source` 为 `stored`、`environment` 或 `none`，响应禁止缓存且不包含 Key 或密文。
+返回非敏感状态，包括 `configured`、`source`、`provider`、`baseUrl`、`model`、`apiKeyHint`、`version` 和 `missing`。`source` 为 `stored` 或 `none`，响应禁止缓存且不包含 Key 或密文。
 
 ### `PUT /api/v1/model/credentials`
 
@@ -55,7 +44,7 @@ AI_ALLOW_INSECURE_HTTP=false
 
 ### `DELETE /api/v1/model/credentials`
 
-删除 PostgreSQL 中的加密凭据，返回 HTTP 204。它不会删除管理员环境变量兜底。
+删除 PostgreSQL 中的加密凭据，返回 HTTP 204。之后模型调用明确返回未配置，不存在环境兜底。
 
 ### `POST /api/v1/model/credentials/test`
 

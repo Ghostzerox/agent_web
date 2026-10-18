@@ -178,9 +178,7 @@ export function ModelCredentialSettings() {
           <span className="text-right text-zinc-800 dark:text-zinc-200">
             {status?.source === "stored"
               ? "服务端加密存储"
-              : status?.source === "environment"
-                ? "服务端环境变量"
-                : "—"}
+              : "—"}
           </span>
         </div>
         <div className="flex justify-between gap-4">

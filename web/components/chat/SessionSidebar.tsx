@@ -1,4 +1,4 @@
-import type { Session } from "@/lib/config";
+import type { Session } from "@/lib/conversation/session";
 
 type SessionSidebarProps = {
   sessions: Session[];

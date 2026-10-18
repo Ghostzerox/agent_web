@@ -51,8 +51,6 @@ function Assert-LocalCapacitorConfig {
 $previousJavaHome = $env:JAVA_HOME
 $previousAndroidHome = $env:ANDROID_HOME
 $previousAndroidSdkRoot = $env:ANDROID_SDK_ROOT
-$previousBuildProfile = $env:CAPACITOR_BUILD_PROFILE
-$previousServerUrl = $env:CAPACITOR_SERVER_URL
 $previousApiBaseUrl = $env:VITE_API_BASE_URL
 
 Push-Location $webRoot
@@ -61,8 +59,6 @@ try {
     $env:ANDROID_HOME = $AndroidSdkRoot
     $env:ANDROID_SDK_ROOT = $AndroidSdkRoot
     $env:VITE_API_BASE_URL = $expectedApiBaseUrl
-    Remove-Item Env:CAPACITOR_BUILD_PROFILE -ErrorAction SilentlyContinue
-    Remove-Item Env:CAPACITOR_SERVER_URL -ErrorAction SilentlyContinue
 
     npm run mobile:sync
     if ($LASTEXITCODE -ne 0) { throw 'Local mobile client build or Capacitor sync failed.' }
@@ -134,10 +130,6 @@ finally {
     else { $env:ANDROID_HOME = $previousAndroidHome }
     if ($null -eq $previousAndroidSdkRoot) { Remove-Item Env:ANDROID_SDK_ROOT -ErrorAction SilentlyContinue }
     else { $env:ANDROID_SDK_ROOT = $previousAndroidSdkRoot }
-    if ($null -eq $previousBuildProfile) { Remove-Item Env:CAPACITOR_BUILD_PROFILE -ErrorAction SilentlyContinue }
-    else { $env:CAPACITOR_BUILD_PROFILE = $previousBuildProfile }
-    if ($null -eq $previousServerUrl) { Remove-Item Env:CAPACITOR_SERVER_URL -ErrorAction SilentlyContinue }
-    else { $env:CAPACITOR_SERVER_URL = $previousServerUrl }
     if ($null -eq $previousApiBaseUrl) { Remove-Item Env:VITE_API_BASE_URL -ErrorAction SilentlyContinue }
     else { $env:VITE_API_BASE_URL = $previousApiBaseUrl }
     Pop-Location

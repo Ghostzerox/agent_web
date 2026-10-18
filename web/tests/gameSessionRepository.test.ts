@@ -13,7 +13,7 @@ import {
 import { createGameSessionRepository } from "@/lib/repositories/gameSessionRepository";
 import { createGameTurnService } from "@/lib/game/gameTurnService";
 import { PUBLIC_JOURNEY } from "./helpers/explorationJourney";
-import { EXPLORATION_PRESET } from "@/lib/game/exploration/preset";
+import { FOG_HARBOR_PRESET } from "@/lib/game/exploration/templates/fog-harbor/public";
 import { exportGameSessionArtifact } from "@/lib/game/gameSessionExport";
 
 function session(database: Pick<PGlite, "query">): MigrationSession {
@@ -81,7 +81,7 @@ describe("GameSessionRepository", () => {
 
   it("plays the complete region, rejects AI patches atomically and exports compatible saves without hidden lore", async () => {
     const now = new Date("2026-10-18T00:00:00Z");
-    let current = await repository.create({ ...EXPLORATION_PRESET, now });
+    let current = await repository.create({ ...FOG_HARBOR_PRESET, now });
     current = await repository.updateStatus(current.id, { status: "active", expectedVersion: current.version, now });
     let output = '{"narrative":"林汐望向灯座，问你想听哪一段往事。","statePatch":{}}';
     let modelCalls = 0;
@@ -93,7 +93,7 @@ describe("GameSessionRepository", () => {
     const run = async (action: import("@/lib/game/exploration/contracts").ExplorationAction, narrate = false) => {
       current = await service.create(current.id, { content: "合成区域验收", parentTurnId: current.activeLeafTurnId, expectedVersion: current.version, diceRequests: [], checkRequest: null, requestId: crypto.randomUUID(), explorationAction: action, narrate });
     };
-    await run({ action: "start", templateId: "fog-harbor" });
+    await run({ action: "start", templateId: "fog-harbor", templateVersion: "1.0.0" });
     const earlyExport = exportGameSessionArtifact(current, "json", now).content;
     expect(earlyExport).not.toContain("母亲留下的信"); expect(earlyExport).not.toContain("守望者盟约：");
     for (const action of PUBLIC_JOURNEY) await run(action);
@@ -117,7 +117,7 @@ describe("GameSessionRepository", () => {
     let current = await repository.create({ title: "探索测试", kind: "interactive-story", world, initialCharacter: null, now });
     current = await repository.updateStatus(current.id, { status: "active", expectedVersion: current.version, now });
     const service = createGameTurnService(repository, { generate: async () => { throw new Error("No paid model"); } });
-    const base = { content: "开启雾港", parentTurnId: null, expectedVersion: current.version, diceRequests: [], checkRequest: null, requestId: crypto.randomUUID(), explorationAction: { action: "start" as const, templateId: "fog-harbor" } };
+    const base = { content: "开启雾港", parentTurnId: null, expectedVersion: current.version, diceRequests: [], checkRequest: null, requestId: crypto.randomUUID(), explorationAction: { action: "start" as const, templateId: "fog-harbor", templateVersion: "1.0.0" } };
     current = await service.create(current.id, base);
     const root = current.activeLeafTurnId!;
     expect((await service.create(current.id, base)).turns).toHaveLength(1);

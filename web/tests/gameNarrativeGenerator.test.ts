@@ -41,7 +41,7 @@ describe("Game narrative generator", () => {
 
   it("maps missing configuration, provider failure and empty output", async () => {
     const missing = createGameNarrativeGenerator({
-      getConfig: vi.fn().mockRejectedValue(new ModelConfigError(["AI_API_KEY"])),
+      getConfig: vi.fn().mockRejectedValue(new ModelConfigError(["modelCredential"])),
       createProvider: vi.fn(),
     });
     await expect(missing.generate([])).rejects.toMatchObject({

@@ -1,7 +1,7 @@
 import {
   type ChatMessage,
   type Session,
-} from "@/lib/config";
+} from "@/lib/conversation/session";
 import type { PromptMessage } from "@/lib/ai/messages";
 import type { MessageCitation } from "@/lib/ai/messages";
 import type { ResponseVerification } from "@/lib/ai/messages";
@@ -15,7 +15,6 @@ import {
 import {
   appendAssistantBranch,
   appendMessage,
-  normalizeSessionTree,
 } from "@/lib/conversation/tree";
 import { apiFetch } from "@/lib/api/clientRuntime";
 
@@ -141,7 +140,7 @@ export function applySendReply(
 }
 
 /**
- * 纯函数：将 AI 回复更新到指定 assistant 的 versions，返回新 Session。
+ * 纯函数：为指定 assistant 的回复创建兄弟分支，返回新 Session。
  * 不写 localStorage，不产生副作用。
  */
 export function applyRetryReply(
@@ -150,8 +149,7 @@ export function applyRetryReply(
   targetMessageId: string,
   messageId = crypto.randomUUID(),
 ): Session {
-  const normalized = normalizeSessionTree(session);
-  const target = normalized.messages.find(
+  const target = session.messages.find(
     (message) => message.id === targetMessageId,
   );
   if (!target || target.role !== "assistant") return session;
@@ -163,6 +161,6 @@ export function applyRetryReply(
     createdAt: Date.now(),
   };
 
-  const updated = appendAssistantBranch(normalized, targetMessageId, branch);
+  const updated = appendAssistantBranch(session, targetMessageId, branch);
   return { ...updated, updatedAt: Date.now() };
 }

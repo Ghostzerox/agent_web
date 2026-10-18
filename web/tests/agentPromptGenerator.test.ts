@@ -64,7 +64,7 @@ describe("Agent Prompt generator", () => {
 
   it("maps missing configuration and provider failures to stable retry semantics", async () => {
     const missing = createAgentPromptGenerator({
-      getConfig: vi.fn().mockRejectedValue(new ModelConfigError(["AI_API_KEY"])),
+      getConfig: vi.fn().mockRejectedValue(new ModelConfigError(["modelCredential"])),
       createProvider: vi.fn(),
     });
     await expect(missing.generate("任务")).rejects.toMatchObject({

@@ -12,7 +12,7 @@
 
 Phase 6.5 新增 `/entertainment/quick-adventure` 本地路由。真机回归需覆盖：启用规则包并授权隔离存储、Web/APK 配置同步、两种模板预览、确认后进入正确会话和一次故事检定。预览不消耗模型 Token，故事需要服务端模型配置；完整范围见 `GAME_RULE_PACKS.md`。
 
-移动端使用 Hash Router，本地界面即使暂时连不上笔记本也能启动并显示连接诊断。需要服务端事实数据或模型的操作仍必须联网；本地 Bundle 不是数据库副本，也不伪造离线写入成功。旧 remote-shell 只保留为显式 `spike` 兼容工具。
+移动端使用 Hash Router，本地界面即使暂时连不上笔记本也能启动并显示连接诊断。需要服务端事实数据或模型的操作仍必须联网；本地 Bundle 不是数据库副本，也不伪造离线写入成功。R9.2 已删除 remote-shell / spike 打包轨；API 地址仍使用 VITE_API_BASE_URL。
 
 ## 已安装工具
 
@@ -166,7 +166,7 @@ M1.3 增加设备端最小提醒快照、离线回退同步、精确闹钟设置
 
 - APK 内不包含模型 API Key、数据库连接、Credential Master Key 或 Huawei 服务端凭据。
 - Debug APK 使用 Android Debug 证书，只用于个人测试，不可发布应用商店。
-- 正式 Debug APK 使用本地 `mobile-dist` 且没有 `server.url`；remote-shell 只允许 HTTPS 且必须显式使用 `spike` 构建配置。
+- 正式 Debug APK 使用本地 `mobile-dist` 且没有 `server.url`；不再提供 remote-shell / spike 构建配置。
 - Tailscale API Origin 不是认证 Token，会作为连接地址编译进个人 APK，但不会写入 Git；API Key 与服务端密钥不会进入移动产物。
 - 服务端 API 默认只为 Capacitor 的 `https://localhost` Origin 返回 CORS 许可；可通过 `MOBILE_ALLOWED_ORIGINS` 显式收窄或扩展。
 - 未来离开 Tailscale 或支持多人前，必须先增加设备认证、Token 撤销与严格 Origin/CORS 策略。

@@ -3,7 +3,7 @@
   "sourceHashes": {
     "lib/agent/modeRegistry.ts": "2a49e61916594174008e8de5c39a9f012568aa8188d69bc188d3e2831ae9dbac",
     "lib/agent/policyLayer.ts": "347f8749b03f23a976db86520ea3985b70bada2a9ca5fa404f128550b3ff9cab",
-    "lib/agent/promptBuilder.ts": "de01fbf14586cf1da66b313d38e1f7e882e9b38ed338ce02bb4bcdcbc6332fe9",
+    "lib/agent/promptBuilder.ts": "8c3f10250b1539dffa272990e64d34d6260cc6d1a0763c1084caf4ffcdcc2bf9",
     "lib/ai/modelUsage.ts": "cede9cf0238eb1faa07b8f37ccbc0fd402c90c1e6aeef88771d2256e3d18a008",
     "lib/ai/promptEnvelope.ts": "d316ffb088b7385c18f0026bef5bfecddfd7024aa5f472ae6c9d77fb0ddbd024",
     "lib/ai/server/modelProvider.ts": "afd742a778d6274a787de6ffd526d2071aed4e298bf6c5185fe6a8baf1afbcc7",
@@ -14,7 +14,7 @@
     "lib/conversation/summary.ts": "a427b03e3abcbe5ad18e573ce1749713d50bcfd9974e1530aecb2d3f073a9820",
     "lib/game/exploration/prompt.ts": "64a5e5a8ebf38364e8b340470a666299c0befecb999073c7371c4e3742a36a91",
     "lib/game/gameNarrativeGenerator.ts": "ebcf66f31a95e97cf2111a6e806498b3e3855b674857bb1db112dbfc736c482a",
-    "lib/game/gameTurnService.ts": "f4609a83e816da92696ddb0ded3132c7afba8e7edd56c57e18f85287b329e285",
+    "lib/game/gameTurnService.ts": "9639adb2b2a4bc872b53fc89d14c0c1a951018194c327ed7b7b157ca4aed34d2",
     "lib/game/toolkit.ts": "662f40a454c7ad2a5532d269dc9d108ef4e2d9e79c83f6f3ae401a0a2a691f6e",
     "lib/knowledge/audit.ts": "4af15095289fcb5496920567cf8de3bce9483760ece5ed80f1cdc267eeb958dc",
     "lib/knowledge/citations.ts": "2bee4655da855d7aaa511a99fc89aed8a1ce8c4b8cea8b90a8560132c5ff0f8f",

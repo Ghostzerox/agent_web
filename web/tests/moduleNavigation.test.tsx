@@ -15,8 +15,7 @@ describe("R8 module hierarchy and query contracts", () => {
       if (route.path !== "/") expect(workspaceOwner(route.path)).toBe(route.owner);
       expect(existsSync(`app${route.path === "/" ? "" : route.path}/page.tsx`)).toBe(true);
     }
-    expect(workspaceOwner("/memory", new URLSearchParams("palace=learning"))).toBe("study");
-    expect(workspaceOwner("/memory", new URLSearchParams("palace=learning&document=bad"))).toBe("settings");
+    expect(workspaceOwner("/memory")).toBe("settings");
     expect(workspaceOwner("/study-other")).toBeNull();
   });
   it("registers every linked pathname in web and the local React client", () => {
@@ -30,7 +29,7 @@ describe("R8 module hierarchy and query contracts", () => {
   it("keeps exact document citations and rejects conflicting or repeated memory view selectors", () => {
     const doc = "00000000-0000-4000-8000-000000000001";
     expect(resolveMemoryView(new URLSearchParams(`document=${doc}&version=2&line=3`))).toEqual({ view: "knowledge" });
-    expect(resolveMemoryView(new URLSearchParams("palace=learning"))).toEqual({ view: "learning" });
+    expect(resolveMemoryView(new URLSearchParams("palace=learning")).error).toBeTruthy();
     for (const query of ["view=unknown", "view=knowledge&view=personal", "palace=learning&view=personal", `document=${doc}&version=2&view=knowledge`, `document=${doc}&version=0`, "line=1", `document=${doc}&version=1&version=2`]) expect(resolveMemoryView(new URLSearchParams(query)).error).toBeTruthy();
     expect(resolveMemoryView(new URLSearchParams())).toEqual({ view: "personal" });
   });

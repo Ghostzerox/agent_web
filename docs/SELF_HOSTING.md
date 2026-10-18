@@ -30,7 +30,7 @@ $rng.Dispose()
 [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+','-').Replace('/','_')
 ```
 
-- `AI_API_KEY`、`AI_BASE_URL`、`AI_MODEL` 是可选的管理员兜底。推荐先留空，启动后在 `/api-key` 页面测试并保存凭据。
+- 启动后在 /api-key 页面填写并保存模型配置；R9.2 起不再提供环境模型凭据兜底。现有 Vault 无需重填；旧环境变量即使保留也不再生效。
 - 为 `SEARXNG_SECRET` 设置另一条长随机字符串。`WEB_SEARCH_BASE_URL=http://search:8080/` 保持默认值即可。
 - 保持 `APP_BIND_ADDRESS=127.0.0.1`。Tailscale Serve 可以代理 localhost，无需将应用暴露到整个局域网。
 

@@ -18,7 +18,7 @@ describe("R7.5 events and provenance", () => {
     expect(state.history.find((item) => item.id === "keeper-family")?.origin).toBe("setting");
   });
   it("does not spend items on invalid stages, conditions or unavailable choices", () => {
-    const state = startWorld("fog-harbor");
+    const state = startWorld("fog-harbor", "1.0.0");
     expect(() => act(state, { action: "choose", eventId: "lantern-accord", choiceId: "public" }, "x")).toThrow("尚未触发");
     const decision = atWorldDecision(); decision.coins = 0;
     expect(() => act(decision, { action: "choose", eventId: "lantern-accord", choiceId: "public" }, "y")).toThrow("不足");
@@ -26,7 +26,7 @@ describe("R7.5 events and provenance", () => {
     expect(decision.events["lantern-accord"].settled).toBe(false);
   });
   it("distinguishes rumors, legends, opinions and facts with original sources", () => {
-    let state = act(startWorld("fog-harbor"), { action: "move", targetId: "market" }, "a");
+    let state = act(startWorld("fog-harbor", "1.0.0"), { action: "move", targetId: "market" }, "a");
     state = act(state, { action: "investigate", targetId: "well" }, "b");
     state = act(state, { action: "ask", targetId: "merchant", topicId: "old-light" }, "c");
     expect(state.history.find((item) => item.id === "well-legend")?.kind).toBe("legend");

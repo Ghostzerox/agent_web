@@ -129,13 +129,13 @@ describe("Model API", () => {
     const runs = createRunRecorder();
     const api = createModelApi({
       getConfig: () => {
-        throw new ModelConfigError(["AI_API_KEY"]);
+        throw new ModelConfigError(["modelCredential"]);
       },
       getStatus: () => ({
         configured: false,
         baseUrl: null,
         model: null,
-        missing: ["AI_API_KEY"],
+        missing: ["modelCredential"],
       }),
       createProvider: () => {
         throw new Error("must not create provider");
@@ -153,7 +153,7 @@ describe("Model API", () => {
     expect(missingBody.error).toMatchObject({
       code: "MODEL_NOT_CONFIGURED",
       retryable: false,
-      details: { missing: ["AI_API_KEY"] },
+      details: { missing: ["modelCredential"] },
     });
   });
 

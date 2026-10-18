@@ -11,7 +11,7 @@ export function AppShell({ route, title, description, children, actions, chat = 
 }) {
   const [open, setOpen] = useState(false);
   const params = useAppQuery();
-  const owner = workspaceOwner(route, params);
+  const owner = workspaceOwner(route);
   const localLinks = owner ? MODULE_LINKS[owner] : [];
   const currentUrl = `${route}${params.size ? `?${params}` : ""}`;
   useEffect(() => {
@@ -27,7 +27,7 @@ export function AppShell({ route, title, description, children, actions, chat = 
     <nav aria-label="主导航" className="workspace-nav-groups">
       {WORKSPACE_SECTIONS.map((section) => <section key={section.label}>
         <h2>{section.label}</h2>
-        {section.items.map((item) => <AppLink key={item.href} href={item.href} aria-current={isWorkspaceRouteActive(route, item.href, params) ? "page" : undefined} className="workspace-nav-link" title={item.description}>
+        {section.items.map((item) => <AppLink key={item.href} href={item.href} aria-current={isWorkspaceRouteActive(route, item.href) ? "page" : undefined} className="workspace-nav-link" title={item.description}>
           <span className="workspace-nav-mark" aria-hidden="true">{item.mark}</span><span>{item.label}</span>
         </AppLink>)}
       </section>)}

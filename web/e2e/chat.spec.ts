@@ -34,80 +34,10 @@ type MockConversation = {
   messages: MockMessage[];
 };
 
-async function installServerDataMock(page: Page) {
-  const conversations = new Map<string, MockConversation>();
-  const importedSourceIds = new Set<string>();
+async function installServerDataMock(page: Page, initial: MockConversation[] = []) {
+  const conversations = new Map(initial.map((item) => [item.id, item]));
   const respond = (route: Parameters<Parameters<Page["route"]>[1]>[0], data: unknown, status = 200) =>
     route.fulfill({ status, contentType: "application/json", body: JSON.stringify({ data }) });
-
-  await page.route("**/api/v1/imports/local-storage", async (route) => {
-    const body = route.request().postDataJSON() as {
-      action: "preview" | "import";
-      sessions: Array<{
-        id: string;
-        title: string;
-        activeLeafId: string | null;
-        updatedAt: number;
-        messages: Array<{
-          id: string;
-          parentId: string | null;
-          role: "user" | "assistant";
-          content: string;
-          createdAt: number;
-        }>;
-      }>;
-    };
-    const pending = body.sessions.filter((session) => !importedSourceIds.has(session.id));
-    if (body.action === "preview") {
-      return respond(route, {
-        total: body.sessions.length,
-        importable: pending.length,
-        alreadyImported: body.sessions.length - pending.length,
-        existingSourceIds: body.sessions
-          .filter((session) => importedSourceIds.has(session.id))
-          .map((session) => session.id),
-      });
-    }
-
-    const conversationIds: string[] = [];
-    for (const session of pending) {
-      const id = crypto.randomUUID();
-      const idMap = new Map(session.messages.map((message) => [message.id, crypto.randomUUID()]));
-      const timestamp = new Date(session.updatedAt).toISOString();
-      conversations.set(id, {
-        id,
-        userId: "00000000-0000-4000-8000-000000000001",
-        title: session.title,
-        mode: "auto",
-        summary: null,
-        activeLeafMessageId: session.activeLeafId ? idMap.get(session.activeLeafId)! : null,
-        version: 1,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        messages: session.messages.map((message) => ({
-          id: idMap.get(message.id)!,
-          parentMessageId: message.parentId ? idMap.get(message.parentId)! : null,
-          role: message.role,
-          content: message.content,
-          status: "complete",
-          model: null,
-          citations: [],
-          verification: null,
-          createdAt: new Date(message.createdAt).toISOString(),
-        })),
-      });
-      importedSourceIds.add(session.id);
-      conversationIds.push(id);
-    }
-    return respond(route, {
-      total: body.sessions.length,
-      importable: pending.length,
-      alreadyImported: body.sessions.length - pending.length,
-      existingSourceIds: [],
-      imported: pending.length,
-      conversationIds,
-    }, 201);
-  });
 
   await page.route("**/api/v1/conversations**", async (route) => {
     const request = route.request();
@@ -229,6 +159,35 @@ async function installServerDataMock(page: Page) {
   });
 }
 
+test("retired browser stores stay untouched and never trigger an import", async ({ page }) => {
+  const stored = {
+    agent_chat_sessions: JSON.stringify([{ id: "legacy", title: "不再导入的旧会话", messages: [], updatedAt: 1 }]),
+    agent_chat_messages: JSON.stringify([{ role: "user", content: "历史" }]),
+    agent_memory_store: JSON.stringify([{ content: "旧记忆" }]),
+    agent_api_key: "synthetic-retired-key",
+    agent_api_base_url: "https://retired.invalid",
+    agent_api_model: "old-model",
+  };
+  await page.addInitScript((values) => {
+    for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value);
+  }, stored);
+  const imports: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().includes("/imports/local-storage")) imports.push(request.url());
+  });
+  await installServerDataMock(page);
+  await page.route("**/api/v1/model/credentials", (route) => route.fulfill({
+    json: { data: { configured: false, source: "none", provider: null, baseUrl: null, model: null, apiKeyHint: null, version: null, missing: ["modelCredential"] } },
+  }));
+  await page.goto("/chat");
+  await expect(page.getByText("暂无对话，点击上方按钮开始")).toBeVisible();
+  await expect(page.getByRole("button", { name: "确认导入" })).toHaveCount(0);
+  await page.goto("/api-key");
+  await expect(page.getByText("未配置", { exact: true })).toBeVisible();
+  expect(await page.evaluate((keys) => Object.fromEntries(keys.map((key) => [key, localStorage.getItem(key)])), Object.keys(stored))).toEqual(stored);
+  expect(imports).toEqual([]);
+});
+
 test("chat session lifecycle survives reloads", async ({ page }) => {
   await installServerDataMock(page);
   await page.route("**/api/v1/model/stream", (route) =>
@@ -243,7 +202,7 @@ test("chat session lifecycle survives reloads", async ({ page }) => {
   await page.goto("/chat");
   await page.evaluate(() => {
     window.localStorage.clear();
-    window.localStorage.setItem("agent_api_key", "must-be-removed");
+    window.localStorage.setItem("agent_api_key", "retired-not-used");
     window.localStorage.setItem("agent_api_base_url", "https://legacy.example");
     window.localStorage.setItem("agent_api_model", "legacy-model");
   });
@@ -257,7 +216,7 @@ test("chat session lifecycle survives reloads", async ({ page }) => {
         model: window.localStorage.getItem("agent_api_model"),
       })),
     )
-    .toEqual({ key: null, baseUrl: null, model: null });
+    .toEqual({ key: "retired-not-used", baseUrl: "https://legacy.example", model: "legacy-model" });
 
   await expect(page.getByRole("heading", { name: "AI 对话" })).toBeVisible();
   await expect(page.getByText("暂无对话，点击上方按钮开始")).toBeVisible();
@@ -612,45 +571,18 @@ test("persists and restores visible response verification", async ({ page }) => 
   ).toBeVisible();
 });
 
-test("renders dollar and slash-delimited math in the chat page", async ({
-  page,
-}) => {
-  await installServerDataMock(page);
+test("renders dollar and slash-delimited math from server conversation data", async ({ page }) => {
+  const createdAt = "2026-10-18T00:00:00.000Z";
+  const content = "行内：\\(x^2\\) 与 $\\frac{a+b}{c+d}$\n\n\\[\\frac{1}{1 + \\frac{1}{x}}\\]\n\n以及 $z^2$";
+  await installServerDataMock(page, [{
+    id: "math-session", userId: "user", title: "公式测试", mode: "professional",
+    summary: null, activeLeafMessageId: "math-answer", version: 1, createdAt, updatedAt: createdAt,
+    messages: [
+      { id: "math-question", parentMessageId: null, role: "user", content: "展示公式", status: "complete", model: null, citations: [], createdAt },
+      { id: "math-answer", parentMessageId: "math-question", role: "assistant", content, status: "complete", model: null, citations: [], createdAt },
+    ],
+  }]);
   await page.goto("/chat");
-  await page.evaluate(() => {
-    window.localStorage.clear();
-    window.localStorage.setItem(
-      "agent_chat_sessions",
-      JSON.stringify([
-        {
-          id: "math-session",
-          title: "公式测试",
-          schemaVersion: 2,
-          activeLeafId: "math-answer",
-          updatedAt: Date.now(),
-          messages: [
-            {
-              id: "math-question",
-              parentId: null,
-              role: "user",
-              content: "展示公式",
-            },
-            {
-              id: "math-answer",
-              parentId: "math-question",
-              role: "assistant",
-              content:
-                "行内：\\(x^2\\) 与 $\\frac{a+b}{c+d}$\n\n\\[\\frac{1}{1 + \\frac{1}{x}}\\]\n\n以及 $z^2$",
-            },
-          ],
-        },
-      ]),
-    );
-  });
-  await page.reload();
-
-  await page.getByRole("button", { name: "确认导入" }).click();
-
   await expect(page.locator(".katex")).toHaveCount(4);
   await expect(page.locator(".katex-display")).toHaveCount(1);
   await expect(page.locator(".mfrac")).toHaveCount(3);

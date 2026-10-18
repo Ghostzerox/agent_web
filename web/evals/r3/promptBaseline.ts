@@ -17,7 +17,7 @@ import type { PromptRunRecord, ReadingProfileRecord, ReflectionPreferenceRecord 
 import { PROMPT_COMPOSER_VERSION } from "@/lib/ai/promptEnvelope";
 import { DEFAULT_PERSONA_PROFILE } from "@/lib/persona/personaProfile";
 import type { RetrievedMemory } from "@/lib/memory/memoryRetrieval";
-import type { Session } from "@/lib/config";
+import type { Session } from "@/lib/conversation/session";
 import { rollGameDice } from "@/lib/game/dice";
 import { BASELINE_SOURCE_COMMIT, KNOWN_PROMPT_GAPS, MODULE_PROMPT_COVERAGE, PROMPT_BASELINE_VERSION, PROMPT_SOURCE_FILES, QUALITY_DIMENSIONS, type PromptEntryId } from "./promptInventory";
 import { MODE_QUALITY_SCENARIOS } from "./modeQualityScenarios";

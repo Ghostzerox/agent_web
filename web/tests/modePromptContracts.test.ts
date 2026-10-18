@@ -11,7 +11,7 @@ describe("R3.2 mode prompt contracts (not model answer scores)", () => {
   it("keeps the same factual policy and current explicit request across four modes", () => {
     const inputs = MODE_QUALITY_SCENARIOS.filter((scenario) => scenario.id.endsWith("-fact"));
     expect(new Set(inputs.map((scenario) => scenario.input)).size).toBe(1);
-    const prompts = inputs.map((scenario) => buildAgentPrompt({ session: { id: "synthetic", title: "fact", mode: scenario.mode, updatedAt: 1, messages: [{ role: "user", content: scenario.input }] }, memory: [] }));
+    const prompts = inputs.map((scenario) => buildAgentPrompt({ session: { id: "synthetic", title: "fact", mode: scenario.mode, updatedAt: 1, schemaVersion: 2, activeLeafId: "user", messages: [{ id: "user", parentId: null, role: "user", content: scenario.input }] }, memory: [] }));
     expect(new Set(prompts.map((prompt) => prompt[0].content)).size).toBe(1);
     for (const prompt of prompts) {
       expect(prompt.map((message) => message.source)).toEqual(["policy", "mode", "persona", "conversation"]);
@@ -46,7 +46,7 @@ describe("R3.2 mode prompt contracts (not model answer scores)", () => {
   });
 
   it("exports the actual new mode/persona versions and preserves exact request integrity", async () => {
-    const prompt = buildAgentPrompt({ session: { id: "id", title: "mode", updatedAt: 1, mode: "companion", messages: [{ role: "user", content: "只想聊聊" }] }, memory: [] });
+    const prompt = buildAgentPrompt({ session: { id: "id", title: "mode", updatedAt: 1, mode: "companion", schemaVersion: 2, activeLeafId: "user", messages: [{ id: "user", parentId: null, role: "user", content: "只想聊聊" }] }, memory: [] });
     const envelope = await createPromptEnvelope({ runId: "run", createdAt: "2026-10-15T00:00:00.000Z", trigger: "send", conversation: { id: "id", title: "mode", activeLeafId: null }, prompt, provider: { provider: "openai-compatible", baseUrl: "https://provider.invalid", model: "synthetic" } });
     expect(envelope.composer.version).toBe("r3.2/mode-prompts-v1");
     expect(envelope.promptLayers.find((layer) => layer.source === "mode")?.version).toBe(CORE_MODE_PROMPT_VERSION);

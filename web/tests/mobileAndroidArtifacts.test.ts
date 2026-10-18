@@ -94,7 +94,8 @@ describe("Capacitor Android project artifacts", () => {
     expect(sourceConfig).not.toMatch(
       /https:\/\/[a-z0-9-]+\.[a-z0-9-]+\.ts\.net/i,
     );
-    expect(sourceConfig).toContain("process.env.CAPACITOR_SERVER_URL");
+    expect(sourceConfig).not.toContain("process.env.CAPACITOR_SERVER_URL");
+    expect(sourceConfig).toContain('webDir: "mobile-dist"');
   });
 
   it("builds local-client APKs with an explicit HTTPS API origin", async () => {

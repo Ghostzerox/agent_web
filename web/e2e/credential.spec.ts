@@ -24,7 +24,7 @@ test("tests, saves and deletes a write-only model credential", async ({
       model: stored ? "deepseek-v4-flash-vision-exp" : null,
       apiKeyHint: stored ? "••••alue" : null,
       version: stored ? 1 : null,
-      missing: stored ? [] : ["AI_API_KEY"],
+      missing: stored ? [] : ["modelCredential"],
     };
 
     if (pathname.endsWith("/test") && request.method() === "POST") {

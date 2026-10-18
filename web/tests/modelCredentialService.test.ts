@@ -43,6 +43,23 @@ afterEach(() => {
 });
 
 describe("ModelCredentialService", () => {
+  it("does not fall back to environment credentials before save or after deletion", async () => {
+    vi.stubEnv("AI_API_KEY", "retired-secret");
+    vi.stubEnv("AI_BASE_URL", "https://retired.example/v1");
+    vi.stubEnv("AI_MODEL", "retired-model");
+    vi.stubEnv("CREDENTIAL_MASTER_KEY", randomBytes(32).toString("base64url"));
+    const fetcher = vi.fn();
+    const service = createModelCredentialService(new MemoryCredentialRepository(), fetcher);
+    await expect(service.getStatus()).resolves.toMatchObject({ configured: false, source: "none", missing: ["modelCredential"] });
+    await expect(service.getConfig()).rejects.toMatchObject({ code: "MODEL_NOT_CONFIGURED" });
+    await service.save({ apiKey: "current-secret", provider: "custom", baseUrl: "https://current.example/v1", model: "current" });
+    await expect(service.getConfig()).resolves.toMatchObject({ apiKey: "current-secret", model: "current" });
+    await service.delete();
+    await expect(service.getStatus()).resolves.toMatchObject({ configured: false, source: "none" });
+    await expect(service.getConfig()).rejects.toMatchObject({ missing: ["modelCredential"] });
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it("encrypts a saved Key and resolves it only for server model calls", async () => {
     const repository = new MemoryCredentialRepository();
     vi.stubEnv("CREDENTIAL_MASTER_KEY", randomBytes(32).toString("base64url"));

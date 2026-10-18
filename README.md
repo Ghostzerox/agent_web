@@ -62,11 +62,11 @@ Database
 
 Phase 4 主动内容闭环、Phase 5.1–5.5、Phase 7.1–7.5 与 Phase 6.1–6.5 已完成：可信记忆、Persona、设备语音、有约束的主动问候和 Plugin API 1.0.0 已经落地。娱乐模式已有独立 GameSession、树形回合、可信骰子、结构化状态、检查点、导出和轻量冒险规则包。当前优先精简现有实现，之后再评估移动发布 / 语音需求；Phase 5.6仍为发布前封版。
 
-R3–R8 工程首期已交付：提示词 / 工具、分域记忆、行动 / 打卡 / 目标、叙事探索与七入口模块化UI，见 [R8指南](docs/R8_MODULE_UI_GUIDE.md)。R9.1已完成 [现状解构与26项删改清单](docs/R9_1_SIMPLIFICATION_AUDIT.md)，下一步R9.2先删确定退出的旧代码，再兼容收敛和解耦；不再默认永久维护所有旧版本。本轮未删除业务代码或数据，真机仍统一暂缓，不把自动检查当硬件或长期效果签收。
+R3–R8 工程首期已交付：提示词 / 工具、分域记忆、行动 / 打卡 / 目标、叙事探索与七入口模块化UI，见 [R8指南](docs/R8_MODULE_UI_GUIDE.md)。R9.1 盘点与 R9.2 删除收敛已完成，见 [R9.2 报告](docs/reports/R9_2_REPORT.md)。废弃实现退出，旧 localStorage 不读取、不清空，服务端数据保留；下一步 R9.3 模块解耦。真机仍统一暂缓。
 
 当前优先级、修订后的交付顺序与防偏移规则见 `docs/PRODUCT_MAINLINE_GUIDE.md`。运行 `npm run eval:core` 可查看模式边界、专业回答与总回归分数；该分数只表示确定性契约没有回归，不代表模型事实正确率。
 
-Phase 1 已完成：Conversation/Message 服务端 Repository/API、模型 Streaming、显式旧数据导入和 Docker Compose 单用户自托管基线均已建立。Chat 现在以 PostgreSQL 为事实来源；浏览器旧会话只有在用户确认后才会导入，重复请求由导入收据去重。随后完成的 Credential Vault 支持从网页测试和保存自有 Key，服务端使用 AES-256-GCM 加密后写入 PostgreSQL。
+Conversation/Message 服务端 Repository/API、模型 Streaming、Docker Compose 单用户自托管已建立。Chat 以 PostgreSQL 为事实来源；旧浏览器导入已退役。Credential Vault 支持网页保存自有 Key，服务端 AES-256-GCM 加密后写入 PostgreSQL。
 
 ---
 
@@ -83,9 +83,9 @@ Phase 1 已完成：Conversation/Message 服务端 Repository/API、模型 Strea
 
 任务页面位于 `/tasks`，支持单次、每日和每周的普通提醒、AI 定时任务与个人简报。独立 Worker 在网页关闭后仍会执行到期任务，并按 `/proactivity` 保存的规则检查主动问候；问候与任务结果都先进入 `/inbox`，再向已授权设备尝试 Push。访问 `/notifications` 可管理总开关、安静时段与设备；模型、时区和运行边界见 `docs/TASKS.md`，启用与排障见 `docs/WEB_PUSH.md`。
 
-旧版 `agent_chat_sessions` 的预检、确认、树形迁移、去重和失败恢复规则见 `docs/LEGACY_DATA_IMPORT.md`。
+R9.2 已退役旧浏览器会话导入；旧 localStorage 原样保留但不读取、不迁移，服务端现有会话不受影响。
 
-模型配置首选 `/api-key` 写入式设置页：Provider、Base URL 与 Model 均由用户输入并以普通字段保存，Key 只在保存/测试请求中短暂经过浏览器内存并由服务端加密，状态接口只返回末四位提示。`AI_API_KEY`、`AI_BASE_URL`、`AI_MODEL` 仅保留为没有数据库凭据时的管理员兜底；Streaming、凭据端点与错误码见 `docs/SERVER_MODEL_PROVIDER.md`。
+模型配置首选 `/api-key` 写入式设置页：Provider、Base URL 与 Model 均由用户输入并以普通字段保存，Key 只在保存/测试请求中短暂经过浏览器内存并由服务端加密，状态接口只返回末四位提示。R9.2 起 Vault 是唯一模型配置来源；Streaming、凭据端点与错误码见 `docs/SERVER_MODEL_PROVIDER.md`。
 
 笔记本自托管的启动、健康检查、凭据主密钥、重启恢复、备份还原与 Tailscale 私有访问见 `docs/SELF_HOSTING.md`。默认只绑定 localhost，当前无应用登录鉴权，不可使用 Funnel 或端口转发直接暴露公网。
 

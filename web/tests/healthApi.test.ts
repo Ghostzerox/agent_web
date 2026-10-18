@@ -35,7 +35,7 @@ describe("health API", () => {
         configured: false,
         baseUrl: null,
         model: null,
-        missing: ["AI_API_KEY"],
+        missing: ["modelCredential"],
       }),
       now: () => new Date(0),
     }).check();

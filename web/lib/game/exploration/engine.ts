@@ -132,7 +132,7 @@ export function projectWorld(state: ExplorationState, template = getWorldTemplat
   return explorationStateSchema.parse(state);
 }
 
-export function startWorld(templateId: string, version?: string, resolve: WorldTemplateResolver = getWorldTemplate): ExplorationState {
+export function startWorld(templateId: string, version: string, resolve: WorldTemplateResolver = getWorldTemplate): ExplorationState {
   const template = resolve(templateId, version);
   return projectWorld({ schemaVersion: 1, templateId, templateVersion: template.version, tick: 0,
     locationId: template.start, discovered: [template.start], visited: [template.start], learned: [], flags: {},

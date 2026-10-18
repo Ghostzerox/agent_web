@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { Session } from "@/lib/config";
+import type { Session } from "@/lib/conversation/session";
 import {
   appendAssistantBranch,
   appendMessage,
   getActiveMessages,
-  getAssistantSiblings,
-  normalizeSessionTree,
   switchAssistantVersion,
 } from "@/lib/conversation/tree";
 
@@ -39,35 +37,6 @@ const treeSession: Session = {
 };
 
 describe("conversation tree", () => {
-  it("migrates a linear session and preserves the active legacy version", () => {
-    const migrated = normalizeSessionTree({
-      id: "legacy",
-      title: "旧会话",
-      updatedAt: 1,
-      messages: [
-        { id: "user", role: "user", content: "问题" },
-        {
-          id: "answer",
-          role: "assistant",
-          content: "第二版",
-          versions: ["第一版", "第二版"],
-          activeVersion: 1,
-        },
-        { id: "follow-up", role: "user", content: "追问" },
-      ],
-    });
-
-    expect(migrated.schemaVersion).toBe(2);
-    expect(migrated.messages).toHaveLength(4);
-    expect(getActiveMessages(migrated).map((message) => message.content)).toEqual([
-      "问题",
-      "第二版",
-      "追问",
-    ]);
-    expect(getAssistantSiblings(migrated, "answer")).toHaveLength(2);
-    expect(migrated.messages.every((message) => !message.versions)).toBe(true);
-  });
-
   it("regenerates an earlier answer as a sibling without deleting descendants", () => {
     const branched = appendAssistantBranch(treeSession, "assistant-1", {
       id: "assistant-1b",

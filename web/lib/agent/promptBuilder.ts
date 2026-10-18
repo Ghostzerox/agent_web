@@ -3,10 +3,16 @@
 // memory 显式传入，不隐式读取。
 
 import { type PromptMessage } from "@/lib/ai/messages";
-import { type Session } from "@/lib/config";
+import { type Session } from "@/lib/conversation/session";
 import { getActiveMessages } from "@/lib/conversation/tree";
 import { coreModeRegistry } from "./modeRegistry";
-import { type MemoryItem } from "./memory";
+export type MemoryItem = {
+  id: string;
+  type: "fact" | "summary" | "user_preference";
+  content: string;
+  importance: number;
+  createdAt: number;
+};
 import { corePolicyPromptMessage } from "./policyLayer";
 import {
   buildPersonaInstruction,

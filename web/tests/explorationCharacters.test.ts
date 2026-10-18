@@ -3,7 +3,7 @@ import { applyExplorationAction as act, startWorld } from "@/lib/game/exploratio
 import { explorationMessages, EXPLORATION_CONTEXT_BUDGET } from "@/lib/game/exploration/prompt";
 
 function atTower() {
-  let state = act(startWorld("fog-harbor"), { action: "move", targetId: "market" }, "a");
+  let state = act(startWorld("fog-harbor", "1.0.0"), { action: "move", targetId: "market" }, "a");
   state = act(state, { action: "move", targetId: "tower" }, "b"); return state;
 }
 describe("R7.4 characters, agency and knowledge", () => {

@@ -1,5 +1,5 @@
 export const MEMORY_VIEWS = ["personal", "candidates", "knowledge", "navigation", "controls"] as const;
-export type MemoryView = typeof MEMORY_VIEWS[number] | "learning";
+export type MemoryView = typeof MEMORY_VIEWS[number];
 export const MEMORY_VIEW_LINKS = [
   { href: "/memory", label: "长期记忆" }, { href: "/memory?view=candidates", label: "候选审核" },
   { href: "/memory?view=knowledge", label: "知识资料" }, { href: "/memory?view=navigation", label: "AI 记忆导航" }, { href: "/memory?view=controls", label: "读取控制与导出" },
@@ -12,7 +12,7 @@ export function resolveMemoryView(params: URLSearchParams): { view: MemoryView; 
     return { view: "knowledge" };
   }
   if (params.has("version") || params.has("line")) return fail;
-  if (params.has("palace")) return params.get("palace") === "learning" && !params.has("view") ? { view: "learning" } : fail;
+  if (params.has("palace")) return fail;
   const view = params.get("view") ?? "personal";
   return MEMORY_VIEWS.includes(view as typeof MEMORY_VIEWS[number]) ? { view: view as MemoryView } : fail;
 }

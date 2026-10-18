@@ -47,8 +47,6 @@ export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
   createdAt?: number;
-  versions?: string[];
-  activeVersion?: number;
   citations?: MessageCitation[];
   verification?: ResponseVerification | null;
 };

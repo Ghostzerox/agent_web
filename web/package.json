@@ -23,7 +23,6 @@
     "mobile:doctor": "cap doctor android",
     "mobile:client:build": "vite build --config vite.mobile.config.ts",
     "mobile:sync": "npm run mobile:client:build && cap sync android",
-    "mobile:sync:spike": "cap sync android",
     "mobile:open": "cap open android",
     "mobile:build:debug": "cd android && gradlew.bat assembleDebug"
   },

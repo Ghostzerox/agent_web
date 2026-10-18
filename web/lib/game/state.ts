@@ -161,52 +161,11 @@ export function initialGameState(
   });
 }
 
-export function normalizeGameState(
-  value: unknown,
-  characters: readonly GameCharacterSeed[] = [],
-): GameState {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new GameStateValidationError("GAME_STATE_INVALID", "The stored game state is invalid.");
-  }
-  const raw = value as Record<string, unknown>;
-  const inventory = raw.inventory && typeof raw.inventory === "object" && !Array.isArray(raw.inventory)
-    ? raw.inventory as Record<string, unknown>
-    : {};
-  const hasRuntimeCharacters = raw.characters !== undefined;
-  const rawCharacters = raw.characters && typeof raw.characters === "object" && !Array.isArray(raw.characters)
-    ? raw.characters as Record<string, unknown>
-    : {};
-  const mergedCharacters: Record<string, unknown> = { ...rawCharacters };
-  if (!hasRuntimeCharacters) {
-    for (const character of characters) {
-      mergedCharacters[character.id] = initialCharacterState(character);
-    }
-  }
-  const rawItems = raw.items && typeof raw.items === "object" && !Array.isArray(raw.items)
-    ? raw.items as Record<string, unknown>
-    : {};
-  const mergedItems: Record<string, unknown> = { ...rawItems };
-  for (const key of Object.keys(inventory)) {
-    mergedItems[key] ??= {
-      name: key,
-      description: "",
-      holderCharacterId: null,
-      tags: [],
-    };
-  }
-  const result = gameStateSchema.safeParse({
-    ...raw,
-    sceneFacts: raw.sceneFacts ?? [],
-    sceneExits: raw.sceneExits ?? [],
-    characters: mergedCharacters,
-    items: mergedItems,
-  });
+export function parseGameState(value: unknown): GameState {
+  const result = gameStateSchema.safeParse(value);
   if (!result.success) {
-    throw new GameStateValidationError(
-      "GAME_STATE_INVALID",
-      "The stored game state cannot be upgraded to the current schema.",
-      result.error.issues,
-    );
+    throw new GameStateValidationError("GAME_STATE_INVALID",
+      "The stored game state does not match the current schema.", result.error.issues);
   }
   return result.data;
 }
@@ -270,7 +229,7 @@ export function applyGameStatePatch(
   rawCurrent: GameState,
   rawPatch: GameStatePatch,
 ): GameState {
-  const current = normalizeGameState(rawCurrent);
+  const current = parseGameState(rawCurrent);
   const patchResult = gameStatePatchSchema.safeParse(rawPatch);
   if (!patchResult.success) {
     throw new GameStateValidationError(

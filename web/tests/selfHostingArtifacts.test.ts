@@ -97,14 +97,12 @@ describe("single-user self-hosting artifacts", () => {
       "${CREDENTIAL_MASTER_KEY:?Set CREDENTIAL_MASTER_KEY in .env.selfhost}",
     );
     for (const variable of [
-      "AI_API_KEY",
-      "AI_BASE_URL",
-      "AI_MODEL",
       "AI_ALLOW_INSECURE_HTTP",
       "WEB_SEARCH_BASE_URL",
     ]) {
       expect(workerSection).toContain(`${variable}:`);
     }
+    for (const retired of ["AI_API_KEY:", "AI_BASE_URL:", "AI_MODEL:"]) expect(compose).not.toContain(retired);
     expect(workerScript).toContain("runNotificationWorker");
     expect(workerScript).toContain("createPersonalBriefingGenerator");
     expect(workerSection).toContain("search:");

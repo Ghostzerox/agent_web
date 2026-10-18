@@ -31,7 +31,8 @@ for (const width of [360, 1440]) test(`module directories and independent child 
   await local(page, "任务首页"); await expect(page.getByRole("link", { name: "行动与待办", exact: true })).toBeVisible();
   await page.goto(path("/memory?view=knowledge&palace=learning")); await expect(page.getByRole("alert").filter({ hasText: "记忆链接参数" })).toContainText("参数无效或冲突");
   await expect(page.getByRole("region", { name: "知识资料库" })).toHaveCount(0);
-  await page.goto(path("/memory?palace=learning")); await expect(page.getByRole("heading", { name: "学习助记宫殿", exact: true })).toBeVisible();
+  await page.goto(path("/memory?palace=learning")); await expect(page.getByRole("alert").filter({ hasText: "记忆链接参数" })).toContainText("参数无效或冲突");
+  await page.goto(path("/study/memory-palaces")); await expect(page.getByRole("heading", { name: "学习助记宫殿", level: 1, exact: true })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "个人数据子页" })).toHaveCount(0);
   expect(writes).toBe(0);
 });

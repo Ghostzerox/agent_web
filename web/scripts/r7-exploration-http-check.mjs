@@ -17,7 +17,7 @@ current = await api(`game-sessions/${id}/status`, "PATCH", { status: "active", e
 const state = () => current.turns.find((turn) => turn.id === current.activeLeafTurnId).stateSnapshot.exploration;
 const turnInput = (action, parentTurnId = current.activeLeafTurnId) => ({ content: "R7 synthetic action", parentTurnId, expectedVersion: current.version, requestId: crypto.randomUUID(), explorationAction: action });
 const run = async (action, parent) => { const input = turnInput(action, parent); current = await api(`game-sessions/${id}/turns`, "POST", input, 201); return input; };
-const start = await run({ action: "start", templateId: "fog-harbor" }, null); const root = current.activeLeafTurnId;
+const start = await run({ action: "start", templateId: "fog-harbor", templateVersion: "1.0.0" }, null); const root = current.activeLeafTurnId;
 check(state().locationId === "harbor");
 const earlyExport = await api(`game-sessions/${id}/export`, "POST", { format: "json" });
 check(!earlyExport.content.includes("母亲留下的信") && !earlyExport.content.includes("守望者盟约："));

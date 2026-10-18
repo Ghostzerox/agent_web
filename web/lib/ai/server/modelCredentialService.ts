@@ -1,8 +1,6 @@
 import { CredentialCipherError, createApiKeyHint, decryptApiKey, encryptApiKey } from "@/lib/ai/server/credentialCipher";
 import { fetchWithTransientDnsRetry } from "@/lib/ai/server/providerFetch";
 import {
-  getModelProviderConfig,
-  getModelProviderStatus,
   ModelConfigError,
   normalizeBaseUrl,
   type ModelProviderConfig,
@@ -11,7 +9,6 @@ import {
 import { getDatabase } from "@/lib/db/client";
 import {
   createModelCredentialRepository,
-  OPENAI_COMPATIBLE_PROVIDER,
   type ModelCredentialRepositoryPort,
 } from "@/lib/repositories/modelCredentialRepository";
 
@@ -23,7 +20,7 @@ export type ModelCredentialInput = {
 };
 
 export type ModelCredentialPublicStatus = ModelProviderStatus & {
-  source: "stored" | "environment" | "none";
+  source: "stored" | "none";
   provider: string | null;
   apiKeyHint: string | null;
   version: number | null;
@@ -49,17 +46,9 @@ export class ModelCredentialTestError extends Error {
   }
 }
 
-function publicEnvironmentStatus(): ModelCredentialPublicStatus {
-  const status = getModelProviderStatus();
-  const config = status.configured ? getModelProviderConfig() : null;
-  return {
-    ...status,
-    baseUrl: config?.baseUrl ?? status.baseUrl,
-    source: status.configured ? "environment" : "none",
-    provider: status.configured ? OPENAI_COMPATIBLE_PROVIDER : null,
-    apiKeyHint: null,
-    version: null,
-  };
+function unconfiguredStatus(): ModelCredentialPublicStatus {
+  return { configured: false, source: "none", provider: null, baseUrl: null,
+    model: null, apiKeyHint: null, version: null, missing: ["modelCredential"] };
 }
 
 function normalizeInput(input: ModelCredentialInput): ModelCredentialInput {
@@ -85,7 +74,7 @@ export function createModelCredentialService(
   return {
     async getStatus(): Promise<ModelCredentialPublicStatus> {
       const stored = await repository().get();
-      if (!stored) return publicEnvironmentStatus();
+      if (!stored) return unconfiguredStatus();
 
       try {
         decryptApiKey(stored.encryptedApiKey);
@@ -116,7 +105,7 @@ export function createModelCredentialService(
 
     async getConfig(): Promise<ModelProviderConfig> {
       const stored = await repository().get();
-      if (!stored) return getModelProviderConfig();
+      if (!stored) throw new ModelConfigError(["modelCredential"]);
 
       try {
         return {

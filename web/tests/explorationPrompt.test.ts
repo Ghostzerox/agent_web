@@ -27,7 +27,7 @@ describe("R7 scoped prompt budgets", () => {
       yield { type: "delta" as const, text: '{"narrative":"合成回应","statePatch":{}}' };
     });
     const generator = createGameNarrativeGenerator({ getConfig: () => ({ apiKey: "synthetic", baseUrl: "https://provider.invalid", model: "mock" }), createProvider: () => ({ stream }) });
-    await generator.generate(explorationMessages(startWorld("fog-harbor"), "你好"));
+    await generator.generate(explorationMessages(startWorld("fog-harbor", "1.0.0"), "你好"));
     expect(stream.mock.calls[0][0]).toMatchObject({ business: "game", promptVersion: EXPLORATION_PROMPT_VERSION });
   });
 });

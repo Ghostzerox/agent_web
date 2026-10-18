@@ -11,7 +11,7 @@ import {
   normalizeMathDelimiters,
 } from "@/components/chat/MarkdownMessage";
 import { SessionSidebar } from "@/components/chat/SessionSidebar";
-import type { ChatMessage, Session } from "@/lib/config";
+import type { ChatMessage, Session } from "@/lib/conversation/session";
 import { verifyResponse } from "@/lib/ai/responseVerifier";
 
 const noop = vi.fn();
@@ -68,6 +68,8 @@ describe("chat presentation components", () => {
       id: "session-1",
       title: "测试会话",
       messages: [],
+      schemaVersion: 2,
+      activeLeafId: null,
       updatedAt: Date.now(),
     };
     const populatedHtml = renderToStaticMarkup(

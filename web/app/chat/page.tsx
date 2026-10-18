@@ -42,18 +42,7 @@ import {
   updateServerSession,
 } from "@/lib/api/conversationClient";
 import { extractMemoryCandidateFromMessage } from "@/lib/api/memoryCandidateClient";
-import {
-  clearLegacySessionsAfterImport,
-  importLegacySessions,
-  previewLegacySessions,
-  type LegacyImportPreview,
-} from "@/lib/api/legacyImportClient";
-import {
-  clearLegacyBrowserApiConfig,
-  migrateOnce,
-  type ChatMessage,
-  type Session,
-} from "@/lib/config";
+import type { ChatMessage } from "@/lib/ai/messages";
 import {
   appendMessage,
   checkoutSessionAt,
@@ -78,11 +67,6 @@ function ChatWorkspace() {
     new Set(),
   );
   const controllers = useRef(new Map<string, AbortController>());
-  const [legacySessions, setLegacySessions] = useState<Session[]>([]);
-  const [legacyPreview, setLegacyPreview] = useState<LegacyImportPreview | null>(
-    null,
-  );
-  const [importing, setImporting] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [requestedMode, setRequestedMode] = useState<CoreModeId | null>(null);
   const [searchMode, setSearchMode] = useState<SearchMode>("auto");
@@ -124,17 +108,6 @@ function ChatWorkspace() {
     window.addEventListener("hashchange", readModeIntent);
     const initialize = async () => {
       readModeIntent();
-      clearLegacyBrowserApiConfig();
-      const legacy = migrateOnce();
-      if (!disposed) setLegacySessions(legacy);
-      if (legacy.length > 0) {
-        try {
-          const preview = await previewLegacySessions(legacy);
-          if (!disposed) setLegacyPreview(preview);
-        } catch {
-          if (!disposed) setLegacyPreview(null);
-        }
-      }
       try {
         await refreshSessions(currentAppSearchParams().get("session"));
       } catch (loadError) {
@@ -487,24 +460,6 @@ function ChatWorkspace() {
     }
   };
 
-  const handleImport = async () => {
-    if (legacySessions.length === 0 || importing) return;
-    setImporting(true);
-    setError(null);
-    try {
-      const result = await importLegacySessions(legacySessions);
-      clearLegacySessionsAfterImport();
-      setLegacySessions([]);
-      setLegacyPreview(null);
-      await refreshSessions(result.conversationIds[0] ?? null);
-    } catch (importError) {
-      setError(
-        importError instanceof Error ? importError.message : "旧会话导入失败",
-      );
-    } finally {
-      setImporting(false);
-    }
-  };
 
   return (
     <AppShell route="/chat" title="AI 对话" description="自动 · 专业 · 陪伴 · 反思" chat actions={<ChatHeader
@@ -539,33 +494,6 @@ function ChatWorkspace() {
         <button type="button" onClick={() => setRequestedMode(null)} className="px-2 underline">保留原模式</button>
       </div>}
 
-      {legacySessions.length > 0 && (
-        <div className="flex flex-wrap items-center justify-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
-          <span>
-            检测到 {legacySessions.length} 条浏览器旧会话
-            {legacyPreview
-              ? `（${legacyPreview.importable} 条可导入，${legacyPreview.alreadyImported} 条已导入）`
-              : ""}
-            ，是否导入服务端？
-          </span>
-          <button
-            type="button"
-            onClick={handleImport}
-            disabled={importing}
-            className="rounded bg-amber-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-50 dark:bg-amber-200 dark:text-amber-950"
-          >
-            {importing ? "正在导入…" : "确认导入"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setLegacySessions([])}
-            disabled={importing}
-            className="text-xs underline underline-offset-2 disabled:opacity-50"
-          >
-            暂不导入
-          </button>
-        </div>
-      )}
 
       {error && (
         <ChatErrorBanner message={error} onDismiss={() => setError(null)} />

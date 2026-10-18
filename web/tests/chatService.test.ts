@@ -7,11 +7,10 @@ import {
 } from "../lib/ai/chatService";
 import type { PromptMessage } from "../lib/ai/messages";
 import { verifyResponse } from "../lib/ai/responseVerifier";
-import type { Session } from "../lib/config";
+import type { Session } from "../lib/conversation/session";
 import {
   getActiveMessages,
   getAssistantSiblings,
-  normalizeSessionTree,
 } from "../lib/conversation/tree";
 import {
   installBrowserStorage,
@@ -172,7 +171,9 @@ describe("chat reply actions", () => {
     id: "session-1",
     title: "测试",
     updatedAt: 1,
-    messages: [{ id: "user-1", role: "user", content: "问题" }],
+    schemaVersion: 2,
+    activeLeafId: "user-1",
+    messages: [{ id: "user-1", parentId: null, role: "user", content: "问题" }],
   };
 
   it("appends a versioned assistant reply without mutating the source", () => {
@@ -195,17 +196,19 @@ describe("chat reply actions", () => {
   it("adds a retry version without mutating previous versions", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-05T00:00:00Z"));
-    const withAssistant = normalizeSessionTree({
+    const withAssistant: Session = {
       ...session,
+      activeLeafId: "assistant-1",
       messages: [
         ...session.messages,
         {
           id: "assistant-1",
+          parentId: "user-1",
           role: "assistant",
           content: "旧回答",
         },
       ],
-    });
+    };
 
     const result = applyRetryReply(withAssistant, "新回答", "assistant-1");
 

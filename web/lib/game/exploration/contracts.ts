@@ -94,7 +94,7 @@ export const explorationStateSchema = z.object({
 });
 
 export const explorationActionSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("start"), templateId: worldKey, templateVersion: z.string().regex(/^\d+\.\d+\.\d+$/u).optional() }).strict(),
+  z.object({ action: z.literal("start"), templateId: worldKey, templateVersion: z.string().regex(/^\d+\.\d+\.\d+$/u) }).strict(),
   z.object({ action: z.literal("inspect"), targetId: worldKey }).strict(),
   z.object({ action: z.literal("move"), targetId: worldKey }).strict(),
   z.object({ action: z.literal("investigate"), targetId: worldKey }).strict(),

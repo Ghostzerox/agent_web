@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { memoryPalaceClient as client } from "@/lib/api/memoryPalaceClient";
 import { getMemorizationMaterial } from "@/lib/api/memorizationClient";
 import { MODULE_MEMORY_PROFILES, type PalaceModule } from "@/lib/memory/moduleProfiles";
@@ -9,7 +9,6 @@ import type { MemorizationUnit } from "@/lib/memorization/domain";
 import type { MemorizationReviewResult } from "@/lib/memorization/service";
 import { AppLink } from "@/components/platform/AppLink";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
-import { currentAppSearchParams } from "@/lib/platform/appNavigation";
 const field = "mt-1 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700";
 const button = "rounded-lg border border-zinc-300 px-3 py-2 text-xs disabled:opacity-40 dark:border-zinc-700";
 type Plan = Awaited<ReturnType<typeof client.route>>;
@@ -23,7 +22,6 @@ export function MemoryPalaceManager({ purposeFilter }: { purposeFilter?: PalaceV
   const [recitation, setRecitation] = useState(""); const [revealed, setRevealed] = useState(false); const [review, setReview] = useState<MemorizationReviewResult | null>(null);
   const palace = palaces.find((p) => p.id === selected) ?? palaces[0] ?? null; const room = palace?.rooms.find((r) => r.id === roomId) ?? palace?.rooms[0] ?? null;
   useNavigationGuard(busy || Boolean(title.trim() || roomTitle.trim() || label.trim() || association.trim() || (recitation.trim() && !review)));
-  useEffect(() => { const frame = requestAnimationFrame(() => { if (currentAppSearchParams().get("palace") === "learning") { setOpen(true); setPurpose("learning"); setModule("memorization"); } }); return () => cancelAnimationFrame(frame); }, []);
   const act = async (action: () => Promise<void>) => { setBusy(true); setError(""); try { await action(); } catch (failure) { setError(failure instanceof Error ? failure.message : "宫殿操作失败。"); } finally { setBusy(false); } };
   const refresh = async () => { const rows = await client.list(); setPalaces(purposeFilter ? rows.filter((row) => row.purpose === purposeFilter) : rows); setLoaded(true); };
   const clearDraft = () => { setLabel(""); setAssociation(""); setEditing(""); setSourceChoice(""); setSourceView(null); };

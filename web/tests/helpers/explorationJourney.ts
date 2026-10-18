@@ -16,5 +16,5 @@ export const PUBLIC_JOURNEY: ExplorationAction[] = [
   { action: "choose", eventId: "lantern-accord", choiceId: "prepare" },
 ];
 export function atWorldDecision() {
-  return PUBLIC_JOURNEY.reduce((state, action, index) => applyExplorationAction(state, action, `journey-${index}`), startWorld("fog-harbor"));
+  return PUBLIC_JOURNEY.reduce((state, action, index) => applyExplorationAction(state, action, `journey-${index}`), startWorld("fog-harbor", "1.0.0"));
 }

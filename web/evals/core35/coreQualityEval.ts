@@ -1,8 +1,8 @@
 import { buildAgentPrompt } from "@/lib/agent/promptBuilder";
 import { coreModeRegistry, type CoreModeId } from "@/lib/agent/modeRegistry";
-import type { MemoryItem } from "@/lib/agent/memory";
+import type { MemoryItem } from "@/lib/agent/promptBuilder";
 import { verifyResponse } from "@/lib/ai/responseVerifier";
-import type { Session } from "@/lib/config";
+import type { Session } from "@/lib/conversation/session";
 import { addSearchEvidence, shouldSearch } from "@/lib/search/webSearch";
 
 export const CORE_QUALITY_EVAL_VERSION = "core-3.5-lite/v1" as const;
@@ -42,9 +42,12 @@ const session: Session = {
   id: "eval-session",
   title: "Core 3.5 evaluation",
   updatedAt: 2,
+  schemaVersion: 2,
+  activeLeafId: "eval-user",
   messages: [
     {
       id: "eval-user",
+      parentId: null,
       role: "user",
       content: "请回答这个问题",
       createdAt: 1,

@@ -30,14 +30,13 @@ export const MODULE_LINKS: Record<WorkspaceOwner, readonly ModuleLink[]> = {
   settings: [{ href: "/settings", label: "设置首页" }, { href: "/api-key", label: "模型服务", description: "Provider、凭据与用量" }, { href: "/memory", label: "个人数据", description: "记忆、资料与读取控制" }, { href: "/persona", label: "人格与表达" }, { href: "/proactivity", label: "主动联系" }, { href: "/voice", label: "语音" }, { href: "/notifications", label: "通知与设备" }, { href: "/plugins", label: "插件" }, { href: "/tools", label: "高级工具" }],
 };
 
-export function workspaceOwner(path: string, params = new URLSearchParams()): WorkspaceOwner | null {
-  if (path === "/memory" && params.getAll("palace").length === 1 && params.get("palace") === "learning" && !params.has("document") && !params.has("view")) return "study";
+export function workspaceOwner(path: string): WorkspaceOwner | null {
   if (["/reading", "/reflection"].includes(path)) return "content";
   if (["/memory", "/api-key", "/persona", "/proactivity", "/voice", "/notifications", "/plugins", "/tools"].includes(path)) return "settings";
   return (WORKSPACE_SECTIONS.flatMap((section) => [...section.items]).find((item) => path === item.href || path.startsWith(`${item.href}/`))?.href.slice(1) as WorkspaceOwner | undefined) ?? null;
 }
-export function isWorkspaceRouteActive(current: string, target: string, params = new URLSearchParams()): boolean {
-  return workspaceOwner(current, params) === target.slice(1);
+export function isWorkspaceRouteActive(current: string, target: string): boolean {
+  return workspaceOwner(current) === target.slice(1);
 }
 
 // Ownership is not authorization; executor and plugin contracts remain unchanged.

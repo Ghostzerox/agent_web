@@ -5,7 +5,7 @@ import { atWorldDecision } from "./helpers/explorationJourney";
 
 describe("R7.6 epics and bounded history retrieval", () => {
   it("supports distinct endings and non-participation instead of forcing one outcome", () => {
-    expect(startWorld("fog-harbor").view.epics).toEqual([]);
+    expect(startWorld("fog-harbor", "1.0.0").view.epics).toEqual([]);
     const root = atWorldDecision();
     const publicEnd = act(root, { action: "choose", eventId: "lantern-accord", choiceId: "public" }, "p");
     const guildEnd = act(root, { action: "choose", eventId: "lantern-accord", choiceId: "guild" }, "g");

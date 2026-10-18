@@ -1,5 +1,7 @@
 # 浏览器旧会话导入
 
+> 历史记录：本功能已在 R9.2 退役。用户明确不需要旧浏览器数据，因此移除了入口、API 和迁移器，但不清空 localStorage。下文只说明 Sprint 1.4 的历史行为，不再是操作指南；当前事实见 [R9.2报告](reports/R9_2_REPORT.md)。
+
 Sprint 1.4 将 Chat 的事实来源从 `localStorage` 切换为 PostgreSQL，同时为已有 `agent_chat_sessions` 提供显式、可预检、可去重的迁移路径。
 
 ## 用户流程

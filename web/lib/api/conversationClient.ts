@@ -5,8 +5,7 @@ import type {
 } from "@/lib/ai/messages";
 import { isResponseVerification } from "@/lib/ai/responseVerifier";
 import { isCoreModeId, type CoreModeId } from "@/lib/agent/modeRegistry";
-import type { Session } from "@/lib/config";
-import { CONVERSATION_SCHEMA_VERSION } from "@/lib/conversation/tree";
+import { CONVERSATION_SCHEMA_VERSION, type Session } from "@/lib/conversation/session";
 import { apiFetch } from "@/lib/api/clientRuntime";
 import { isSafeCitation } from "@/lib/knowledge/citations";
 

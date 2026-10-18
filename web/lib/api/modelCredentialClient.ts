@@ -2,7 +2,7 @@ import { apiFetch } from "@/lib/api/clientRuntime";
 
 export type ModelCredentialStatus = {
   configured: boolean;
-  source: "stored" | "environment" | "none";
+  source: "stored" | "none";
   provider: string | null;
   baseUrl: string | null;
   model: string | null;

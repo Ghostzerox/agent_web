@@ -2,26 +2,28 @@ import { describe, expect, it } from "vitest";
 
 import { buildAgentPrompt, DEFAULT_PERSONA } from "../lib/agent/promptBuilder";
 import { CORE_POLICY } from "../lib/agent/policyLayer";
-import type { MemoryItem } from "../lib/agent/memory";
-import type { Session } from "../lib/config";
+import type { MemoryItem } from "../lib/agent/promptBuilder";
+import type { Session } from "../lib/conversation/session";
 
 const session: Session = {
   id: "session-1",
   title: "角色测试",
   updatedAt: 3,
+  schemaVersion: 2,
+  activeLeafId: "message-2",
   messages: [
     {
       id: "message-1",
+      parentId: null,
       role: "user",
       content: "请解释这个概念",
       createdAt: 1,
     },
     {
       id: "message-2",
+      parentId: "message-1",
       role: "assistant",
       content: "这是当前显示的回答",
-      versions: ["旧回答", "这是当前显示的回答"],
-      activeVersion: 1,
       createdAt: 2,
     },
   ],

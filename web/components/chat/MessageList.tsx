@@ -1,4 +1,4 @@
-import type { ChatMessage } from "@/lib/config";
+import type { ChatMessage } from "@/lib/ai/messages";
 import { MarkdownMessage } from "@/components/chat/MarkdownMessage";
 import { ResponseVerificationPanel } from "@/components/chat/ResponseVerificationPanel";
 import { MessageSpeechControl } from "@/components/chat/MessageSpeechControl";

@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { fogHarbor, getWorldTemplate } from "@/lib/game/exploration/catalog";
+import { getWorldTemplate } from "@/lib/game/exploration/catalog";
+import { fogHarbor } from "@/lib/game/exploration/templates/fog-harbor/world";
 import { validateWorldTemplate } from "@/lib/game/exploration/validateTemplate";
 import { createGameSessionSchema } from "@/lib/game/contracts";
-import { EXPLORATION_PRESET } from "@/lib/game/exploration/preset";
+import { FOG_HARBOR_PRESET } from "@/lib/game/exploration/templates/fog-harbor/public";
 
 describe("R7.7 complete region template", () => {
   it("validates the preset, template version and all cross-references", () => {
     validateWorldTemplate(fogHarbor);
-    expect(createGameSessionSchema.safeParse({ title: EXPLORATION_PRESET.title, kind: EXPLORATION_PRESET.kind, world: EXPLORATION_PRESET.world, initialCharacter: EXPLORATION_PRESET.initialCharacter }).success).toBe(true);
+    expect(createGameSessionSchema.safeParse({ title: FOG_HARBOR_PRESET.title, kind: FOG_HARBOR_PRESET.kind, world: FOG_HARBOR_PRESET.world, initialCharacter: FOG_HARBOR_PRESET.initialCharacter }).success).toBe(true);
     expect(() => getWorldTemplate("fog-harbor", "2.0.0")).toThrow("已保留");
     expect(fogHarbor.locations).toHaveLength(6); expect(fogHarbor.characters).toHaveLength(3);
   });
