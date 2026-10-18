@@ -1,0 +1,587 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "100347089b4d35a0a32b442e508b81c79fd15dfa",
+  "method": "Committed file set, current tracked contents; TS AST static import/export/dynamic-string-import graph (type edges included separately). No application execution, network, database, or private env reads.",
+  "limitations": [
+    "Not a bundler, symbol liveness proof, CPU/complexity profiler or authorization audit.",
+    "CLI, framework routes, native registration, dynamic non-literal imports and external callers need manual verification.",
+    "Physical nonblank lines are a size signal; dense JSX may have few lines but many responsibilities.",
+    "Build byte counts describe existing ignored local output, not a fresh build; timestamps and previous test durations are recorded separately."
+  ],
+  "counts": {
+    "trackedFiles": 918,
+    "codeFiles": 590,
+    "productSourceFiles": 354,
+    "productNonblankLines": 35824,
+    "pages": 23,
+    "apiRouteFiles": 62,
+    "unitTestFiles": 160,
+    "e2eSpecFiles": 29,
+    "dependencies": 20,
+    "devDependencies": 16,
+    "npmScripts": 23,
+    "upMigrations": 34,
+    "rollbackMigrations": 34,
+    "markdownDocs": 110,
+    "promptBaselineFiles": 15
+  },
+  "largestProductFiles": [
+    {
+      "file": "web/lib/db/schema.ts",
+      "lines": 1543,
+      "bytes": 65049,
+      "incomingFiles": 84
+    },
+    {
+      "file": "web/lib/repositories/gameSessionRepository.ts",
+      "lines": 746,
+      "bytes": 24691,
+      "incomingFiles": 12
+    },
+    {
+      "file": "web/app/chat/page.tsx",
+      "lines": 611,
+      "bytes": 25266,
+      "incomingFiles": 1
+    },
+    {
+      "file": "web/components/tasks/TaskManager.tsx",
+      "lines": 592,
+      "bytes": 28149,
+      "incomingFiles": 2
+    },
+    {
+      "file": "web/lib/repositories/pluginCapabilityRepository.ts",
+      "lines": 571,
+      "bytes": 19282,
+      "incomingFiles": 11
+    },
+    {
+      "file": "web/components/game/GameSessionManager.tsx",
+      "lines": 531,
+      "bytes": 28137,
+      "incomingFiles": 1
+    },
+    {
+      "file": "web/lib/repositories/notificationDeliveryRepository.ts",
+      "lines": 475,
+      "bytes": 16263,
+      "incomingFiles": 4
+    },
+    {
+      "file": "web/components/game/GamePlayPanel.tsx",
+      "lines": 448,
+      "bytes": 29124,
+      "incomingFiles": 1
+    },
+    {
+      "file": "web/lib/api/modelApi.ts",
+      "lines": 425,
+      "bytes": 17485,
+      "incomingFiles": 6
+    },
+    {
+      "file": "web/lib/tasks/reminderWorker.ts",
+      "lines": 423,
+      "bytes": 14653,
+      "incomingFiles": 6
+    },
+    {
+      "file": "web/lib/repositories/inboxRepository.ts",
+      "lines": 404,
+      "bytes": 13279,
+      "incomingFiles": 7
+    },
+    {
+      "file": "web/lib/repositories/conversationRepository.ts",
+      "lines": 390,
+      "bytes": 13894,
+      "incomingFiles": 40
+    },
+    {
+      "file": "web/lib/api/conversationApi.ts",
+      "lines": 349,
+      "bytes": 11658,
+      "incomingFiles": 6
+    },
+    {
+      "file": "web/lib/tasks/personalBriefingGenerator.ts",
+      "lines": 348,
+      "bytes": 12547,
+      "incomingFiles": 8
+    },
+    {
+      "file": "web/lib/platform/capacitorLocalNotifications.ts",
+      "lines": 347,
+      "bytes": 12422,
+      "incomingFiles": 5
+    }
+  ],
+  "productionRoots": [
+    "web/app/api-key/page.tsx",
+    "web/app/api/v1/actions/route.ts",
+    "web/app/api/v1/conversations/[id]/active-leaf/route.ts",
+    "web/app/api/v1/conversations/[id]/messages/route.ts",
+    "web/app/api/v1/conversations/[id]/route.ts",
+    "web/app/api/v1/conversations/[id]/summary/route.ts",
+    "web/app/api/v1/conversations/route.ts",
+    "web/app/api/v1/game-rule-packs/[id]/route.ts",
+    "web/app/api/v1/game-sessions/[id]/characters/[characterId]/route.ts",
+    "web/app/api/v1/game-sessions/[id]/characters/route.ts",
+    "web/app/api/v1/game-sessions/[id]/checkpoints/[checkpointId]/restore/route.ts",
+    "web/app/api/v1/game-sessions/[id]/checkpoints/[checkpointId]/route.ts",
+    "web/app/api/v1/game-sessions/[id]/checkpoints/route.ts",
+    "web/app/api/v1/game-sessions/[id]/exploration/history/route.ts",
+    "web/app/api/v1/game-sessions/[id]/export/route.ts",
+    "web/app/api/v1/game-sessions/[id]/route.ts",
+    "web/app/api/v1/game-sessions/[id]/status/route.ts",
+    "web/app/api/v1/game-sessions/[id]/turns/route.ts",
+    "web/app/api/v1/game-sessions/route.ts",
+    "web/app/api/v1/health/route.ts",
+    "web/app/api/v1/imports/local-storage/route.ts",
+    "web/app/api/v1/inbox/[id]/route.ts",
+    "web/app/api/v1/inbox/route.ts",
+    "web/app/api/v1/knowledge/[[...path]]/route.ts",
+    "web/app/api/v1/memories/[id]/route.ts",
+    "web/app/api/v1/memories/route.ts",
+    "web/app/api/v1/memorization/[id]/review/route.ts",
+    "web/app/api/v1/memorization/[id]/route.ts",
+    "web/app/api/v1/memorization/route.ts",
+    "web/app/api/v1/memory-candidates/[id]/route.ts",
+    "web/app/api/v1/memory-candidates/extract/route.ts",
+    "web/app/api/v1/memory-candidates/route.ts",
+    "web/app/api/v1/memory-data/[[...path]]/route.ts",
+    "web/app/api/v1/memory-palaces/[[...path]]/route.ts",
+    "web/app/api/v1/model/config/route.ts",
+    "web/app/api/v1/model/credentials/route.ts",
+    "web/app/api/v1/model/credentials/test/route.ts",
+    "web/app/api/v1/model/prompt-export/route.ts",
+    "web/app/api/v1/model/stream/route.ts",
+    "web/app/api/v1/model/usage/route.ts",
+    "web/app/api/v1/persona-profile/route.ts",
+    "web/app/api/v1/plugins/[id]/audit/route.ts",
+    "web/app/api/v1/plugins/[id]/capabilities/[capability]/grant/route.ts",
+    "web/app/api/v1/plugins/[id]/capabilities/[capability]/revoke/route.ts",
+    "web/app/api/v1/plugins/[id]/capabilities/route.ts",
+    "web/app/api/v1/plugins/[id]/disable/route.ts",
+    "web/app/api/v1/plugins/[id]/enable/route.ts",
+    "web/app/api/v1/plugins/route.ts",
+    "web/app/api/v1/proactivity/route.ts",
+    "web/app/api/v1/problem-solving/[id]/interactions/route.ts",
+    "web/app/api/v1/problem-solving/[id]/review-cards/route.ts",
+    "web/app/api/v1/problem-solving/[id]/route.ts",
+    "web/app/api/v1/problem-solving/[id]/task-draft/route.ts",
+    "web/app/api/v1/problem-solving/route.ts",
+    "web/app/api/v1/push/config/route.ts",
+    "web/app/api/v1/push/preferences/route.ts",
+    "web/app/api/v1/push/subscriptions/[id]/route.ts",
+    "web/app/api/v1/push/subscriptions/route.ts",
+    "web/app/api/v1/reading-profile/route.ts",
+    "web/app/api/v1/reflection-preferences/route.ts",
+    "web/app/api/v1/tasks/[id]/route.ts",
+    "web/app/api/v1/tasks/route.ts",
+    "web/app/api/v1/voice-profile/route.ts",
+    "web/app/chat/page.tsx",
+    "web/app/content/page.tsx",
+    "web/app/entertainment/page.tsx",
+    "web/app/entertainment/quick-adventure/page.tsx",
+    "web/app/inbox/page.tsx",
+    "web/app/layout.tsx",
+    "web/app/manifest.ts",
+    "web/app/memory/page.tsx",
+    "web/app/notifications/page.tsx",
+    "web/app/page.tsx",
+    "web/app/persona/page.tsx",
+    "web/app/plugins/page.tsx",
+    "web/app/proactivity/page.tsx",
+    "web/app/reading/page.tsx",
+    "web/app/reflection/page.tsx",
+    "web/app/settings/page.tsx",
+    "web/app/study/memorization/page.tsx",
+    "web/app/study/memory-palaces/page.tsx",
+    "web/app/study/page.tsx",
+    "web/app/study/problem-solving/page.tsx",
+    "web/app/study/tools/page.tsx",
+    "web/app/tasks/page.tsx",
+    "web/app/tools/page.tsx",
+    "web/app/voice/page.tsx",
+    "web/mobile/main.tsx",
+    "web/proxy.ts",
+    "web/scripts/reminder-worker.ts"
+  ],
+  "graph": {
+    "edges": 1678,
+    "typeOnlyEdges": 299,
+    "reachableIncludingTypes": 345,
+    "runtimeReachable": 341,
+    "unresolvedInternalSpecifiers": []
+  },
+  "typeOnlyProductFiles": [
+    "web/lib/agent/memory.ts",
+    "web/lib/game/exploration/templatePresentation.ts",
+    "web/lib/game/exploration/templateTypes.ts",
+    "web/lib/platform/capabilities.ts"
+  ],
+  "cycles": {
+    "runtime": [],
+    "includingTypes": [
+      [
+        "web/lib/conversation/summary.ts",
+        "web/lib/db/schema.ts",
+        "web/lib/knowledge/audit.ts",
+        "web/lib/knowledge/retrieval.ts",
+        "web/lib/memory/domainPolicy.ts",
+        "web/lib/memory/memoryRetrieval.ts",
+        "web/lib/memory/moduleProfiles.ts",
+        "web/lib/memory/sourceReference.ts"
+      ],
+      [
+        "web/lib/ai/messages.ts",
+        "web/lib/knowledge/citations.ts"
+      ],
+      [
+        "web/lib/config.ts",
+        "web/lib/conversation/tree.ts"
+      ],
+      [
+        "web/lib/memorization/domain.ts",
+        "web/lib/memorization/learningTools.ts"
+      ],
+      [
+        "web/lib/plugins/capabilityGateway.ts",
+        "web/lib/plugins/hostCapabilityAdapters.ts"
+      ]
+    ]
+  },
+  "clientRuntimeServerFiles": [],
+  "notReachedFromProductionRoots": [
+    {
+      "file": "web/lib/agent/contextCompressor.ts",
+      "lines": 13,
+      "bytes": 542,
+      "incomingFiles": 1,
+      "importers": [
+        "web/tests/contextCompressor.test.ts"
+      ]
+    },
+    {
+      "file": "web/lib/agent/dispatcher.ts",
+      "lines": 21,
+      "bytes": 788,
+      "incomingFiles": 1,
+      "importers": [
+        "web/tests/backend.test.ts"
+      ]
+    },
+    {
+      "file": "web/lib/agent/taskPlanner.ts",
+      "lines": 31,
+      "bytes": 1169,
+      "incomingFiles": 0,
+      "importers": []
+    },
+    {
+      "file": "web/lib/db/migrations.ts",
+      "lines": 130,
+      "bytes": 4585,
+      "incomingFiles": 35,
+      "importers": [
+        "web/lib/db/postgresMigrationDatabase.ts",
+        "web/scripts/db-migrate.ts",
+        "web/scripts/db-rollback.ts",
+        "web/scripts/knowledge-sql-benchmark.ts",
+        "web/tests/actionRepository.test.ts",
+        "web/tests/conversationApi.test.ts",
+        "web/tests/conversationRepository.test.ts",
+        "web/tests/conversationSummaryIntegration.test.ts",
+        "web/tests/databaseMigrations.test.ts",
+        "web/tests/gameRulePackIntegration.test.ts",
+        "web/tests/gameSessionRepository.test.ts",
+        "web/tests/inboxRepository.test.ts",
+        "web/tests/knowledgeRepository.test.ts",
+        "web/tests/knowledgeRetrievalIntegration.test.ts",
+        "web/tests/legacyImport.test.ts",
+        "web/tests/memoryCandidateRepository.test.ts",
+        "web/tests/memoryData.test.ts",
+        "web/tests/memoryPalace.test.ts",
+        "web/tests/memoryRepository.test.ts",
+        "web/tests/modelCredentialRepository.test.ts",
+        "web/tests/modelUsageRepository.test.ts",
+        "web/tests/notificationDeliveryRepository.test.ts",
+        "web/tests/notificationRepository.test.ts",
+        "web/tests/personaProfileRepository.test.ts",
+        "web/tests/pluginCapabilityGateway.test.ts",
+        "web/tests/pluginRepository.test.ts",
+        "web/tests/proactivityRepository.test.ts",
+        "web/tests/promptRunRepository.test.ts",
+        "web/tests/r3TaskPipeline.test.ts",
+        "web/tests/readingProfileRepository.test.ts",
+        "web/tests/reflectionPreferenceRepository.test.ts",
+        "web/tests/schedulerRepository.test.ts",
+        "web/tests/taskApi.test.ts",
+        "web/tests/taskRepository.test.ts",
+        "web/tests/voiceProfileRepository.test.ts"
+      ]
+    },
+    {
+      "file": "web/lib/db/postgresMigrationDatabase.ts",
+      "lines": 31,
+      "bytes": 894,
+      "incomingFiles": 2,
+      "importers": [
+        "web/scripts/db-migrate.ts",
+        "web/scripts/db-rollback.ts"
+      ]
+    },
+    {
+      "file": "web/lib/game/exploration/preset.ts",
+      "lines": 2,
+      "bytes": 154,
+      "incomingFiles": 2,
+      "importers": [
+        "web/tests/explorationTemplate.test.ts",
+        "web/tests/gameSessionRepository.test.ts"
+      ]
+    },
+    {
+      "file": "web/lib/notifications/huaweiPushContract.ts",
+      "lines": 21,
+      "bytes": 782,
+      "incomingFiles": 1,
+      "importers": [
+        "web/tests/pushProvider.test.ts"
+      ]
+    },
+    {
+      "file": "web/lib/platform/mobileServerUrl.ts",
+      "lines": 31,
+      "bytes": 905,
+      "incomingFiles": 2,
+      "importers": [
+        "web/capacitor.config.ts",
+        "web/tests/mobileServerUrl.test.ts"
+      ]
+    },
+    {
+      "file": "web/lib/runtime/backend.ts",
+      "lines": 191,
+      "bytes": 6674,
+      "incomingFiles": 2,
+      "importers": [
+        "web/lib/agent/dispatcher.ts",
+        "web/tests/backend.test.ts"
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "@capacitor/android",
+      "kind": "runtime",
+      "importingFiles": 0
+    },
+    {
+      "name": "@capacitor/app",
+      "kind": "runtime",
+      "importingFiles": 1
+    },
+    {
+      "name": "@capacitor/core",
+      "kind": "runtime",
+      "importingFiles": 4
+    },
+    {
+      "name": "@capacitor/filesystem",
+      "kind": "runtime",
+      "importingFiles": 2
+    },
+    {
+      "name": "@capacitor/local-notifications",
+      "kind": "runtime",
+      "importingFiles": 2
+    },
+    {
+      "name": "@capacitor/preferences",
+      "kind": "runtime",
+      "importingFiles": 1
+    },
+    {
+      "name": "@capacitor/share",
+      "kind": "runtime",
+      "importingFiles": 1
+    },
+    {
+      "name": "@next/env",
+      "kind": "runtime",
+      "importingFiles": 5
+    },
+    {
+      "name": "drizzle-orm",
+      "kind": "runtime",
+      "importingFiles": 67
+    },
+    {
+      "name": "katex",
+      "kind": "runtime",
+      "importingFiles": 2
+    },
+    {
+      "name": "next",
+      "kind": "runtime",
+      "importingFiles": 5
+    },
+    {
+      "name": "postgres",
+      "kind": "runtime",
+      "importingFiles": 6
+    },
+    {
+      "name": "react",
+      "kind": "runtime",
+      "importingFiles": 50
+    },
+    {
+      "name": "react-dom",
+      "kind": "runtime",
+      "importingFiles": 17
+    },
+    {
+      "name": "react-markdown",
+      "kind": "runtime",
+      "importingFiles": 1
+    },
+    {
+      "name": "rehype-katex",
+      "kind": "runtime",
+      "importingFiles": 1
+    },
+    {
+      "name": "remark-gfm",
+      "kind": "runtime",
+      "importingFiles": 1
+    },
+    {
+      "name": "remark-math",
+      "kind": "runtime",
+      "importingFiles": 1
+    },
+    {
+      "name": "web-push",
+      "kind": "runtime",
+      "importingFiles": 2
+    },
+    {
+      "name": "zod",
+      "kind": "runtime",
+      "importingFiles": 65
+    },
+    {
+      "name": "@capacitor/cli",
+      "kind": "development",
+      "importingFiles": 0
+    },
+    {
+      "name": "@electric-sql/pglite",
+      "kind": "development",
+      "importingFiles": 32
+    },
+    {
+      "name": "@playwright/test",
+      "kind": "development",
+      "importingFiles": 33
+    },
+    {
+      "name": "@tailwindcss/postcss",
+      "kind": "development",
+      "importingFiles": 0
+    },
+    {
+      "name": "@types/node",
+      "kind": "development",
+      "importingFiles": 0
+    },
+    {
+      "name": "@types/react",
+      "kind": "development",
+      "importingFiles": 0
+    },
+    {
+      "name": "@types/react-dom",
+      "kind": "development",
+      "importingFiles": 0
+    },
+    {
+      "name": "@types/web-push",
+      "kind": "development",
+      "importingFiles": 0
+    },
+    {
+      "name": "drizzle-kit",
+      "kind": "development",
+      "importingFiles": 1
+    },
+    {
+      "name": "eslint",
+      "kind": "development",
+      "importingFiles": 1
+    },
+    {
+      "name": "eslint-config-next",
+      "kind": "development",
+      "importingFiles": 1
+    },
+    {
+      "name": "tailwindcss",
+      "kind": "development",
+      "importingFiles": 0
+    },
+    {
+      "name": "tsx",
+      "kind": "development",
+      "importingFiles": 0
+    },
+    {
+      "name": "typescript",
+      "kind": "development",
+      "importingFiles": 0
+    },
+    {
+      "name": "vite",
+      "kind": "development",
+      "importingFiles": 1
+    },
+    {
+      "name": "vitest",
+      "kind": "development",
+      "importingFiles": 161
+    }
+  ],
+  "npmScripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run",
+    "eval:core": "tsx scripts/core-quality-eval.ts",
+    "eval:cost": "tsx scripts/token-cost-eval.ts",
+    "eval:prompts": "tsx scripts/prompt-baseline.ts",
+    "eval:prompts:live": "tsx scripts/prompt-quality-live.ts",
+    "eval:prompts:report": "tsx scripts/prompt-quality-report.ts",
+    "test:e2e": "playwright test",
+    "db:generate": "drizzle-kit generate",
+    "db:check": "drizzle-kit check",
+    "db:migrate": "tsx scripts/db-migrate.ts",
+    "db:rollback": "tsx scripts/db-rollback.ts",
+    "scheduler:claim": "tsx scripts/scheduler-claim.ts",
+    "worker:reminders": "tsx scripts/reminder-worker.ts",
+    "mobile:doctor": "cap doctor android",
+    "mobile:client:build": "vite build --config vite.mobile.config.ts",
+    "mobile:sync": "npm run mobile:client:build && cap sync android",
+    "mobile:sync:spike": "cap sync android",
+    "mobile:open": "cap open android",
+    "mobile:build:debug": "cd android && gradlew.bat assembleDebug"
+  },
+  "existingLocalArtifactBytes": {
+    "mobileDist": 2389131,
+    "nextStatic": 3176837
+  }
+}
