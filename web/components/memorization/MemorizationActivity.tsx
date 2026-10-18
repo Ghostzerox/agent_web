@@ -252,6 +252,7 @@ export function MemorizationActivity() {
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <aside className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <details open><summary className="mb-3 min-h-11 cursor-pointer py-2 text-sm font-semibold">材料列表与导入</summary>
         <AppLink href="/memory?palace=learning" className="block text-xs text-blue-600 underline">记忆宫殿：关联单元、位置联想与路线抽测</AppLink>
         <div className="flex items-center justify-between gap-3">
           <div><p className="text-xs text-zinc-500">已导入材料</p><h2 className="font-semibold">复习库</h2></div>
@@ -266,6 +267,7 @@ export function MemorizationActivity() {
             <span className="mt-1 block text-[11px] text-zinc-400">下次：{dateLabel(item.nextReviewAt)}</span>
           </button>
         ))}
+        </details>
       </aside>
 
       <main className="min-w-0 space-y-4">

@@ -13,9 +13,9 @@ import { currentAppSearchParams } from "@/lib/platform/appNavigation";
 const field = "mt-1 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm dark:border-zinc-700";
 const button = "rounded-lg border border-zinc-300 px-3 py-2 text-xs disabled:opacity-40 dark:border-zinc-700";
 type Plan = Awaited<ReturnType<typeof client.route>>;
-export function MemoryPalaceManager() {
+export function MemoryPalaceManager({ purposeFilter }: { purposeFilter?: PalaceView["purpose"] } = {}) {
   const [open, setOpen] = useState(false); const [loaded, setLoaded] = useState(false); const [palaces, setPalaces] = useState<PalaceView[]>([]); const [selected, setSelected] = useState(""); const [roomId, setRoomId] = useState("");
-  const [title, setTitle] = useState(""); const [purpose, setPurpose] = useState<PalaceView["purpose"]>("navigation"); const [roomTitle, setRoomTitle] = useState(""); const [module, setModule] = useState<PalaceModule>("professional");
+  const [title, setTitle] = useState(""); const [purpose, setPurpose] = useState<PalaceView["purpose"]>(purposeFilter ?? "navigation"); const [roomTitle, setRoomTitle] = useState(""); const [module, setModule] = useState<PalaceModule>(purposeFilter === "learning" ? "memorization" : "professional");
   const [label, setLabel] = useState(""); const [association, setAssociation] = useState(""); const [editing, setEditing] = useState(""); const [sourceChoice, setSourceChoice] = useState("");
   const [catalog, setCatalog] = useState<Awaited<ReturnType<typeof client.catalog>> | null>(null); const [materialId, setMaterialId] = useState(""); const [units, setUnits] = useState<MemorizationUnit[]>([]);
   const [sourceView, setSourceView] = useState<PalaceSourceView | null>(null); const [busy, setBusy] = useState(false); const [notice, setNotice] = useState(""); const [error, setError] = useState("");
@@ -25,7 +25,7 @@ export function MemoryPalaceManager() {
   useNavigationGuard(busy || Boolean(title.trim() || roomTitle.trim() || label.trim() || association.trim() || (recitation.trim() && !review)));
   useEffect(() => { const frame = requestAnimationFrame(() => { if (currentAppSearchParams().get("palace") === "learning") { setOpen(true); setPurpose("learning"); setModule("memorization"); } }); return () => cancelAnimationFrame(frame); }, []);
   const act = async (action: () => Promise<void>) => { setBusy(true); setError(""); try { await action(); } catch (failure) { setError(failure instanceof Error ? failure.message : "宫殿操作失败。"); } finally { setBusy(false); } };
-  const refresh = async () => { const rows = await client.list(); setPalaces(rows); setLoaded(true); };
+  const refresh = async () => { const rows = await client.list(); setPalaces(purposeFilter ? rows.filter((row) => row.purpose === purposeFilter) : rows); setLoaded(true); };
   const clearDraft = () => { setLabel(""); setAssociation(""); setEditing(""); setSourceChoice(""); setSourceView(null); };
   const discard = () => !(label.trim() || association.trim() || (recitation.trim() && !review)) || window.confirm("放弃未保存的联想或作答？");
   const resetRoom = () => { setCatalog(null); setMaterialId(""); setUnits([]); setPlan(null); setTarget(null); setRecitation(""); setReview(null); clearDraft(); };
@@ -33,16 +33,16 @@ export function MemoryPalaceManager() {
   const source = (): PalaceSourceInput => { const [kind, id, unitId] = sourceChoice.split(":"); if (!id) throw new Error("请显式选择来源。"); if (kind === "unit" && unitId) return { kind, id, unitId }; if (kind === "memory" || kind === "knowledge") return { kind, id }; throw new Error("请选择背书材料中的一个单元。"); };
   const loadStep = async (route: Plan, index: number) => { if (!palace || !route.steps[index]) return; const resolved = await client.resolve(palace.id, route.steps[index].locusId); if (resolved.status !== "ready" || !resolved.unit) throw new Error("本题来源已更正/删除，路线暂停；请重新关联，不会按旧答案评分。"); setPlan(route); setStep(index); setTarget(resolved); setReview(null); setRecitation(""); setRevealed(false); };
   return <section aria-labelledby="palace-title" className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
-    <h2 id="palace-title" className="text-lg font-semibold">记忆宫殿</h2><p className="mt-1 text-xs text-zinc-500">房间/位置只组织来源；联想不是现实事实。学习路线复用背书材料与复习记录，不调用模型。</p>
+    <h2 id="palace-title" className="text-lg font-semibold">{purposeFilter === "learning" ? "学习助记宫殿" : purposeFilter === "navigation" ? "AI 记忆导航" : "记忆宫殿"}</h2><p className="mt-1 text-xs text-zinc-500">房间/位置只组织来源；联想不是现实事实。学习路线复用背书材料与复习记录，不调用模型。</p>
     <details open={open} onToggle={(event) => { const next = event.currentTarget.open; setOpen(next); if (next && !loaded && !busy) void act(refresh); }} className="mt-3">
-      <summary className="cursor-pointer text-sm">打开记忆导航与学习助记</summary>
+      <summary className="cursor-pointer text-sm">{purposeFilter === "learning" ? "展开学习宫殿与训练" : purposeFilter === "navigation" ? "展开 AI 记忆导航" : "打开记忆导航与学习助记"}</summary>
       <div className="mt-4 space-y-4">
         <details><summary className="cursor-pointer text-xs">模块记忆如何区分</summary><div className="mt-2 grid gap-2 sm:grid-cols-2">{Object.entries(MODULE_MEMORY_PROFILES).map(([id, profile]) => <div key={id} className="rounded-lg border p-3 text-xs"><AppLink className="font-medium underline" href={profile.href}>{profile.label}</AppLink><p>{profile.focus}</p><p className="mt-1 text-zinc-500">权威来源：{profile.source}</p></div>)}</div></details>
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}{notice && <p role="status" className="text-sm text-emerald-700">{notice}</p>}
         <button type="button" className={button} disabled={busy} onClick={() => void act(refresh)}>刷新宫殿</button>
         <fieldset disabled={busy} className="space-y-4 disabled:opacity-60">
           <form className="grid gap-3 sm:grid-cols-3" onSubmit={(e) => { e.preventDefault(); void act(async () => { const saved = await client.create(title, purpose); setPalaces((rows) => [saved, ...rows]); setSelected(saved.id); setTitle(""); setRoomId(""); resetRoom(); }); }}>
-            <label>宫殿名称<input value={title} required maxLength={120} onChange={(e) => setTitle(e.target.value)} className={field} /></label><label>宫殿用途<select value={purpose} className={field} onChange={(e) => { const next = e.target.value as PalaceView["purpose"]; setPurpose(next); if (next === "learning") setModule("memorization"); }}><option value="navigation">AI 记忆导航</option><option value="learning">学习助记</option></select></label><button className={`${button} self-end`} disabled={!title.trim()}>创建宫殿</button>
+            <label>宫殿名称<input value={title} required maxLength={120} onChange={(e) => setTitle(e.target.value)} className={field} /></label><label>宫殿用途<select value={purpose} disabled={Boolean(purposeFilter)} className={field} onChange={(e) => { const next = e.target.value as PalaceView["purpose"]; setPurpose(next); if (next === "learning") setModule("memorization"); }}>{(!purposeFilter || purposeFilter === "navigation") && <option value="navigation">AI 记忆导航</option>}{(!purposeFilter || purposeFilter === "learning") && <option value="learning">学习助记</option>}</select></label><button className={`${button} self-end`} disabled={!title.trim()}>创建宫殿</button>
           </form>
           {loaded && !palaces.length && <p className="text-sm text-zinc-500">还没有宫殿。先创建，再添加房间与来源位置。</p>}
           {palace && <>

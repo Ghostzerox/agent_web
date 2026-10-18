@@ -7,7 +7,8 @@ import { GameCheckpointPanel } from "@/components/game/GameCheckpointPanel";
 import { AppLink } from "@/components/platform/AppLink";
 import { currentAppSearchParams } from "@/lib/platform/appNavigation";
 import { FIRST_PARTY_PLUGIN_ACTIVITIES } from "@/lib/plugins/activityRegistry";
-import { EXPLORATION_PRESET } from "@/lib/game/exploration/preset";
+import { explorationSessionInput } from "@/lib/game/exploration/templateCatalog";
+import { ExplorationTemplatePicker } from "./ExplorationTemplatePicker";
 import { requestNavigationPermission } from "@/lib/platform/navigationGuard";
 import {
   createGameCharacter,
@@ -327,7 +328,8 @@ export function GameSessionManager() {
   return (
     <div className="mx-auto grid w-full max-w-7xl gap-5 lg:grid-cols-[17rem_minmax(0,1fr)]">
       <aside className="h-fit rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-        <button type="button" disabled={busy} onClick={() => setExplorationDraft((open) => !open)} className="mb-2 w-full rounded-xl border border-violet-300 px-4 py-2.5 text-sm font-medium text-violet-700 dark:text-violet-300">大世界探索 · 雾港</button>
+        <details open><summary className="mb-3 min-h-11 cursor-pointer py-2 text-sm font-semibold">世界列表与创建入口</summary>
+        <button type="button" disabled={busy} onClick={() => setExplorationDraft((open) => !open)} className="mb-2 w-full rounded-xl border border-violet-300 px-4 py-2.5 text-sm font-medium text-violet-700 dark:text-violet-300">大世界探索 · 选择模板</button>
         <button type="button" onClick={startNew} className="w-full rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-600">+ 新建游戏会话</button>
         <div className="mt-3 space-y-2 border-b border-zinc-200 pb-3 dark:border-zinc-800">
           {FIRST_PARTY_PLUGIN_ACTIVITIES.filter((activity) => activity.route.startsWith("/entertainment/")).map((activity) => (
@@ -349,6 +351,7 @@ export function GameSessionManager() {
             </button>
           ))}
         </div>
+        </details>
       </aside>
 
       <main className="min-w-0 space-y-5">
@@ -366,16 +369,14 @@ export function GameSessionManager() {
         {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">{error}</div>}
         {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</p>}
 
-        {explorationDraft && <section aria-label="探索模板确认" className="space-y-3 rounded-2xl border border-violet-300 bg-[var(--workspace-surface)] p-5">
-          <h3 className="text-lg font-semibold">雾港与旧灯岬 · 新的探索存档</h3><p className="text-sm leading-6 text-zinc-500">六处相连地点、装备与交易、三位可结识角色、地方 / 人物 / 世界事件与多结局故事弧。普通动作无需 AI；自由对话可选调用模型。不会转换或覆盖旧故事。</p>
-          <p className="text-xs text-zinc-500">模板 {EXPLORATION_PRESET.templateVersion} · {EXPLORATION_PRESET.hostContract}。创建后点击“开启雾港探索”；玩家的过往和关键决定仍由你控制。</p>
-          <div className="flex gap-2"><button className="rounded-lg bg-violet-700 px-4 py-2 text-sm text-white disabled:opacity-50" disabled={busy} onClick={() => {
-            if (!requestNavigationPermission()) return;
-            if (!window.confirm("确认创建独立的雾港探索存档？不会改动已有故事或现实记忆。")) return;
-            setBusy(true); setError(null);
-            void createGameSession({ title: EXPLORATION_PRESET.title, kind: EXPLORATION_PRESET.kind, world: EXPLORATION_PRESET.world, initialCharacter: EXPLORATION_PRESET.initialCharacter }).then((next) => { installDetail(next); setExplorationDraft(false); setNotice("探索存档已创建，请点击开启雾港探索。"); }).catch((error: unknown) => setError(friendlyError(error))).finally(() => setBusy(false));
-          }}>确认创建探索存档</button><button className="rounded-lg border px-4 py-2 text-sm" onClick={() => setExplorationDraft(false)}>取消</button></div>
-        </section>}
+        {explorationDraft && <ExplorationTemplatePicker busy={busy} onCancel={() => setExplorationDraft(false)} onCreate={(template) => {
+          if (!requestNavigationPermission()) return;
+          if (!window.confirm(`确认创建「${template.title}」的独立存档？不会改动已有故事或现实记忆。`)) return;
+          setBusy(true); setError(null);
+          void createGameSession(explorationSessionInput(template)).then((next) => {
+            installDetail(next); setExplorationDraft(false); setNotice("探索存档已创建，请点击“开启探索世界”。");
+          }).catch((error: unknown) => setError(friendlyError(error))).finally(() => setBusy(false));
+        }} />}
 
         {creating ? (
           <CreateSessionForm busy={busy} onSubmit={create} />

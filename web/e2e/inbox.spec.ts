@@ -87,6 +87,7 @@ test("renders and manages Agent task results on mobile", async ({ page }) => {
   await page.goto("/inbox");
   await expect(page.getByRole("heading", { name: "复习今日错题" })).toBeVisible();
   await expect(page.getByText("AI 定时任务", { exact: true })).toBeVisible();
+  await page.getByRole("article").filter({ has: page.getByRole("heading", { name: "复习今日错题", exact: true }) }).getByText("展开投递正文", { exact: true }).click();
   await expect(page.getByRole("heading", { name: "AI 复习建议" })).toBeVisible();
   await expect(page.getByText("先回顾三道典型题")).toBeVisible();
 

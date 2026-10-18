@@ -89,6 +89,7 @@ describe("GameSessionRepository", () => {
       modelCalls++; expect(JSON.stringify(messages)).not.toContain("商人私密口令");
       return { content: output, model: "mock-r7" };
     } });
+    await expect(service.create(current.id, { content: "错误版本", parentTurnId: null, expectedVersion: current.version, requestId: crypto.randomUUID(), diceRequests: [], checkRequest: null, explorationAction: { action: "start", templateId: "fog-harbor", templateVersion: "2.0.0" } })).rejects.toThrow("不一致");
     const run = async (action: import("@/lib/game/exploration/contracts").ExplorationAction, narrate = false) => {
       current = await service.create(current.id, { content: "合成区域验收", parentTurnId: current.activeLeafTurnId, expectedVersion: current.version, diceRequests: [], checkRequest: null, requestId: crypto.randomUUID(), explorationAction: action, narrate });
     };

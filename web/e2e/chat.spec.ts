@@ -325,7 +325,7 @@ test("mobile chat uses a collapsible conversation drawer", async ({ page }) => {
     .click();
   await expect(page.getByRole("dialog", { name: "对话列表" })).toHaveCount(0);
   await page.getByRole("button", { name: "打开模式与导航" }).click();
-  await expect(page.getByRole("dialog", { name: "模式与导航" }).getByRole("link", { name: "娱乐模式" })).toHaveAttribute("href", "/entertainment");
+  await expect(page.getByRole("dialog", { name: "模式与导航" }).getByRole("link", { name: "娱乐", exact: true })).toHaveAttribute("href", "/entertainment");
   await page.getByRole("button", { name: "关闭模式与导航" }).click();
 });
 
@@ -391,7 +391,7 @@ test("offers review instead of silently saving an explicit memory", async ({ pag
   await expect(page.getByText("尚未保存", { exact: false })).toBeVisible();
   await expect(page.getByRole("link", { name: "查看并确认" })).toHaveAttribute(
     "href",
-    "/memory",
+    "/memory?view=candidates",
   );
 });
 

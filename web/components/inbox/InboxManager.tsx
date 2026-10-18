@@ -12,6 +12,7 @@ import {
 } from "@/lib/api/inboxClient";
 import { MarkdownMessage } from "@/components/chat/MarkdownMessage";
 import { appHref } from "@/lib/platform/appNavigation";
+import { useAppQuery } from "@/components/platform/useAppQuery";
 
 const FILTERS: Array<{ value: InboxFilter; label: string }> = [
   { value: "all", label: "全部" },
@@ -52,6 +53,8 @@ function inboxSourceLabel(source: InboxItem["source"]): string {
 }
 
 export function InboxManager() {
+  const params = useAppQuery();
+  const source = params.get("source"); const highlight = params.get("highlight");
   const [items, setItems] = useState<InboxItem[]>([]);
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [loading, setLoading] = useState(true);
@@ -137,6 +140,10 @@ export function InboxManager() {
   };
 
   const unreadCount = items.filter((item) => item.status === "unread").length;
+  const visibleItems = items.filter((item) => !source || item.source === source);
+  useEffect(() => {
+    if (!loading && highlight) document.getElementById(`inbox-${highlight}`)?.scrollIntoView({ block: "center", behavior: "instant" });
+  }, [loading, highlight, items]);
 
   return (
     <section className="mx-auto w-full max-w-4xl" aria-label="提醒收件箱">
@@ -184,21 +191,27 @@ export function InboxManager() {
           {error}
         </div>
       )}
+      {source && <p className="mb-4 text-sm text-zinc-500">来源筛选：{inboxSourceLabel(source as InboxItem["source"])}（当前已加载结果）。<a href={appHref("/inbox")} className="ml-2 underline">查看全部来源</a></p>}
+      {!loading && highlight && !visibleItems.some((item) => item.id === highlight) && <p role="status" className="mb-4 rounded-xl border border-amber-300 p-3 text-sm">指定投递不在当前可访问列表或筛选中，可能已删除；没有自动标为已读。可清除筛选后重试。</p>}
 
       {loading ? (
         <p className="rounded-2xl border border-zinc-200 bg-white p-8 text-center text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950">
           正在读取提醒…
         </p>
-      ) : items.length === 0 ? (
+      ) : visibleItems.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 bg-white/60 p-10 text-center dark:border-zinc-700 dark:bg-zinc-950/60">
           <p className="font-medium text-zinc-800 dark:text-zinc-200">这里暂时没有提醒</p>
           <p className="mt-1 text-sm text-zinc-500">任务到达设定时间后，会自动出现在这里。</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {items.map((item) => (
+          {visibleItems.map((item) => (
             <article
               key={item.id}
+              id={`inbox-${item.id}`}
+              tabIndex={highlight === item.id ? -1 : undefined}
+              aria-label={highlight === item.id ? `定位结果：${item.title}` : undefined}
+              style={highlight === item.id ? { outline: "2px solid var(--workspace-accent)", outlineOffset: "3px" } : undefined}
               className={`rounded-2xl border bg-white p-4 shadow-sm sm:p-5 dark:bg-zinc-950 ${
                 item.status === "unread"
                   ? "border-blue-200 dark:border-blue-900"
@@ -223,9 +236,9 @@ export function InboxManager() {
                     </time>
                   </div>
                   {item.body && (
-                    <div className="mt-2 break-words text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                    <details open={highlight === item.id} className="mt-2 break-words text-sm leading-6 text-zinc-600 dark:text-zinc-400"><summary className="min-h-11 cursor-pointer py-2">展开投递正文</summary>
                       <MarkdownMessage content={item.body} />
-                    </div>
+                    </details>
                   )}
                   {item.source === "personal_briefing" && (
                     <div className="mt-4 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-900/70">

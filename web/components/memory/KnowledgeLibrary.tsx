@@ -40,8 +40,10 @@ export function KnowledgeLibrary() {
 
   useEffect(() => {
     const readSource = () => { const next = currentAppSearchParams().toString(); if (next === sourceQuery) return; setSourceQuery(next); setOpened(null); setDraft(blank); setSourceLine(null); setError(""); setLoading(true); };
-    window.addEventListener("hashchange", readSource);
-    return () => window.removeEventListener("hashchange", readSource);
+    let active = true;
+    const afterNavigation = () => window.setTimeout(() => { if (active) readSource(); }, 0);
+    window.addEventListener("hashchange", afterNavigation);
+    return () => { active = false; window.removeEventListener("hashchange", afterNavigation); };
   }, [sourceQuery]);
 
   useEffect(() => {

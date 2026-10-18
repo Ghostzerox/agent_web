@@ -116,7 +116,7 @@ test("reviews, edits and confirms a memory candidate on mobile", async ({ page }
     });
   });
 
-  await page.goto("/memory");
+  await page.goto("/memory?view=candidates");
   await expect(page.getByRole("heading", { name: "记忆先确认，再生效" })).toBeVisible();
   await expect(page.getByText("原始证据：")).toBeVisible();
   const editor = page.getByLabel(/编辑候选/);
@@ -125,6 +125,7 @@ test("reviews, edits and confirms a memory candidate on mobile", async ({ page }
 
   await expect(page.getByText("已确认", { exact: true })).toBeVisible();
   await expect(page.getByText("等待你确认")).toBeVisible();
+  await page.getByRole("navigation", { name: "个人数据子页" }).getByRole("link", { name: "长期记忆", exact: true }).click();
 
   const memoryEditor = page.getByLabel(/编辑记忆/);
   await expect(memoryEditor).toHaveValue("我的长期目标是完成并公开展示作品集");

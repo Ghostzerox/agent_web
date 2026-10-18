@@ -4,6 +4,8 @@ import { useMemo, useRef, useState, type FormEvent } from "react";
 import { GameToolkitPanel } from "./GameToolkitPanel";
 import { ExplorationPanel } from "./ExplorationPanel";
 import type { ExplorationAction } from "@/lib/game/exploration/contracts";
+import { sessionExplorationTemplate } from "@/lib/game/exploration/templateReference";
+import { findExplorationTemplate } from "@/lib/game/exploration/templateCatalog";
 import type { GameToolRequest } from "@/lib/game/toolkit";
 import { MarkdownMessage } from "@/components/chat/MarkdownMessage";
 import {
@@ -288,20 +290,22 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
     finally { setBusy(false); }
   };
 
-  const explorationPreset = detail.worldRules.some((rule) => rule.startsWith("exploration.v1 / fog-harbor@"));
+  const templateReference = sessionExplorationTemplate(detail.worldRules);
+  const explorationPreset = templateReference !== null;
+  const templateTitle = templateReference ? findExplorationTemplate(templateReference)?.title ?? detail.worldName : "探索世界";
   const selectBranch = (parentTurnId: string | null) => {
     if (!busy && requestNavigationPermission()) setBranchSelection({ sessionId: detail.id, parentTurnId });
   };
   const openWorld = async () => {
-    if (busy || turns.length || !window.confirm("开启轻数值探索规则？地图、装备和事件由宿主验证，普通动作不调用 AI。")) return;
+    if (busy || turns.length || !templateReference || !window.confirm(`开启「${templateTitle}」？地图、装备和事件由宿主验证，普通动作不调用 AI。`)) return;
     setBusy(true); onError(null);
     try {
       const active = detail.status === "setup" ? await updateGameSessionStatus(detail.id, "active", detail.version) : detail;
       onChange(active);
       const key = `open:${active.id}:${active.version}`;
       if (toolRetry.current?.key !== key) toolRetry.current = { key, requestId: crypto.randomUUID() };
-      onChange(await createGameTurn(active.id, "开启雾港探索", null, active.version, [], null, { requestId: toolRetry.current.requestId, explorationAction: { action: "start", templateId: "fog-harbor" } }));
-      toolRetry.current = null; setBranchSelection(null); onNotice("雾港已开启。从地图选择行动，或到人物页自由交流。");
+      onChange(await createGameTurn(active.id, `开启探索：${templateTitle}`, null, active.version, [], null, { requestId: toolRetry.current.requestId, explorationAction: { action: "start", ...templateReference } }));
+      toolRetry.current = null; setBranchSelection(null); onNotice("探索世界已开启。从地图选择行动，或到人物页自由交流。");
     } catch (error) { onError(message(error)); await recoverConflict(error); }
     finally { setBusy(false); }
   };
@@ -309,7 +313,7 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
   return (
     <section className="space-y-5 rounded-2xl border border-violet-200 bg-white p-5 shadow-sm sm:p-6 dark:border-violet-900 dark:bg-zinc-950">
       {selectedState.exploration ? <ExplorationPanel key={detail.id} state={selectedState.exploration} sessionId={detail.id} parentTurnId={parentTurnId} disabled={busy || detail.status !== "active"} run={runExploration} onError={onError} /> : !explorationPreset && <GameToolkitPanel toolkit={selectedState.toolkit} busy={busy} enabled={detail.status === "active"} onRun={runTool} onError={onError} />}
-      {explorationPreset && turns.length === 0 && ["setup", "active"].includes(detail.status) && <div className="rounded-xl border border-violet-200 p-4"><p className="mb-3 text-sm text-zinc-500">这份新存档尚未开启探索；不会生成收费的 AI 开场。</p><button disabled={busy} onClick={() => void openWorld()} className="rounded-lg bg-violet-700 px-4 py-2 text-sm text-white disabled:opacity-50">开启雾港探索</button></div>}
+      {explorationPreset && turns.length === 0 && ["setup", "active"].includes(detail.status) && <div className="rounded-xl border border-violet-200 p-4"><p className="mb-3 text-sm text-zinc-500">这份新存档尚未开启探索；不会生成收费的 AI 开场。</p><button disabled={busy} onClick={() => void openWorld()} className="rounded-lg bg-violet-700 px-4 py-2 text-sm text-white disabled:opacity-50">开启探索世界</button></div>}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold">剧情回合</h3>
@@ -328,7 +332,7 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
 
       {turns.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-300 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-700">
-          {explorationPreset ? "点击上方“开启雾港探索”进入地图，之后可自由行动。" : detail.status === "setup" ? "点击“开始故事”，然后写下角色的第一个行动。" : "写下第一个行动，AI 会根据世界和角色卡开启故事。"}
+          {explorationPreset ? "点击上方“开启探索世界”进入地图，之后可自由行动。" : detail.status === "setup" ? "点击“开始故事”，然后写下角色的第一个行动。" : "写下第一个行动，AI 会根据世界和角色卡开启故事。"}
         </div>
       ) : (
         <div className="space-y-3" aria-label="剧情分支树">

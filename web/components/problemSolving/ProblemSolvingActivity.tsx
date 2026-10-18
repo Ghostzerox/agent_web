@@ -288,6 +288,7 @@ export function ProblemSolvingActivity() {
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <aside className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <details open><summary className="mb-3 min-h-11 cursor-pointer py-2 text-sm font-semibold">题目列表与录入</summary>
         <div className="flex items-center justify-between gap-3">
           <div><p className="text-xs text-zinc-500">错题与练习</p><h2 className="font-semibold">题目记录</h2></div>
           <button type="button" onClick={resetForNew} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white">新题</button>
@@ -301,6 +302,7 @@ export function ProblemSolvingActivity() {
             {item.latestErrorTags.length > 0 && <span className="mt-1 block truncate text-[11px] text-amber-600">错因：{item.latestErrorTags.join("、")}</span>}
           </button>
         ))}
+        </details>
       </aside>
 
       <main className="min-w-0 space-y-4">

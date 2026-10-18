@@ -31,6 +31,7 @@ test("reviews and enables a branch summary, sends the flag, displays truthful co
     return route.fulfill({ json: { data: [] } });
   });
   await page.goto(mobile ? "/#/chat" : "/chat");
+  await page.getByText("本次对话的资料与上下文", { exact: true }).click();
   await expect(page.getByText("分支摘要 · 默认关闭", { exact: true })).toBeVisible();
   expect(summaryCalls).toBe(0);
   await page.getByText("分支摘要 · 默认关闭", { exact: true }).click();
@@ -62,7 +63,7 @@ test("summary errors keep the raw chat and require an explicit retry", async ({ 
     if (path.endsWith(`/conversations/${uuid(100)}`)) return route.fulfill({ json: { data: conversation } });
     return route.fulfill({ json: { data: [] } });
   });
-  await page.goto(mobile ? "/#/chat" : "/chat"); await page.getByText("分支摘要 · 默认关闭", { exact: true }).click();
+  await page.goto(mobile ? "/#/chat" : "/chat"); await page.getByText("本次对话的资料与上下文", { exact: true }).click(); await page.getByText("分支摘要 · 默认关闭", { exact: true }).click();
   await page.getByRole("button", { name: "查看当前分支摘要", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("完整历史保留");
   await expect(page.getByText("原始历史不能丢失", { exact: true })).toBeVisible(); expect(writes).toBe(1);

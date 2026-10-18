@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 import { DEFAULT_MEMORY_CONTROLS } from "../lib/memory/controls";
 const uuid = (n: number) => `66666666-6666-4666-8666-${String(n).padStart(12, "0")}`;
-const url = process.env.MEMORY_DATA_MOBILE_BUNDLE === "true" ? "/#/memory" : "/memory";
+const url = process.env.MEMORY_DATA_MOBILE_BUNDLE === "true" ? "/#/memory?view=controls" : "/memory?view=controls";
 test("memory controls preserve drafts on a cross-device conflict and distinguish an offline refresh", async ({ page }) => {
   let version = 0; let settings = structuredClone(DEFAULT_MEMORY_CONTROLS); let offline = false; let writes = 0;
   await page.setViewportSize({ width: 360, height: 844 });
@@ -56,7 +56,7 @@ test("an existing memory edit retains its unsaved body when another device has c
     if (route.request().method() === "PATCH") return route.fulfill({ status: 409, json: { error: { message: "记忆已被另一端更改" } } });
     reads++; return route.fulfill({ json: { data: [record(), { ...record(), id: uuid(5), candidateId: uuid(6), content: "过期合成记忆", validUntil: "2020-01-01T00:00:00Z" }] } });
   });
-  await page.goto(url); const region = page.getByRole("region", { name: "已确认的长期记忆" });
+  await page.goto(process.env.MEMORY_DATA_MOBILE_BUNDLE === "true" ? "/#/memory" : "/memory"); const region = page.getByRole("region", { name: "已确认的长期记忆" });
   await region.getByRole("textbox", { name: "编辑记忆：数学目标" }).fill("手机未保存的草稿"); content = "电脑已经保存的新版"; version++;
   await region.getByRole("button", { name: "保存修改", exact: true }).click(); await expect(region.getByRole("alert")).toContainText("另一端"); await expect(region.getByRole("textbox", { name: "编辑记忆：数学目标" })).toHaveValue("手机未保存的草稿"); expect(reads).toBe(1);
   page.once("dialog", (dialog) => dialog.dismiss()); await region.getByRole("button", { name: "刷新已确认记忆" }).click(); await expect(region.getByRole("textbox", { name: "编辑记忆：数学目标" })).toHaveValue("手机未保存的草稿");

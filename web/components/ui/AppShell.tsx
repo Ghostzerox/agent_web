@@ -2,13 +2,18 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { AppLink } from "@/components/platform/AppLink";
-import { WORKSPACE_SECTIONS, isWorkspaceRouteActive } from "@/lib/platform/workspaceNavigation";
+import { WORKSPACE_SECTIONS, MODULE_LINKS, workspaceOwner, isWorkspaceRouteActive } from "@/lib/platform/workspaceNavigation";
+import { useAppQuery } from "@/components/platform/useAppQuery";
 import { Drawer } from "./Drawer";
 
 export function AppShell({ route, title, description, children, actions, chat = false }: {
   route: string; title: string; description: string; children: ReactNode; actions?: ReactNode; chat?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const params = useAppQuery();
+  const owner = workspaceOwner(route, params);
+  const localLinks = owner ? MODULE_LINKS[owner] : [];
+  const currentUrl = `${route}${params.size ? `?${params}` : ""}`;
   useEffect(() => {
     const close = () => setOpen(false);
     window.addEventListener("hashchange", close);
@@ -22,12 +27,9 @@ export function AppShell({ route, title, description, children, actions, chat = 
     <nav aria-label="主导航" className="workspace-nav-groups">
       {WORKSPACE_SECTIONS.map((section) => <section key={section.label}>
         <h2>{section.label}</h2>
-        {section.items.map((item) => <AppLink key={item.href} href={item.href} aria-current={isWorkspaceRouteActive(route, item.href) ? "page" : undefined} className="workspace-nav-link" title={item.description}>
+        {section.items.map((item) => <AppLink key={item.href} href={item.href} aria-current={isWorkspaceRouteActive(route, item.href, params) ? "page" : undefined} className="workspace-nav-link" title={item.description}>
           <span className="workspace-nav-mark" aria-hidden="true">{item.mark}</span><span>{item.label}</span>
         </AppLink>)}
-        {section.label === "对话与探索" && <div className="mt-2 grid grid-cols-3 gap-1 px-2" aria-label="对话行为模式入口">
-          {[["professional", "专业"], ["companion", "陪伴"], ["reflection", "反思"]].map(([mode, label]) => <AppLink key={mode} href={`/chat?mode=${mode}`} className="flex min-h-11 items-center justify-center rounded-lg border border-[var(--workspace-border)] text-xs text-[var(--workspace-muted)] hover:bg-[var(--workspace-active)]">{label}</AppLink>)}
-        </div>}
       </section>)}
     </nav>
     <p className="workspace-nav-note">专业地回答，自然地陪伴。<br />模式各自独立，数据由你掌控。</p>
@@ -43,6 +45,10 @@ export function AppShell({ route, title, description, children, actions, chat = 
         <div className="workspace-heading"><h1>{title}</h1><p>{description}</p></div>
         {actions && <div className="workspace-actions">{actions}</div>}
       </header>
+      {owner && <details className="module-navigation" key={currentUrl}>
+        <summary>{owner === "chat" ? "对话内导航" : "本模块导航"}<span className="ml-2 text-xs font-normal text-[var(--workspace-muted)]">返回首页 / 打开功能子页</span></summary>
+        <nav aria-label="模块内导航" className="flex flex-wrap gap-2 p-3">{localLinks.map((link) => <AppLink key={link.href} href={link.href} aria-current={currentUrl === link.href ? "page" : undefined} className="module-local-link">{link.label}</AppLink>)}</nav>
+      </details>}
       {chat ? <div id="workspace-content" tabIndex={-1} className="workspace-chat-content">{children}</div> : <main id="workspace-content" tabIndex={-1} className="workspace-page-content">{children}</main>}
     </div>
     {open && <Drawer id="workspace-navigation" label="模式与导航" onClose={() => setOpen(false)}>{navigation(true)}</Drawer>}

@@ -14,13 +14,13 @@ describe("workspace navigation", () => {
     expect(isWorkspaceRouteActive("/entertainment/quick-adventure", "/entertainment")).toBe(true);
     expect(isWorkspaceRouteActive("/study-other", "/study")).toBe(false);
   });
-  it("renders one page heading, explicit behavior-mode intents, and the same APK routes", () => {
+  it("renders one heading and module-only routes without global behavior-mode shortcuts", () => {
     configureAppNavigation("hash");
     const html = renderToStaticMarkup(<AppShell route="/study/memorization" title="背书训练" description="学习活动"><p>保留活动</p></AppShell>);
     expect(html.match(/<h1/g)).toHaveLength(1);
-    expect(html).toContain('href="#/chat?mode=professional"');
-    expect(html).toContain('href="#/chat?mode=companion"');
-    expect(html).toContain('href="#/chat?mode=reflection"');
+    expect(html).not.toContain('href="#/chat?mode=');
+    expect(html).toContain('href="#/settings"');
+    expect(html).toContain('href="#/study/memory-palaces"');
     expect(html).toMatch(/href="#\/study" aria-current="page"/);
     expect(html).toContain('aria-label="打开模式与导航"');
     expect(html).toContain("保留活动");

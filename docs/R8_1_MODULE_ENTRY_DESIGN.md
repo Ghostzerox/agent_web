@@ -1,6 +1,7 @@
 # R8.1：入口、页面与部件归属设计
 
 - 日期：2026-10-17；状态：**设计交付，运行时尚未改造**。
+- 后续状态（2026-10-18）：下文保留设计时态；R8.2–R8.4 已按“目录→子页、按需折叠”实施，增加 `/study/tools`，实际界面与验证见 [R8指南](R8_MODULE_UI_GUIDE.md) / [报告](reports/R8_REPORT.md)。不要把下文“待实现”当作当前运行状态。
 - 盘点基线：`f257ffc`。当前 19 个 Web 页面与 19 个本地 React 路由一致；全局导航有 15 个常驻链接，另有专业 / 陪伴 / 反思 3 个快捷链接，以及品牌首页链接。
 - 范围：定稿全局入口、现有页面归属、局部部件和迁移边界；不更改 UI、路由、数据、授权或插件协议，不重建 Docker / APK。
 - 承接：[R6–R8 规划](TASK_WORLD_AND_MODULE_UI_PLAN.md)；结构化清单：[route-ownership.json](ui/r8/route-ownership.json)；验收记录：[R8.1 报告](reports/R8_1_REPORT.md)。

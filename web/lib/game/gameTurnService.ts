@@ -6,6 +6,7 @@ import { createGameTurnSchema, type CreateGameTurnRequest } from "@/lib/game/con
 import { applyGameTool } from "./toolkit";
 import { applyExplorationAction } from "./exploration/engine";
 import { ExplorationError } from "./exploration/contracts";
+import { sessionExplorationTemplate } from "./exploration/templateReference";
 import { explorationMessages } from "./exploration/prompt";
 import { rollGameDice, type GameDiceRoll } from "@/lib/game/dice";
 import {
@@ -233,7 +234,13 @@ export function createGameTurnService(
       if (!input.parentTurnId && input.explorationAction?.action !== "start" && session.turns.some((turn) => turn.stateSnapshot.exploration)) throw new ExplorationError("探索世界请从已保存的世界起点开分支，不能在空根节点混用旧规则。");
       if (input.explorationAction) {
         if (input.explorationAction.action === "start" && session.turns.some((turn) => !turn.stateSnapshot.exploration)) throw new ExplorationError("旧故事不自动转换规则，请新建一局探索。");
-        const exploration = applyExplorationAction(currentState.exploration, input.explorationAction, input.requestId!);
+        let action = input.explorationAction;
+        if (action.action === "start") {
+          const selected = sessionExplorationTemplate(session.worldRules);
+          if (selected && (action.templateId !== selected.templateId || (action.templateVersion && action.templateVersion !== selected.templateVersion))) throw new ExplorationError("启动的模板与创建时选择的模板版本不一致。");
+          action = { ...action, templateVersion: action.templateVersion ?? selected?.templateVersion };
+        }
+        const exploration = applyExplorationAction(currentState.exploration, action, input.requestId!);
         if (input.explorationAction.action === "start") {
           const player = session.characters.find((character) => character.controller === "user");
           if (player) Object.assign(exploration.characters.player, { name: player.name, identity: player.role,

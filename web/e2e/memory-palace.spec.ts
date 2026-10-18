@@ -1,8 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { PalaceView } from "../lib/memory/palace";
 const id = (n: number) => `55555555-5555-4555-8555-${String(n).padStart(12, "0")}`;
-const url = process.env.PALACE_MOBILE_BUNDLE === "true" ? "/#/memory" : "/memory";
-async function setup(page: Page) {
+const url = process.env.PALACE_MOBILE_BUNDLE === "true" ? "/#/memory?view=navigation" : "/memory?view=navigation";
+async function setup(page: Page, learning = false) {
   let palace: PalaceView | null = null; let changed = false; let reviews = 0; let modelCalls = 0;
   const unit = { id: id(9), cue: "第一词", content: "alpha", reviewCount: 0, lastScore: null, lastReviewedAt: null, nextReviewAt: null };
   const material = { id: id(8), title: "合成单词", sourceText: "alpha", units: [unit], attempts: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
@@ -29,13 +29,13 @@ async function setup(page: Page) {
     } else data = palace ? [palace] : [];
     return route.fulfill({ json: { data } });
   });
-  await page.goto(url); await page.getByText("打开记忆导航与学习助记", { exact: true }).click();
+  await page.goto(learning ? (process.env.PALACE_MOBILE_BUNDLE === "true" ? "/#/study/memory-palaces" : "/study/memory-palaces") : url); await page.getByText(learning ? "展开学习宫殿与训练" : "展开 AI 记忆导航", { exact: true }).click();
   return { change: () => { changed = true; }, reviews: () => reviews, calls: () => modelCalls };
 }
 async function create(page: Page, learning = false) {
-  const region = page.getByRole("region", { name: "记忆宫殿", exact: true });
+  const region = page.getByRole("region", { name: learning ? "学习助记宫殿" : "AI 记忆导航", exact: true });
   await region.getByLabel("宫殿名称", { exact: true }).fill("我的宫殿");
-  if (learning) await region.getByLabel("宫殿用途").selectOption("learning");
+  await expect(region.getByLabel("宫殿用途")).toHaveValue(learning ? "learning" : "navigation");
   await region.getByRole("button", { name: "创建宫殿", exact: true }).click();
   await region.getByLabel("房间名称", { exact: true }).fill("书房");
   await region.getByRole("button", { name: "添加房间", exact: true }).click();
@@ -51,7 +51,7 @@ test("memory palace links sources, persists layout, reports usage/staleness and 
   const state = await setup(page); let region = await create(page);
   await region.getByRole("button", { name: "查看 门口 的来源与状态" }).click(); await expect(region.getByText("喜欢数学", { exact: true })).toBeVisible();
   await expect(region.getByText(/实际用于回答 3 次/)).toBeVisible();
-  await page.reload(); await page.getByText("打开记忆导航与学习助记", { exact: true }).click(); region = page.getByRole("region", { name: "记忆宫殿", exact: true });
+  await page.reload(); await page.getByText("展开 AI 记忆导航", { exact: true }).click(); region = page.getByRole("region", { name: "AI 记忆导航", exact: true });
   await expect(region.getByText("1. 门口", { exact: true })).toBeVisible();
   state.change(); await region.getByRole("button", { name: "查看 门口 的来源与状态" }).click(); await expect(region.getByText(/没有读取旧正文/)).toBeVisible();
   await expect(region.getByText("喜欢数学", { exact: true })).toHaveCount(0);
@@ -59,7 +59,7 @@ test("memory palace links sources, persists layout, reports usage/staleness and 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= 360)).toBe(true); expect(state.calls()).toBe(0);
 });
 test("learning palace hides answers, checks spelling once and displays the existing review schedule", async ({ page }) => {
-  const state = await setup(page); const region = await create(page, true);
+  const state = await setup(page, true); const region = await create(page, true);
   await region.getByRole("button", { name: "开始路线/抽测" }).click(); await expect(region.getByText("提示：第一词", { exact: true })).toBeVisible();
   await expect(region.getByText("alpha", { exact: true })).toHaveCount(0);
   await region.getByLabel("本题回忆", { exact: true }).fill("alpah"); await region.getByRole("button", { name: "提交逐字检查并记录" }).click();

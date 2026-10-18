@@ -23,8 +23,8 @@ describe("chat presentation components", () => {
     );
 
     expect(html).toContain("AI 对话");
-    expect(html).toContain('href="/api-key"');
-    expect(html).toContain("模型服务配置");
+    expect(html).toContain('href="/settings"');
+    expect(html).not.toContain('href="/api-key"');
     expect(html).toContain("打开对话列表");
     expect(html).toContain("mobile-session-drawer");
     expect(html).toContain('aria-expanded="true"');

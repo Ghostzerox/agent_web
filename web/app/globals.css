@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+.module-directory { max-width: 64rem; margin-inline: auto; display: grid; gap: 1.5rem; }
+.module-intro { padding: clamp(1.25rem, 4vw, 2rem); border: 1px solid var(--workspace-border); border-radius: 1.25rem; background: var(--workspace-active); }
+.module-card { display: block; min-width: 0; border: 1px solid var(--workspace-border); border-radius: 1rem; padding: 1.5rem; background: var(--workspace-surface); transition: border-color 150ms; }
+.module-card:hover { border-color: #059669; }
+.module-navigation { flex-shrink: 0; border-bottom: 1px solid var(--workspace-border); background: var(--workspace-surface); }
+.module-navigation > summary { padding: .65rem clamp(.75rem, 2vw, 1.5rem); }
+.module-navigation > summary, .module-disclosure > summary { min-height: 44px; cursor: pointer; font-size: .875rem; font-weight: 600; }
+.module-local-link { display: inline-flex; align-items: center; min-height: 44px; border: 1px solid var(--workspace-border); border-radius: .75rem; padding: .5rem 1rem; font-size: .875rem; }
+.module-local-link:hover, .module-local-link[aria-current="page"] { background: var(--workspace-active); color: var(--workspace-accent); }
+.module-disclosure { border: 1px solid var(--workspace-border); border-radius: 1rem; padding: .5rem 1rem; background: var(--workspace-surface); }
+.module-disclosure > summary { padding-block: .6rem; }
+.module-card:focus-visible, summary:focus-visible, .module-local-link:focus-visible { outline: 2px solid #059669; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .module-card { transition: none; } }
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

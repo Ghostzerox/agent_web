@@ -1,5 +1,5 @@
 import { publicWorldCharacterSchema, worldItemInstanceSchema, worldItemSchema, worldKey, worldRanksSchema, ExplorationError } from "./contracts";
-import type { WorldEffect, WorldTemplate } from "./catalog";
+import type { WorldEffect, WorldTemplate } from "./templateTypes";
 
 /** Host templates are code-owned today. Validate every cross-reference before opening a save. */
 export function validateWorldTemplate(template: WorldTemplate): void {
@@ -21,6 +21,10 @@ export function validateWorldTemplate(template: WorldTemplate): void {
   const lore = ids(template.lore, "史料", 100);
   const events = ids(template.events, "事件", 50);
   if (!locations.has(template.start)) fail("起始地点不存在");
+  publicWorldCharacterSchema.parse(template.initial.player);
+  if (template.waitMessage !== undefined && (!template.waitMessage.trim() || template.waitMessage.length > 600)) fail("等待文案无效");
+  if (template.initial.player.id !== "player" || template.initial.player.controller !== "user" || template.initial.player.category !== "player" || template.initial.player.locationId !== template.start) fail("初始玩家配置无效");
+  if (!Number.isInteger(template.initial.coins) || template.initial.coins < 0 || template.initial.coins > 1000000 || !template.initial.message.trim() || template.initial.message.length > 600) fail("初始钱币或开场无效");
   const condition = (value?: { learned?: string; item?: string }) => {
     if (value?.learned && !lore.has(value.learned)) fail("条件引用未知史料");
     if (value?.item && !items.has(value.item)) fail("条件引用未知物品");
@@ -33,6 +37,7 @@ export function validateWorldTemplate(template: WorldTemplate): void {
     if (value.progress && (!template.ranks.rating.some((rank) => rank.id === value.progress!.rating)
       || !template.ranks.tier.some((rank) => rank.id === value.progress!.tier) || value.progress.level < 1 || value.progress.level > template.ranks.levelsPerTier)) fail("进度档位无效");
   };
+  effect({ progress: template.initial.progress });
   for (const item of template.items) {
     worldItemSchema.parse(item);
     if (!template.ranks.quality.some((rank) => rank.id === item.quality) || !template.ranks.tier.some((rank) => rank.id === item.tier)
@@ -54,6 +59,7 @@ export function validateWorldTemplate(template: WorldTemplate): void {
   ids(allPoints, "兴趣点全局", 100);
   const revealSchema = publicWorldCharacterSchema.pick({ appearance: true, backstory: true, values: true, boundaries: true, abilities: true, unresolved: true, arc: true }).partial();
   for (const person of template.characters) {
+    if (person.initialWallet !== undefined && (!Number.isInteger(person.initialWallet) || person.initialWallet < 0 || person.initialWallet > 1000000)) fail("商人初始资金无效");
     publicWorldCharacterSchema.parse(person.card);
     if (person.revealedCard) revealSchema.parse(person.revealedCard);
     if (!locations.has(person.card.locationId) || person.card.controller === "user") fail("NPC 地点或控制者无效");

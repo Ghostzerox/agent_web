@@ -7,10 +7,15 @@ import { z } from "zod";
 import { taskDraftResultSchema } from "@/lib/plugins/pluginApiV1";
 import { createTask } from "@/lib/api/taskClient";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
+import { requestNavigationPermission } from "@/lib/platform/navigationGuard";
 
-export function ToolsWorkbench() {
-  const [id, setId] = useState(WORKBENCH_TOOLS[0].id);
-  const selected = WORKBENCH_TOOLS.find((item) => item.id === id)!;
+export function ToolsWorkbench({ toolIds }: { toolIds?: readonly string[] } = {}) {
+  const tools = WORKBENCH_TOOLS.filter((tool) => !toolIds || toolIds.includes(tool.id));
+  return tools.length ? <Workbench key={tools.map((tool) => tool.id).join(",")} tools={tools} /> : <p role="status">当前没有可用工具。</p>;
+}
+function Workbench({ tools }: { tools: typeof WORKBENCH_TOOLS }) {
+  const [id, setId] = useState(tools[0].id);
+  const selected = tools.find((item) => item.id === id)!;
   const [input, setInput] = useState(JSON.stringify(selected.example, null, 2));
   const [output, setOutput] = useState<unknown>(null);
   const [error, setError] = useState<string | null>(null);
@@ -20,8 +25,8 @@ export function ToolsWorkbench() {
   useNavigationGuard(saving !== null || (output === null && input !== JSON.stringify(selected.example, null, 2)));
   const drafts = z.object({ taskDrafts: z.array(taskDraftResultSchema) }).safeParse(output);
   const selectTool = (nextId: string) => {
-    const next = WORKBENCH_TOOLS.find((item) => item.id === nextId);
-    if (!next || saving !== null) return;
+    const next = tools.find((item) => item.id === nextId);
+    if (!next || saving !== null || !requestNavigationPermission()) return;
     setId(nextId); setInput(JSON.stringify(next.example, null, 2)); setOutput(null); setError(null); setNotice(null); setSaved([]);
   };
   const confirmDraft = async (index: number) => {
@@ -33,9 +38,9 @@ export function ToolsWorkbench() {
   };
   return <div className="mx-auto max-w-5xl space-y-5">
     <p className="text-sm text-[var(--workspace-muted)]">以下工具由代码计算，不调用付费模型。只读、计算和草稿互相区分；创建任务等操作仍须到对应模块确认。</p>
-    <label className="block text-sm md:hidden">选择工具<select aria-label="选择工具" disabled={saving !== null} value={id} onChange={(event) => selectTool(event.target.value)} className="mt-2 min-h-11 w-full rounded-xl border bg-transparent px-3">{WORKBENCH_TOOLS.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
+    <label className="block text-sm md:hidden">选择工具<select aria-label="选择工具" disabled={saving !== null} value={id} onChange={(event) => selectTool(event.target.value)} className="mt-2 min-h-11 w-full rounded-xl border bg-transparent px-3">{tools.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</select></label>
     <div className="grid gap-4 md:grid-cols-[15rem_1fr]">
-      <nav aria-label="工具列表" className="hidden space-y-2 md:block">{WORKBENCH_TOOLS.map((item) => <button key={item.id} type="button" disabled={saving !== null} aria-pressed={id === item.id} className="block min-h-11 w-full rounded-xl border p-3 text-left text-sm disabled:opacity-50" onClick={() => selectTool(item.id)}>{item.title}<span className="mt-1 block text-xs text-zinc-500">{item.effect} · {item.allowedScopes.join(" / ")}</span></button>)}</nav>
+      <nav aria-label="工具列表" className="hidden space-y-2 md:block">{tools.map((item) => <button key={item.id} type="button" disabled={saving !== null} aria-pressed={id === item.id} className="block min-h-11 w-full rounded-xl border p-3 text-left text-sm disabled:opacity-50" onClick={() => selectTool(item.id)}>{item.title}<span className="mt-1 block text-xs text-zinc-500">{item.effect} · {item.allowedScopes.join(" / ")}</span></button>)}</nav>
       <section className="min-w-0 space-y-3 rounded-2xl border p-5">
         <h2 className="text-lg font-semibold">{selected.title}</h2><p className="text-sm text-zinc-500">{selected.description}</p>
         <details className="text-xs text-zinc-500"><summary>工具契约与适配边界</summary><pre className="mt-2 max-h-60 overflow-auto whitespace-pre-wrap">{JSON.stringify({ id: selected.id, version: selected.version, effect: selected.effect, executor: selected.executor, maxResultBytes: selected.maxResultBytes, inputSchema: z.toJSONSchema(selected.inputSchema), outputSchema: z.toJSONSchema(selected.outputSchema), pluginGrant: "此页面是用户工具，不向插件自动授予新能力" }, null, 2)}</pre></details>

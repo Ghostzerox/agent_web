@@ -1,11 +1,14 @@
 "use client";
-import { useEffect, useState } from "react";
 import { TaskManager } from "./TaskManager";
 import { ActionBoard } from "./ActionBoard";
-import { currentAppSearchParams } from "@/lib/platform/appNavigation";
-import { requestNavigationPermission } from "@/lib/platform/navigationGuard";
+import { useAppQuery } from "@/components/platform/useAppQuery";
+import { ModuleDirectory } from "@/components/ui/ModuleDirectory";
+import { ToolsWorkbench } from "@/components/tools/ToolsWorkbench";
+import { MODULE_LINKS, MODULE_TOOL_IDS } from "@/lib/platform/workspaceNavigation";
 export function TaskWorkspace() {
-  const [section, setSection] = useState<"actions" | "scheduled">("actions");
-  useEffect(() => { const read = () => { const params=currentAppSearchParams(); if (params.get("task") || params.get("section")==="scheduled") setSection("scheduled"); }; read(); window.addEventListener("hashchange", read); return () => window.removeEventListener("hashchange", read); }, []);
-  return <div className="space-y-6"><nav aria-label="任务局部导航" className="flex gap-2">{([["actions", "行动与打卡"], ["scheduled", "定时任务"]] as const).map(([id, label]) => <button key={id} className="min-h-11 rounded-xl border px-4 text-sm aria-pressed:bg-emerald-700 aria-pressed:text-white" aria-pressed={section === id} onClick={() => { if (section !== id && requestNavigationPermission()) setSection(id); }}>{label}</button>)}</nav>{section === "actions" ? <ActionBoard /> : <TaskManager />}</div>;
+  const params = useAppQuery(); const section = params.has("task") ? "scheduled" : params.get("section");
+  if (section === "scheduled") return <TaskManager key={`${params.get("task") ?? ""}:${params.get("edit") ?? ""}`} />;
+  if (section === "tools") return <ToolsWorkbench toolIds={MODULE_TOOL_IDS.tasks} />;
+  if (["actions", "habits", "goals", "insights", "reminders"].includes(section ?? "")) return <ActionBoard key={section} view={section as "actions" | "habits" | "goals" | "insights" | "reminders"} />;
+  return <ModuleDirectory title="从一件小事开始" description="待办、习惯、目标、统计与定时任务分别进入。完成行动不会被误当成系统已提醒，打开目录也不会自动创建任务。" links={MODULE_LINKS.tasks.slice(1)} />;
 }

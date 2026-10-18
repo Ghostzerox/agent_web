@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { splitDocument, type DocumentInput } from "../lib/knowledge/documents";
 import type { KnowledgeCollection, KnowledgeDocument } from "../lib/api/knowledgeClient";
-const memoryUrl = process.env.KNOWLEDGE_MOBILE_BUNDLE === "true" ? "/#/memory" : "/memory";
+const memoryUrl = process.env.KNOWLEDGE_MOBILE_BUNDLE === "true" ? "/#/memory?view=knowledge" : "/memory?view=knowledge";
 
 test("mobile knowledge workflow imports locally, retains a conflicting draft, replaces sources and deletes derived data", async ({ page }) => {
   const collectionId = "11111111-1111-4111-8111-111111111111";
@@ -87,7 +87,7 @@ test("memory source controls require explicit confirmation and send the intended
     if (path.endsWith(`/conversations/${conversationId}`) && route.request().method() === "DELETE") { expect(route.request().postDataJSON()).toEqual({ deleteRelatedMemories: true }); sourceDeleteCalls++; items = []; return route.fulfill({ status: 204 }); }
     return route.fulfill({ json: { data: path.endsWith("/memories") ? items : [] } });
   });
-  await page.goto(memoryUrl);
+  await page.goto(process.env.KNOWLEDGE_MOBILE_BUNDLE === "true" ? "/#/memory" : "/memory");
   await expect(page.getByRole("button", { name: "删除原对话及关联记忆" })).toBeVisible();
   page.once("dialog", (dialog) => dialog.dismiss());
   await page.getByRole("button", { name: "删除原对话及关联记忆" }).click();

@@ -1,0 +1,30 @@
+import type { ExplorationState, WorldHistory, WorldCharacter } from "./contracts";
+
+export type WorldCondition = { flag?: string; learned?: string; item?: string; minTick?: number };
+export type WorldEffect = {
+  flags?: string[]; discover?: string[]; reveal?: string[]; grant?: string[];
+  coins?: number; condition?: string; removeCondition?: string;
+  character?: { id: string; relationship?: "wary" | "neutral" | "friendly" | "trusted"; reason: string; important?: boolean; locationId?: string; removeUnresolved?: string[] };
+  progress?: ExplorationState["progress"];
+};
+export type WorldTemplate = {
+  id: string; version: string; hostContract: "exploration.v1"; world: string; region: string; start: string;
+  initial: { coins: number; progress: ExplorationState["progress"]; player: WorldCharacter; message: string };
+  waitMessage?: string;
+  ranks: ExplorationState["view"]["ranks"]; slots: string[];
+  locations: { id: string; name: string; description: string; exits: { to: string; requires?: WorldCondition; reason: string }[];
+    points: { id: string; name: string; description: string; requires?: WorldCondition; effect: WorldEffect; result: string }[] }[];
+  items: ExplorationState["view"]["items"];
+  instances: ExplorationState["instances"];
+  consumableEffects: Record<string, WorldEffect>;
+  characters: { card: ExplorationState["characters"][string]; revealedCard?: Partial<WorldCharacter>; topics: { id: string; label: string; requires?: WorldCondition; answer: string; effect?: WorldEffect }[];
+    promise?: { text: string; requires: WorldCondition; completion: WorldCondition; effect: WorldEffect }; help?: { requires?: WorldCondition; effect: WorldEffect; result: string };
+    negotiate?: { requires: WorldCondition; effect: WorldEffect; result: string }; knowledge: string[]; trader: boolean; initialWallet?: number }[];
+  lore: (Omit<WorldHistory, "tick" | "source"> & { source: string })[];
+  events: { id: string; name: string; scope: "local" | "character" | "world"; locationId: string; actorIds: string[];
+    stages: { id: string; description: string; terminal: boolean; choices: { id: string; label: string; cost: string;
+      requires?: WorldCondition; coinCost?: number; consume?: string; next: string; effect: WorldEffect; result: string }[] }[];
+    trigger: WorldCondition }[];
+  epics: { id: string; name: string; chapters: string[]; keyActors: string[];
+    milestones: { flag: string; text: string }[]; endings: { flag: string; text: string; consequences: string[] }[] }[];
+};

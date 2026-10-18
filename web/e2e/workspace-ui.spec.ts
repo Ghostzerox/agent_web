@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
-const routes = ["/", "/chat", "/tools", "/study", "/study/memorization", "/study/problem-solving", "/entertainment", "/entertainment/quick-adventure", "/tasks", "/inbox", "/reading", "/reflection", "/memory", "/persona", "/voice", "/proactivity", "/plugins", "/notifications", "/api-key"];
+const routes = ["/", "/chat", "/tools", "/study", "/study/memorization", "/study/problem-solving", "/entertainment", "/entertainment/quick-adventure", "/tasks", "/inbox", "/reading", "/reflection", "/memory", "/persona", "/voice", "/proactivity", "/plugins", "/notifications", "/api-key", "/content", "/settings", "/study/memory-palaces", "/study/tools"];
+const appPath = (path: string) => process.env.R8_MOBILE_BUNDLE === "true" ? `/#${path}` : path;
 for (const width of [360, 390, 1440]) {
   test(`all pages retain readable shells and recoverable offline states at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -12,7 +13,7 @@ for (const width of [360, 390, 1440]) {
       return route.fulfill({ status: 503, json: { error: { message: "测试服务端暂时离线" } } });
     });
     for (const route of routes) {
-      await page.goto(route);
+      await page.goto(appPath(route));
       await expect(page.locator("h1")).toHaveCount(1);
       await expect(page.locator("h1")).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1), route).toBe(true);
@@ -28,11 +29,11 @@ test("mobile navigation traps focus, closes with Escape/back/backdrop, and never
   await page.setViewportSize({ width: 360, height: 844 });
   let writes = 0;
   await page.route("**/api/v1/**", (route) => { if (route.request().method() !== "GET") writes++; return route.fulfill({ status: 503, json: { error: { message: "服务端暂时离线" } } }); });
-  await page.goto("/study");
+  await page.goto(appPath("/study"));
   const opener = page.getByRole("button", { name: "打开模式与导航" });
   const drawer = page.getByRole("dialog", { name: "模式与导航" });
   await opener.click();
-  await expect(drawer.getByRole("link", { name: "学习模式" })).toHaveAttribute("aria-current", "page");
+  await expect(drawer.getByRole("link", { name: "学习", exact: true })).toHaveAttribute("aria-current", "page");
   for (let index = 0; index < 24; index++) { await page.keyboard.press("Tab"); expect(await drawer.evaluate((element) => element.contains(document.activeElement))).toBe(true); }
   await page.keyboard.press("Escape");
   await expect(drawer).toHaveCount(0);
@@ -44,7 +45,7 @@ test("mobile navigation traps focus, closes with Escape/back/backdrop, and never
   await page.mouse.click(350, 20);
   await expect(drawer).toHaveCount(0);
   await opener.click();
-  await drawer.getByRole("link", { name: "学习模式" }).click();
+  await drawer.getByRole("link", { name: "学习", exact: true }).click();
   await expect(page.locator("h1")).toHaveText("学习模式");
   expect(writes).toBe(0);
 });
@@ -61,18 +62,18 @@ test("unsaved notification settings can cancel navigation and successful save cl
     }
     return route.fulfill({ json: { data: { publicKey: null, preferences, subscriptions: [] } } });
   });
-  await page.goto("/notifications");
+  await page.goto(appPath("/notifications"));
   await page.getByLabel("安静时段开始", { exact: true }).fill("23:15");
   await page.getByRole("button", { name: "打开模式与导航" }).click();
   page.once("dialog", (dialog) => dialog.dismiss());
-  await page.getByRole("dialog", { name: "模式与导航" }).getByRole("link", { name: "学习模式" }).click();
+  await page.getByRole("dialog", { name: "模式与导航" }).getByRole("link", { name: "学习", exact: true }).click();
   await expect(page).toHaveURL(/\/notifications$/);
   await page.getByRole("button", { name: "关闭模式与导航" }).click();
   await expect(page.getByLabel("安静时段开始", { exact: true })).toHaveValue("23:15");
   await page.getByRole("button", { name: "保存通知偏好" }).click();
   await expect(page.getByRole("status")).toContainText("通知偏好已保存");
   await page.getByRole("button", { name: "打开模式与导航" }).click();
-  await page.getByRole("dialog", { name: "模式与导航" }).getByRole("link", { name: "学习模式" }).click();
+  await page.getByRole("dialog", { name: "模式与导航" }).getByRole("link", { name: "学习", exact: true }).click();
   await expect(page).toHaveURL(/\/study$/);
   expect(writes).toBe(1);
 });
@@ -88,7 +89,7 @@ test("mode entry needs confirmation and long math/code stay within a full-width 
     if (request.method() !== "GET") { writes++; mode = request.postDataJSON().mode; }
     return route.fulfill({ json: { data: pathname.endsWith("/conversations") ? [conversation()] : conversation() } });
   });
-  await page.goto("/chat?mode=companion");
+  await page.goto(appPath("/chat?mode=companion"));
   await expect(page.getByLabel("对话模式")).toHaveValue("professional");
   expect(writes).toBe(0);
   await page.getByRole("button", { name: "切换当前会话为陪伴" }).click();

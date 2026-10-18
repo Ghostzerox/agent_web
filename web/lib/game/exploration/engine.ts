@@ -1,5 +1,7 @@
 import { explorationActionSchema, explorationStateSchema, ExplorationError, type ExplorationAction, type ExplorationState } from "./contracts";
-import { characterCard, getWorldTemplate, type WorldCondition, type WorldEffect, type WorldTemplate } from "./catalog";
+import { getWorldTemplate } from "./catalog";
+import type { WorldCondition, WorldEffect, WorldTemplate } from "./templateTypes";
+import type { WorldTemplateResolver } from "./templateRegistry";
 
 export function meets(state: ExplorationState, condition?: WorldCondition): boolean {
   return !condition || ((!condition.flag || state.flags[condition.flag] === true)
@@ -65,6 +67,7 @@ export function applyWorldEffect(state: ExplorationState, template: WorldTemplat
       character.relationshipReason = change.reason;
     }
     if (change.locationId) character.locationId = change.locationId;
+    if (change.removeUnresolved) character.unresolved = character.unresolved.filter((entry) => !change.removeUnresolved!.includes(entry));
     character.memories = [...character.memories, change.reason].slice(-12);
   }
   for (const id of effect.reveal ?? []) {
@@ -84,7 +87,9 @@ export function projectWorld(state: ExplorationState, template = getWorldTemplat
     const character = state.characters[definition.card.id];
     if ((character?.locationId ?? definition.card.locationId) !== state.locationId) continue;
     const known = state.characters[definition.card.id] ??= structuredClone(definition.card);
-    if (definition.trader) state.wallets[definition.card.id] ??= 30;
+    if (definition.trader) state.wallets[definition.card.id] ??= definition.initialWallet ?? 0;
+    if (definition.promise && meets(state, definition.promise.requires)) known.offeredPromise = definition.promise.text;
+    else delete known.offeredPromise;
     known.topics = definition.topics.filter((topic) => meets(state, topic.requires)).map(({ id, label }) => ({ id, label }));
     known.interactions = [
       ...(definition.promise && meets(state, definition.promise.requires) ? ["promise" as const] : []),
@@ -127,26 +132,26 @@ export function projectWorld(state: ExplorationState, template = getWorldTemplat
   return explorationStateSchema.parse(state);
 }
 
-export function startWorld(templateId: string): ExplorationState {
-  const template = getWorldTemplate(templateId);
+export function startWorld(templateId: string, version?: string, resolve: WorldTemplateResolver = getWorldTemplate): ExplorationState {
+  const template = resolve(templateId, version);
   return projectWorld({ schemaVersion: 1, templateId, templateVersion: template.version, tick: 0,
     locationId: template.start, discovered: [template.start], visited: [template.start], learned: [], flags: {},
-    coins: 12, wallets: {}, conditions: [], progress: { rating: template.ranks.rating[0].id, tier: template.ranks.tier[0].id, level: 1 },
-    instances: [], characters: { player: { ...characterCard("player", "行旅者", template.start, "玩家"), category: "player", controller: "user", goals: ["自由探索"], personality: "由玩家决定", boundaries: ["不替玩家决定内心与关键行动"] } }, events: {}, history: [],
+    coins: template.initial.coins, wallets: {}, conditions: [], progress: structuredClone(template.initial.progress),
+    instances: [], characters: { player: structuredClone(template.initial.player) }, events: {}, history: [],
     view: { world: template.world, region: template.region, ranks: template.ranks, slots: template.slots, locations: [], items: [], events: [], epics: [] },
-    lastResult: "你已抵达雾港。普通行动不掷骰，地图和人物会随探索逐步开放；可以自由探索，也可以不参与灯塔故事。",
+    lastResult: template.initial.message,
   }, template);
 }
 
-export function applyExplorationAction(raw: ExplorationState | undefined, rawAction: ExplorationAction, source: string): ExplorationState {
+export function applyExplorationAction(raw: ExplorationState | undefined, rawAction: ExplorationAction, source: string, resolve: WorldTemplateResolver = getWorldTemplate): ExplorationState {
   const action = explorationActionSchema.parse(rawAction);
   if (action.action === "start") {
     if (raw) fail("这条剧情线已经开启世界，不可覆盖存档。");
-    return startWorld(action.templateId);
+    return startWorld(action.templateId, action.templateVersion, resolve);
   }
   if (!raw) fail("请先开启探索世界。");
   const state = explorationStateSchema.parse(structuredClone(raw));
-  const template = getWorldTemplate(state.templateId, state.templateVersion);
+  const template = resolve(state.templateId, state.templateVersion);
   const location = template.locations.find((item) => item.id === state.locationId)!;
   state.tick += action.action === "inspect" ? 0 : 1;
   if (action.action === "move") {
@@ -230,7 +235,7 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
     } else {
       const interaction = action.action === "help" ? definition.help : definition.negotiate;
       if (!interaction || !meets(state, interaction.requires)) {
-        state.lastResult = `${character.name}暂不接受：${action.action === "help" ? "需要先带来能解决问题的物品" : "需要可信证据和双方认可的依据"}。没有损失物品，也没有自动改变信任。`;
+        state.lastResult = `${character.name}暂不接受：尚未达到对方提出的条件。没有损失物品，也没有自动改变信任。`;
       } else {
         const flag = `interaction-${action.action}-${character.id}`;
         if (state.flags[flag]) fail("该项协助 / 交涉已经完成，不重复奖励。");
@@ -241,7 +246,6 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
     const promise = definition.promise;
     if (promise && character.promises.includes(promise.text) && meets(state, promise.completion) && !state.flags[`fulfilled-${character.id}`]) {
       applyWorldEffect(state, template, promise.effect); state.flags[`fulfilled-${character.id}`] = true;
-      character.unresolved = character.unresolved.filter((entry) => entry !== "缺失的镜片");
     }
   } else if (action.action === "choose") {
     const event = template.events.find((entry) => entry.id === action.eventId) ?? fail("事件不存在。");
@@ -264,7 +268,7 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
     runtime.stage = choice.next;
     runtime.settled = event.stages.find((entry) => entry.id === choice.next)?.terminal ?? fail("事件阶段无效。");
     state.lastResult = choice.result;
-  } else if (action.action === "wait") state.lastResult = "你停留片刻，观察潮水与路人的变化。";
+  } else if (action.action === "wait") state.lastResult = template.waitMessage ?? "你停留片刻，观察周围的变化。";
   else fail("该动作尚未在当前世界开放。");
   state.history.push({ id: `${source}:${state.tick}`, tick: state.tick, kind: "fact", origin: "play", text: state.lastResult,
     locationId: state.locationId, actorIds: action.action === "choose" ? template.events.find((entry) => entry.id === action.eventId)!.actorIds : "targetId" in action && state.characters[action.targetId] ? [action.targetId] : [], eventId: action.action === "choose" ? action.eventId : null, source });

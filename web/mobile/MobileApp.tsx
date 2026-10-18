@@ -31,8 +31,13 @@ type MobileRoute =
   | "/study/problem-solving"
   | "/notifications"
   | "/api-key";
+type ModuleRoute = "/content" | "/settings" | "/study/memory-palaces" | "/study/tools";
 
-const ROUTES: Record<MobileRoute, LazyExoticComponent<ComponentType>> = {
+const ROUTES: Record<MobileRoute | ModuleRoute, LazyExoticComponent<ComponentType>> = {
+  "/content": lazy(() => import("@/app/content/page")),
+  "/settings": lazy(() => import("@/app/settings/page")),
+  "/study/memory-palaces": lazy(() => import("@/app/study/memory-palaces/page")),
+  "/study/tools": lazy(() => import("@/app/study/tools/page")),
   "/": lazy(() => import("@/app/page")),
   "/chat": lazy(() => import("@/app/chat/page")),
   "/tools": lazy(() => import("@/app/tools/page")),
@@ -81,7 +86,7 @@ export function MobileApp() {
     return () => window.removeEventListener("hashchange", updateRoute);
   }, []);
 
-  const Page = ROUTES[route as MobileRoute];
+  const Page = ROUTES[route as MobileRoute | ModuleRoute];
 
   return (
     <div className="mobile-host">

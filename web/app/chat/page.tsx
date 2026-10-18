@@ -13,6 +13,10 @@ import { SessionSidebar } from "@/components/chat/SessionSidebar";
 import { AppLink } from "@/components/platform/AppLink";
 import { AppShell } from "@/components/ui/AppShell";
 import { Drawer } from "@/components/ui/Drawer";
+import { Disclosure } from "@/components/ui/Disclosure";
+import { ToolsWorkbench } from "@/components/tools/ToolsWorkbench";
+import { MODULE_TOOL_IDS } from "@/lib/platform/workspaceNavigation";
+import { useAppQueryReady } from "@/components/platform/useAppQuery";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import { currentAppSearchParams } from "@/lib/platform/appNavigation";
 import { coreModeRegistry, isCoreModeId } from "@/lib/agent/modeRegistry";
@@ -62,6 +66,12 @@ function isAbortError(error: unknown): boolean {
 }
 
 export default function ChatPage() {
+  const params = useAppQueryReady();
+  if (!params) return <p role="status">正在打开对话空间…</p>;
+  return params.get("view") === "tools" ? <AppShell route="/chat" title="专业工具" description="基础计算与原文定位，不自动发给 AI。"><ToolsWorkbench toolIds={MODULE_TOOL_IDS.chat} /></AppShell> : <ChatWorkspace />;
+}
+
+function ChatWorkspace() {
   const [sessions, setSessions] = useState<ServerSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [runningSessionIds, setRunningSessionIds] = useState<Set<string>>(
@@ -564,7 +574,7 @@ export default function ChatPage() {
       {memoryCandidateReady && (
         <div role="status" className="flex flex-wrap items-center justify-center gap-2 border-b border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-100">
           <span>发现一条可能值得长期记住的信息，尚未保存。</span>
-          <AppLink href="/memory" className="font-medium underline underline-offset-2">查看并确认</AppLink>
+          <AppLink href="/memory?view=candidates" className="font-medium underline underline-offset-2">查看并确认</AppLink>
           <button type="button" onClick={() => setMemoryCandidateReady(false)} className="text-xs opacity-70 underline">稍后处理</button>
         </div>
       )}
@@ -609,8 +619,10 @@ export default function ChatPage() {
             />
           </div>
 
-          {resolvedActiveSessionId && <KnowledgeSelector key={resolvedActiveSessionId} mode={activeSession?.mode ?? "auto"} selected={knowledgeSelections[resolvedActiveSessionId] ?? []} disabled={loading} onChange={(ids) => setKnowledgeSelections((current) => ({ ...current, [resolvedActiveSessionId]: ids }))} />}
-          {resolvedActiveSessionId && <ConversationSummaryControl key={`${resolvedActiveSessionId}:${activeSession?.activeLeafId ?? ""}`} conversationId={resolvedActiveSessionId} leafId={activeSession?.activeLeafId ?? null} enabled={summarySelections[resolvedActiveSessionId] ?? false} onChange={(value) => setSummarySelections((current) => ({ ...current, [resolvedActiveSessionId]: value }))} disabled={loading} envelope={promptEnvelopes[resolvedActiveSessionId]} />}
+          {resolvedActiveSessionId && <div className="max-h-[35vh] shrink-0 overflow-y-auto"><Disclosure title="本次对话的资料与上下文">
+            <KnowledgeSelector key={resolvedActiveSessionId} mode={activeSession?.mode ?? "auto"} selected={knowledgeSelections[resolvedActiveSessionId] ?? []} disabled={loading} onChange={(ids) => setKnowledgeSelections((current) => ({ ...current, [resolvedActiveSessionId]: ids }))} />
+            <ConversationSummaryControl key={`${resolvedActiveSessionId}:${activeSession?.activeLeafId ?? ""}`} conversationId={resolvedActiveSessionId} leafId={activeSession?.activeLeafId ?? null} enabled={summarySelections[resolvedActiveSessionId] ?? false} onChange={(value) => setSummarySelections((current) => ({ ...current, [resolvedActiveSessionId]: value }))} disabled={loading} envelope={promptEnvelopes[resolvedActiveSessionId]} />
+          </Disclosure></div>}
           {resolvedActiveSessionId && (
             <ChatComposer
               value={input}

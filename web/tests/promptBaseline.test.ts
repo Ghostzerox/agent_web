@@ -3,7 +3,8 @@ import { resolve } from "node:path";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { comparePromptBaselines, promptBaselineCases, promptBaselineSnapshot, runPromptBaseline } from "@/evals/r3/promptBaseline";
 import { MODEL_CALLER_FILES, MODULE_PROMPT_COVERAGE, PROMPT_ENTRY_POINTS, AUXILIARY_PROMPT_ENTRY_POINTS, PROMPT_SOURCE_FILES } from "@/evals/r3/promptInventory";
-import baseline from "@/evals/r3/baseline-r7.json";
+import baseline from "@/evals/r3/baseline-r7-templates.json";
+import exploration from "@/evals/r3/baseline-r7.json";
 import actions from "@/evals/r3/baseline-r6.json";
 import palace from "@/evals/r3/baseline-r5.5.json";
 import summaries from "@/evals/r3/baseline-r5.4.json";
@@ -25,6 +26,9 @@ beforeAll(async () => { vi.stubGlobal("fetch", fetch); result = await runPromptB
 afterAll(() => vi.unstubAllGlobals());
 
 describe("R3 offline prompt baselines", () => {
+  it("keeps R7 prompts unchanged while separating template selection from host mechanics", () => {
+    expect(comparePromptBaselines(exploration, promptBaselineSnapshot(result))).toMatchObject({ addedCases: [], removedCases: [], changedExistingRequests: [], changedExistingFixtures: [], addedSourceFiles: [], changedSourceFiles: ["lib/game/gameTurnService.ts"] });
+  });
   it("preserves all R6 legacy fixtures and requests while tracking the new exploration prompt separately", () => {
     const comparison = comparePromptBaselines(actions, promptBaselineSnapshot(result));
     expect(comparison).toMatchObject({ addedCases: [], removedCases: [], changedExistingRequests: [], changedExistingFixtures: [] });

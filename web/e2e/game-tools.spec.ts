@@ -18,7 +18,7 @@ test("mobile deck controls save host-only turns without model requests", async (
     await route.fulfill({ status: 201, json: { data: session } });
   });
   await page.route("**/api/v1/model/**", () => { throw new Error("Unexpected model request"); });
-  await page.goto("/entertainment");
+  await page.goto("/entertainment?view=worlds");
   await expect(page.getByRole("heading", { name: "剧情回合" })).toBeVisible();
   await page.getByText("牌堆与随机表（随所选剧情分支保存）", { exact: true }).click();
   await page.getByLabel("卡牌或事件列表").fill("A\nB\nC");

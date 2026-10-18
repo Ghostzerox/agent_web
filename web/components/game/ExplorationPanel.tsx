@@ -62,7 +62,7 @@ function CharacterCard({ person, here, disabled, run }: { person: WorldCharacter
       <div className="flex flex-wrap gap-2"><button className={button} disabled={disabled} onClick={() => void run({ action: "talk", targetId: person.id })}>与{person.name}交谈</button>
         {person.topics.map((topic) => <button key={topic.id} className={button} disabled={disabled} onClick={() => void run({ action: "ask", targetId: person.id, topicId: topic.id })}>{topic.label}</button>)}
         {person.interactions.filter((action) => action !== "trade").map((action) => <button key={action} className={button} disabled={disabled} onClick={() => {
-          if (action !== "promise" || window.confirm("明确向角色承诺寻找镜片？这只记入本局故事，不创建现实提醒。")) void run({ action, targetId: person.id });
+          if (action !== "promise" || window.confirm(`明确作出承诺：${person.offeredPromise ?? "当前角色提出的事项"}？这只记入本局故事，不创建现实提醒。`)) void run({ action, targetId: person.id });
         }}>{action === "promise" ? "明确作出承诺" : action === "help" ? "提出协助" : "据理交涉"}</button>)}
       </div>
       <details><summary className="cursor-pointer text-xs text-violet-600">自由 AI 对话（点击发送才调用模型）</summary><div className="mt-3 space-y-2">

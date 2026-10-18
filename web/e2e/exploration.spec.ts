@@ -6,7 +6,7 @@ import type { GameSessionDetail } from "../lib/api/gameSessionClient";
 import { PUBLIC_JOURNEY } from "../tests/helpers/explorationJourney";
 import { searchWorldHistory } from "../lib/game/exploration/history";
 
-const path = process.env.EXPLORATION_MOBILE_BUNDLE === "true" ? "/#/entertainment" : "/entertainment";
+const path = process.env.EXPLORATION_MOBILE_BUNDLE === "true" ? "/#/entertainment?view=worlds" : "/entertainment?view=worlds";
 async function mockWorld(page: Page) {
   let exists = false; let rejectAI = false; let modelCalls = 0;
   const detail: GameSessionDetail = { id: crypto.randomUUID(), userId: crypto.randomUUID(), title: "雾港与旧灯岬", kind: "interactive-story", status: "setup",
@@ -29,6 +29,7 @@ async function mockWorld(page: Page) {
     if (url.pathname.endsWith("/status")) { detail.status = req.postDataJSON().status; detail.version++; return route.fulfill({ json: { data: detail } }); }
     if (url.pathname.endsWith("/turns")) {
       const input = req.postDataJSON(); expect(input.expectedVersion).toBe(detail.version); expect(input.requestId).toMatch(/^[a-f0-9-]{36}$/u);
+      if (input.explorationAction.action === "start") expect(input.explorationAction).toMatchObject({ templateId: "fog-harbor", templateVersion: "1.0.0" });
       if (input.narrate) { modelCalls++; if (rejectAI) return route.fulfill({ status: 503, json: { error: { code: "MODEL_CONFIGURATION_ERROR", message: "合成模型暂不可用，草稿保留" } } }); }
       const parent = detail.turns.find((turn) => turn.id === input.parentTurnId);
       const exploration = applyExplorationAction(parent?.stateSnapshot.exploration, input.explorationAction, input.requestId);
@@ -41,9 +42,15 @@ async function mockWorld(page: Page) {
     return route.fulfill({ json: { data: detail } });
   });
   await page.goto(path);
-  await page.getByRole("button", { name: "大世界探索 · 雾港", exact: true }).click();
+  await page.getByRole("button", { name: "大世界探索 · 选择模板", exact: true }).click();
+  const picker = page.getByRole("region", { name: "探索模板选择" });
+  await expect(picker.getByRole("article", { name: "所选模板简介" })).toContainText("世界背景");
+  await expect(picker).toContainText("自由行旅者");
+  await expect(picker).not.toContainText("守望者盟约：");
+  await page.getByLabel("探索模板", { exact: true }).selectOption("fog-harbor@1.0.0");
+  expect(exists).toBe(false); // Reading/selecting an introduction must not create a session.
   await page.getByRole("button", { name: "确认创建探索存档", exact: true }).click();
-  await page.getByRole("button", { name: "开启雾港探索", exact: true }).click();
+  await page.getByRole("button", { name: "开启探索世界", exact: true }).click();
   await expect(page.getByRole("region", { name: "大世界探索工作区" })).toBeVisible();
   return { detail, state, modelCalls: () => modelCalls, rejectAI: (value: boolean) => { rejectAI = value; } };
 }

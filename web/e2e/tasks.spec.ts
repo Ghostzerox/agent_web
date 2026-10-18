@@ -85,7 +85,7 @@ test("manages an Agent task and creates a personal briefing on mobile", async ({
   });
 
   await page.goto("/tasks");
-  await page.getByRole("button", { name: "定时任务", exact: true }).click();
+  await page.getByRole("link", { name: "定时任务", exact: true }).click();
   await expect(page.getByText("还没有任务")).toBeVisible();
 
   await page.getByLabel("任务类型").selectOption("agent_prompt");

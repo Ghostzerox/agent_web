@@ -38,6 +38,7 @@ test("selects knowledge for chat, saves versioned citations across reloads, and 
     return route.fulfill({ json: { data: [] } });
   });
   await page.goto(pageUrl("/chat"));
+  await page.getByText("本次对话的资料与上下文", { exact: true }).click();
   await page.getByText("本次使用资料库（已选 0）", { exact: false }).click();
   await page.getByLabel("我的专业资料", { exact: true }).check();
   await expect(page.getByText("本地检索，关闭联网搜索", { exact: false })).toBeVisible();
@@ -74,7 +75,7 @@ test("searches the explicitly selected collection without generating an answer",
     return route.fulfill({ json: { data: [] } });
   });
   await page.setViewportSize({ width: 360, height: 844 });
-  await page.goto(pageUrl("/memory"));
+  await page.goto(pageUrl("/memory?view=knowledge"));
   await page.getByLabel("检索本集合").fill("缓存 TTL");
   await page.getByRole("button", { name: "检索资料（不调用模型）" }).click();
   await expect(page.getByRole("status")).toContainText("命中 1 段");

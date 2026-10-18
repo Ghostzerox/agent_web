@@ -47,6 +47,7 @@ export const publicWorldCharacterSchema = z.object({
   relationshipReason: text, knownInformation: lines, promises: lines, memories: lines,
   unresolved: lines, arc: text,
   topics: z.array(z.object({ id: worldKey, label: text }).strict()).max(20),
+  offeredPromise: text.optional(),
   interactions: z.array(z.enum(["promise", "help", "negotiate", "trade"])).max(4),
 }).strict();
 const locationView = z.object({
@@ -93,7 +94,7 @@ export const explorationStateSchema = z.object({
 });
 
 export const explorationActionSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("start"), templateId: worldKey }).strict(),
+  z.object({ action: z.literal("start"), templateId: worldKey, templateVersion: z.string().regex(/^\d+\.\d+\.\d+$/u).optional() }).strict(),
   z.object({ action: z.literal("inspect"), targetId: worldKey }).strict(),
   z.object({ action: z.literal("move"), targetId: worldKey }).strict(),
   z.object({ action: z.literal("investigate"), targetId: worldKey }).strict(),

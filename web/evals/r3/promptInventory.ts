@@ -2,7 +2,7 @@ import { GAME_PROMPT_VERSION, TASK_PROMPT_PROFILES } from "@/lib/ai/taskPromptPr
 import { EXPLORATION_PROMPT_VERSION } from "@/lib/game/exploration/prompt";
 
 /** Audit data only; runtime generation uses the actual builders below. */
-export const PROMPT_BASELINE_VERSION = "r7/exploration-v1";
+export const PROMPT_BASELINE_VERSION = "r7/template-separation-v1";
 export const BASELINE_SOURCE_COMMIT = "b2f973e20d1a4fcff77e371d79366f3eac0330ab";
 
 export const PROMPT_ENTRY_POINTS = [

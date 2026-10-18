@@ -223,7 +223,7 @@ test("creates and edits an isolated GameSession on mobile", async ({ page }) => 
     });
   });
 
-  await page.goto("/entertainment");
+  await page.goto("/entertainment?view=worlds");
   await expect(page.getByRole("heading", { name: "娱乐模式" })).toBeVisible();
   await expect(page.getByText("不会进入普通对话或长期记忆")).toBeVisible();
 
