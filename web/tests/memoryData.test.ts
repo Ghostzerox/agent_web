@@ -130,11 +130,12 @@ describe("R5.6 user controls, portable data and source-index recovery", () => {
   });
   it("rolls controls down/up independently and leaves originals untouched", async () => {
     const m = await memory(); await createMemoryControlRepository(db).update(DEFAULT_MEMORY_CONTROLS, 0); const migrations = await loadMigrations();
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0035_game_asset_designs.sql");
     expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0034_game_world_authoring.sql");
     expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0033_task_actions.sql");
     expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0032_memory_controls.sql");
     expect((await db.select().from(s.memoryItems))[0].id).toBe(m.id);
-    expect(await migrateDatabase(createPgliteMigrationDatabase(pg), migrations)).toEqual(["0032_memory_controls.sql", "0033_task_actions.sql", "0034_game_world_authoring.sql"]);
+    expect(await migrateDatabase(createPgliteMigrationDatabase(pg), migrations)).toEqual(["0032_memory_controls.sql", "0033_task_actions.sql", "0034_game_world_authoring.sql", "0035_game_asset_designs.sql"]);
     expect((await createMemoryControlRepository(db).get()).version).toBe(0);
   });
 });

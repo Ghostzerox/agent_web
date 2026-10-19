@@ -165,12 +165,13 @@ describe("R5.5 memory palace and authorized learning loop", () => {
   });
   it("rolls only the new layout migration back and up, preserving source data", async () => {
     await room(); const m = await memory(); const migrations = await loadMigrations();
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0035_game_asset_designs.sql");
     expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0034_game_world_authoring.sql");
     expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0033_task_actions.sql");
     expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0032_memory_controls.sql");
     expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0031_memory_palaces.sql");
     expect((await db.select().from(schema.memoryItems))[0].id).toBe(m.id);
-    expect(await migrateDatabase(createPgliteMigrationDatabase(pg), migrations)).toEqual(["0031_memory_palaces.sql", "0032_memory_controls.sql", "0033_task_actions.sql", "0034_game_world_authoring.sql"]);
+    expect(await migrateDatabase(createPgliteMigrationDatabase(pg), migrations)).toEqual(["0031_memory_palaces.sql", "0032_memory_controls.sql", "0033_task_actions.sql", "0034_game_world_authoring.sql", "0035_game_asset_designs.sql"]);
     expect(await repo.list()).toEqual([]);
   });
 });

@@ -41,7 +41,10 @@ export function explorationMessages(state: ExplorationState, content: string, ta
   const location = state.view.locations.find((place) => place.id === state.locationId);
   const template = resolve(state.templateId, state.templateVersion);
   const required = { rules: template.publicRules ?? [], hostNotes: template.hostNotes ?? [],
-    authorLore: template.lore.filter((entry) => template.authorLoreIds?.includes(entry.id)) };
+    ...(template.characterNotes ? { presentNotes: Object.fromEntries(present.filter((actor) => template.characterNotes?.[actor.id]?.length).map((actor) => [actor.id, template.characterNotes![actor.id]])) } : {}),
+    ...(template.personas ? { presentPersonas: Object.fromEntries(present.filter((actor) => template.personas?.[actor.id]).map((actor) => [actor.id, template.personas![actor.id]])) } : {}),
+    authorLore: template.lore.filter((entry) => template.authorLoreIds?.includes(entry.id)
+      && (entry.locationId === state.locationId || entry.actorIds.some((id) => present.some((actor) => actor.id === id)))) };
   const context = {
     ...required, setting: template.setting,
     location, characters: present, conditions: state.conditions, progress: state.progress,

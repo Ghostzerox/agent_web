@@ -1,4 +1,5 @@
 import { and, desc, eq, sql } from "drizzle-orm";
+import { stableJson } from "@/lib/ai/stableJson";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { gameWorldDrafts as drafts, gameWorldRevisions as revisions, gameWorldSaves as saves, users } from "@/lib/db/schema";
@@ -30,7 +31,7 @@ export function createGameWorldRepository<H extends PgQueryResultHKT>(db: PgData
       const input = updateWorldDraftSchema.parse(raw); const previous = await get(id);
       const origins = generation?.origins ?? { ...previous.origins };
       if (!generation) for (const section of Object.keys(input.content ?? {}) as (keyof WorldOrigins)[])
-        if (JSON.stringify(previous.content?.[section]) !== JSON.stringify(input.content?.[section])) origins[section] = "user";
+        if (stableJson(previous.content?.[section]) !== stableJson(input.content?.[section])) origins[section] = "user";
       const [row] = await db.update(drafts).set({ input: input.input, content: input.content, lockedSections: [...new Set(input.lockedSections)], origins,
         generationReceipt: generation?.receipt ?? null, version: sql`${drafts.version} + 1`, updatedAt: new Date() })
         .where(and(eq(drafts.id, id), eq(drafts.userId, LOCAL_USER_ID), eq(drafts.version, input.expectedVersion))).returning();
@@ -53,6 +54,7 @@ export function createGameWorldRepository<H extends PgQueryResultHKT>(db: PgData
         if (issues.length || !row.content) throw new WorldDesignError("WORLD_INVALID", issues.join("\n"));
         const [latest] = await tx.select({ revision: revisions.revision }).from(revisions).where(eq(revisions.worldId, id)).orderBy(desc(revisions.revision)).limit(1);
         const revision = (latest?.revision ?? 0) + 1; const definition = compileWorld(id, revision, row.input, row.content);
+        if (Buffer.byteLength(JSON.stringify(definition), "utf8") > 300000) throw new WorldDesignError("WORLD_INVALID", "发布定义超出容量，请精简道具或人物资料。");
         startWorld(definition.id, definition.version, () => definition); // Reject definitions that cannot project into a playable state.
         await tx.insert(revisions).values({ worldId: id, userId: LOCAL_USER_ID, revision, draftVersion: row.version, definition });
         return { revision, draftVersion: row.version };

@@ -105,6 +105,7 @@ export function projectWorld(state: ExplorationState, template = getWorldTemplat
     world: template.world, region: template.region, ranks: template.ranks, slots: template.slots,
     ...(template.numericPolicy ? { numericPolicy: template.numericPolicy } : {}),
     ...(template.publicRules ? { publicRules: template.publicRules } : {}),
+    ...(template.attributeRules ? { attributeRules: template.attributeRules } : {}),
     locations: template.locations.filter((location) => state.discovered.includes(location.id)).map((location) => ({
       id: location.id, name: location.name, region: template.region,
       description: state.visited.includes(location.id) ? location.description : "尚未到访。",
@@ -162,7 +163,7 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
     state.locationId = exit.to; add(state.discovered, exit.to); add(state.visited, exit.to);
     if (state.characters.player) state.characters.player.locationId = exit.to;
     const destination = template.locations.find((item) => item.id === exit.to)!;
-    state.lastResult = `抵达${destination.name}。${destination.description}`;
+    state.lastResult = `抵达${destination.name}。${destination.description.length > 440 ? `${destination.description.slice(0, 437)}…` : destination.description}`;
   } else if (action.action === "inspect") {
     if (action.targetId === location.id) state.lastResult = location.description;
     else {
@@ -213,6 +214,9 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
       } else if (action.action === "use") {
         if (!definition.consumable) fail("该物品不是消耗品；剧情道具请通过事件使用。");
         if (item.equippedSlot) fail("请先卸下装备。");
+        const requirement = template.itemUseRequirements?.[definition.id];
+        if (requirement?.locationId && requirement.locationId !== state.locationId) fail("使用地点不符合已确认规则。");
+        if (requirement?.condition && !state.conditions.includes(requirement.condition)) fail("尚不满足已确认的使用状态条件。");
         applyWorldEffect(state, template, template.consumableEffects[definition.id] ?? {});
         item.quantity--; state.instances = state.instances.filter((entry) => entry.quantity > 0);
         state.lastResult = `使用${definition.name}，消耗 1；${definition.abilities.join("、")}。`;
@@ -223,7 +227,8 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
     const character = state.characters[action.targetId];
     if (!character || character.locationId !== state.locationId || character.controller === "user") fail("只能与同地点的非玩家角色交互。");
     if (action.action === "talk") {
-      state.lastResult = `${character.name}：我现在关心的是${character.goals[0]}。你想谈什么？`;
+      const goal = character.goals[0] ?? "当前的生活";
+      state.lastResult = `${character.name}：我现在关心的是${goal.length > 400 ? `${goal.slice(0, 397)}…` : goal}。你想谈什么？`;
     } else if (action.action === "ask") {
       const topic = definition.topics.find((entry) => entry.id === action.topicId && meets(state, entry.requires)) ?? fail("话题尚未解锁，对方不会凭空知道你的秘密。");
       applyWorldEffect(state, template, topic.effect ?? {});

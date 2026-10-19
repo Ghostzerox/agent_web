@@ -1,4 +1,4 @@
-import { publicWorldCharacterSchema, worldItemInstanceSchema, worldItemSchema, worldKey, worldRanksSchema, ExplorationError } from "./contracts";
+import { attributeRuleSchema, characterPersonaSchema, publicWorldCharacterSchema, worldItemInstanceSchema, worldItemSchema, worldKey, worldRanksSchema, ExplorationError } from "./contracts";
 import type { WorldEffect, WorldTemplate } from "./templateTypes";
 
 /** Static and published templates share this validator and the same engine. */
@@ -17,6 +17,17 @@ export function validateWorldTemplate(template: WorldTemplate): void {
   const items = ids(template.items, "物品定义", 100);
   const instances = ids(template.instances, "物品实例", 150);
   const actors = ids(template.characters.map((item) => item.card), "人物", 49);
+  ids(template.attributeRules ?? [], "属性声明", 8);
+  for (const rule of template.attributeRules ?? []) attributeRuleSchema.parse(rule);
+  if (template.numericPolicy === "qualitative" && template.attributeRules?.length || template.numericPolicy === "specified" && !template.attributeRules?.length) fail("属性声明与数值策略冲突");
+  for (const [id, persona] of Object.entries(template.personas ?? {})) {
+    if (id !== "player" && !actors.has(id)) fail("人物私有资料目标不存在");
+    characterPersonaSchema.parse(persona);
+    if (persona.relationships.some((relation) => relation.targetId === id || relation.targetId !== "player" && !actors.has(relation.targetId))) fail("人物关系引用无效");
+  }
+  for (const [id, requirement] of Object.entries(template.itemUseRequirements ?? {})) {
+    if (!items.has(id) || requirement.locationId && !locations.has(requirement.locationId)) fail("物品使用前置引用无效");
+  }
   if (actors.has("player") || locations.has("player") || [...actors].some((id) => locations.has(id))) fail("所有者 ID 命名空间冲突");
   const lore = ids(template.lore, "史料", 100);
   const events = ids(template.events, "事件", 50);
@@ -36,7 +47,7 @@ export function validateWorldTemplate(template: WorldTemplate): void {
     if (value.character && (!actors.has(value.character.id) || (value.character.locationId && !locations.has(value.character.locationId)))) fail("人物变更目标不存在");
     if (value.progress && (!template.ranks.rating.some((rank) => rank.id === value.progress!.rating)
       || !template.ranks.tier.some((rank) => rank.id === value.progress!.tier)
-      || (template.numericPolicy === "qualitative" ? value.progress.level !== undefined || template.ranks.levelsPerTier !== undefined :
+      || (template.numericPolicy === "qualitative" || template.numericPolicy === "specified" ? value.progress.level !== undefined || template.ranks.levelsPerTier !== undefined :
         value.progress.level === undefined || template.ranks.levelsPerTier === undefined || value.progress.level < 1 || value.progress.level > template.ranks.levelsPerTier))) fail("进度档位无效");
   };
   effect({ progress: template.initial.progress });
@@ -44,8 +55,12 @@ export function validateWorldTemplate(template: WorldTemplate): void {
     worldItemSchema.parse(item);
     if (!template.ranks.quality.some((rank) => rank.id === item.quality) || !template.ranks.tier.some((rank) => rank.id === item.tier)
       || !template.ranks.rating.some((rank) => rank.id === item.rating)
-      || (template.numericPolicy === "qualitative" ? item.level !== undefined : item.level === undefined || item.level > (template.ranks.levelsPerTier ?? 0))
+      || (template.numericPolicy === "qualitative" || template.numericPolicy === "specified" ? item.level !== undefined : item.level === undefined || item.level > (template.ranks.levelsPerTier ?? 0))
       || (item.slot && !template.slots.includes(item.slot))) fail("物品档位或装备槽无效");
+    for (const [id, value] of Object.entries(item.details?.attributes ?? {})) {
+      const rule = template.attributeRules?.find((entry) => entry.id === id);
+      if (template.numericPolicy === "qualitative" || !rule || value < rule.min || value > rule.max) fail("物品属性未声明或超范围");
+    }
   }
   for (const item of template.instances) {
     worldItemInstanceSchema.parse(item);

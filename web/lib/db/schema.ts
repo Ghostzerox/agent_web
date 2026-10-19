@@ -659,6 +659,18 @@ export const gameWorldDrafts = pgTable("game_world_drafts", {
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
 }, (table) => [uniqueIndex("game_world_draft_owner_key").on(table.id, table.userId), check("game_world_draft_version", sql`${table.version} > 0`)]);
 
+export const gameAssetDesigns = pgTable("game_asset_designs", {
+  id: uuid("id").defaultRandom().primaryKey(), worldId: uuid("world_id").notNull(), userId: uuid("user_id").notNull(),
+  sourceWorldVersion: integer("source_world_version").notNull(), sourceSnapshot: jsonb("source_snapshot").$type<{ input: WorldBrief; content: WorldBlueprint }>().notNull(),
+  brief: text("brief").notNull(), content: jsonb("content").$type<import("@/lib/game/worlds/assetContracts").AssetDesignContent>().notNull(),
+  lockedFields: jsonb("locked_fields").$type<import("@/lib/game/worlds/assetContracts").AssetField[]>().notNull().default(sql`'[]'::jsonb`),
+  origins: jsonb("origins").$type<Record<string, "user" | "ai">>().notNull().default(sql`'{}'::jsonb`),
+  generationReceipt: jsonb("generation_receipt").$type<{ requestId: string; fingerprint: string } | null>(),
+  version: integer("version").notNull().default(1), appliedWorldVersion: integer("applied_world_version"),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(), updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (table) => [foreignKey({ columns: [table.worldId, table.userId], foreignColumns: [gameWorldDrafts.id, gameWorldDrafts.userId] }).onDelete("restrict"),
+  index("game_asset_designs_world_idx").on(table.worldId, table.userId, table.updatedAt)]);
+
 export const gameWorldRevisions = pgTable("game_world_revisions", {
   id: uuid("id").defaultRandom().primaryKey(), worldId: uuid("world_id").notNull(), userId: uuid("user_id").notNull(),
   revision: integer("revision").notNull(), draftVersion: integer("draft_version").notNull(),

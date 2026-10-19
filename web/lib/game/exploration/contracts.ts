@@ -12,6 +12,12 @@ const keys = z.array(worldKey).max(100).refine((ids) => ids.length === new Set(i
 const record = <T extends z.ZodType>(value: T, limit = 100) => z.record(worldKey, value)
   .refine((items) => Object.keys(items).length <= limit);
 const rank = z.object({ id: worldKey, name: z.string().min(1).max(60), meaning: text }).strict();
+export const numericPolicySchema = z.enum(["qualitative", "light", "specified"]);
+export const attributeRuleSchema = z.object({ id: worldKey, name: text.max(60), unit: text.max(30), min: z.number().finite().min(-1000000), max: z.number().finite().max(1000000) }).strict()
+  .refine((rule) => rule.min <= rule.max, "属性范围无效");
+export const characterPersonaSchema = z.object({ privateBackground: text, values: z.array(text).max(6), boundaries: z.array(text).max(6),
+  abilities: z.array(text).max(6), needs: z.array(text).max(6), longTermGoal: text,
+  relationships: z.array(z.object({ targetId: worldKey, description: text }).strict()).max(8) }).strict();
 export const worldRanksSchema = z.object({
   rating: z.array(rank).min(1).max(12), quality: z.array(rank).min(1).max(12),
   tier: z.array(rank).min(1).max(12), levelsPerTier: z.number().int().min(1).max(10).optional(),
@@ -26,6 +32,9 @@ export const worldItemSchema = z.object({
   rating: worldKey, level: z.number().int().min(1).max(10).optional(),
   stackable: z.boolean(), unique: z.boolean(), slot: worldKey.nullable(),
   abilities: lines, consumable: z.boolean(), price: z.number().int().min(0).max(10000),
+  details: z.object({ category: z.enum(["tool", "equipment", "consumable", "material"]), appearance: text, source: text,
+    background: text, faction: text, usage: text, restrictions: text, cost: text, targets: text, tags: z.array(text.max(40)).max(8),
+    attributes: z.record(worldKey, z.number().finite()).refine((value) => Object.keys(value).length <= 8) }).strict().optional(),
 }).strict();
 export const worldItemInstanceSchema = z.object({
   id: worldKey, definitionId: worldKey, owner: worldKey,
@@ -78,7 +87,7 @@ export const explorationStateSchema = z.object({
   history: z.array(worldHistorySchema).max(200),
   // Public projection only. Hidden template data is never serialized into snapshots.
   view: z.object({ world: text, region: text, ranks: worldRanksSchema, slots: keys,
-    numericPolicy: z.enum(["qualitative", "light"]).optional(), publicRules: lines.optional(),
+    numericPolicy: numericPolicySchema.optional(), publicRules: lines.optional(), attributeRules: z.array(attributeRuleSchema).max(8).optional(),
     locations: z.array(locationView).max(100), items: z.array(worldItemSchema).max(100),
     events: z.array(eventView).max(50), epics: z.array(epicView).max(20),
   }).strict(),
@@ -92,12 +101,17 @@ export const explorationStateSchema = z.object({
     ctx.addIssue({ code: "custom", message: "当前位置 / 已访问地点必须已发现。" });
   if (!state.view.ranks.rating.some((rank) => rank.id === state.progress.rating)
     || !state.view.ranks.tier.some((rank) => rank.id === state.progress.tier)
-    || (state.view.numericPolicy === "qualitative" ? state.progress.level !== undefined || state.view.ranks.levelsPerTier !== undefined :
+    || (state.view.numericPolicy === "qualitative" || state.view.numericPolicy === "specified" ? state.progress.level !== undefined || state.view.ranks.levelsPerTier !== undefined :
       state.progress.level === undefined || state.view.ranks.levelsPerTier === undefined || state.progress.level > state.view.ranks.levelsPerTier))
     ctx.addIssue({ code: "custom", message: "进度超出世界档位定义。" });
   for (const item of state.view.items) {
-    if (state.view.numericPolicy === "qualitative" ? item.level !== undefined : item.level === undefined || item.level > (state.view.ranks.levelsPerTier ?? 0))
+    if (state.view.numericPolicy === "qualitative" || state.view.numericPolicy === "specified" ? item.level !== undefined : item.level === undefined || item.level > (state.view.ranks.levelsPerTier ?? 0))
       ctx.addIssue({ code: "custom", message: "物品等级不符合当前世界的数值策略。" });
+    for (const [id, value] of Object.entries(item.details?.attributes ?? {})) {
+      const rule = state.view.attributeRules?.find((entry) => entry.id === id);
+      if (state.view.numericPolicy === "qualitative" || !rule || value < rule.min || value > rule.max)
+        ctx.addIssue({ code: "custom", message: "物品属性不在当前世界声明范围内。" });
+    }
   }
 });
 

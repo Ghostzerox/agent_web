@@ -204,7 +204,7 @@ describe("current exploration service boundary regression", () => {
     expect(worldItemSchema.safeParse(qualitative).success).toBe(true);
     state.view.items[0] = qualitative;
     expect(explorationStateSchema.safeParse(state).success).toBe(false); // The existing light world still requires a level.
-    // Full generated-item acceptance P09 remains R10.4 work; R10.3 tests qualitative world progress separately.
+    // P09/P10 are executed in assetDesign.test.ts; this still checks the built-in light-world contract.
   });
 
   it.each(["perceptionScope", "creationDraft", "numericPolicy"])("C12 does not silently accept unimplemented/client-authoritative field %s", (field) => {
@@ -213,7 +213,7 @@ describe("current exploration service boundary regression", () => {
 });
 
 describe("R10 synthetic future acceptance corpus — explicitly pending, not passed", () => {
-  for (const sample of R10_SEMANTIC_CASES.filter((sample) => sample.owner !== "R10.2"))
+  for (const sample of R10_SEMANTIC_CASES.filter((sample) => sample.owner === "R10.4.1" || sample.owner === "R10.5"))
     it.todo(`${sample.id} ${sample.owner}: ${sample.title} | ${sample.input} → ${sample.expected}`);
 });
 

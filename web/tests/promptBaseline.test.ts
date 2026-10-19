@@ -15,7 +15,7 @@ describe("R3 offline prompt baselines", () => {
 
   it("covers nine generation families and all sixteen modules, including deterministic services", () => {
     expect(PROMPT_ENTRY_POINTS).toHaveLength(9);
-    expect(AUXILIARY_PROMPT_ENTRY_POINTS).toHaveLength(2);
+    expect(AUXILIARY_PROMPT_ENTRY_POINTS).toHaveLength(3);
     expect(MODULE_PROMPT_COVERAGE).toHaveLength(16);
     expect(new Set(result.cases.map((item) => item.entry))).toEqual(new Set(PROMPT_ENTRY_POINTS.map((item) => item.id)));
     for (const coverage of MODULE_PROMPT_COVERAGE) {

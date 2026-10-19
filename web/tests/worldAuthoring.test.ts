@@ -187,11 +187,13 @@ describe("R10.3 persisted world creation and playable revisions", () => {
     expect((await repo.get(row.id)).lockedSections).toEqual(["opening"]);
   });
 
-  it("rolls back only the additive world tables without deleting existing game sessions", async () => {
+  it("fences a newer authoring downgrade without deleting existing game sessions", async () => {
     const migrationDB = createPgliteMigrationDatabase(pglite); const migrations = await loadMigrations();
+    // New R10.4 data deliberately fences a lossy downgrade; old sessions still remain intact.
+    await expect(rollbackDatabase(migrationDB, migrations)).rejects.toThrow("R10.4 authoring data exists");
     const before = (await pglite.query<{ count: number }>("SELECT count(*)::int AS count FROM game_sessions")).rows[0].count;
-    await expect(rollbackDatabase(migrationDB, migrations)).resolves.toBe(migrations[34].id);
+
     expect((await pglite.query<{ count: number }>("SELECT count(*)::int AS count FROM game_sessions")).rows[0].count).toBe(before);
-    await expect(migrateDatabase(migrationDB, migrations)).resolves.toEqual([migrations[34].id]);
+    await expect(migrateDatabase(migrationDB, migrations)).resolves.toEqual([]);
   });
 });

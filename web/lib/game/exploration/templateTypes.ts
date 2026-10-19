@@ -1,4 +1,5 @@
-import type { ExplorationState, WorldHistory, WorldCharacter } from "./contracts";
+import type { z } from "zod";
+import type { attributeRuleSchema, characterPersonaSchema, ExplorationState, WorldHistory, WorldCharacter } from "./contracts";
 
 export type WorldCondition = { flag?: string; learned?: string; item?: string; minTick?: number };
 export type WorldEffect = {
@@ -11,7 +12,11 @@ export type WorldTemplate = {
   id: string; version: string; hostContract: "exploration.v1"; world: string; region: string; start: string;
   initial: { coins: number; progress: ExplorationState["progress"]; player: WorldCharacter; message: string };
   waitMessage?: string;
-  numericPolicy?: "qualitative" | "light";
+  numericPolicy?: "qualitative" | "light" | "specified";
+  attributeRules?: z.infer<typeof attributeRuleSchema>[];
+  personas?: Record<string, z.infer<typeof characterPersonaSchema>>;
+  characterNotes?: Record<string, string[]>;
+  itemUseRequirements?: Record<string, { locationId: string | null; condition: string | null }>;
   publicRules?: string[];
   hostNotes?: string[];
   authorLoreIds?: string[];

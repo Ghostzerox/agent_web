@@ -46,12 +46,15 @@ export function actorContext(state: ExplorationState, targetId: string, scope: P
   // Never read arbitrary legacy knownInformation/memories, global lastResult or raw history.
   const knowledge = template.lore.filter((entry) => definition.knowledge.includes(entry.id))
     .map((entry) => ({ text: entry.text, evidence: entry.kind, source: `${template.id}@${template.version}:${entry.id}`, method: "initial-knowledge" }));
+  const persona = template.personas?.[targetId];
   return {
     purpose: "actor" as const, actorId: targetId,
     location: { name: location.name, description: location.description },
     character: { name: actor.name, identity: actor.identity, personality: actor.personality, speech: actor.speech,
-      goals: actor.goals, values: actor.values, abilities: actor.abilities, boundaries: actor.boundaries,
-      relationship: actor.relationship, backstory: actor.backstory },
+      goals: actor.goals, values: persona?.values ?? actor.values, abilities: persona?.abilities ?? actor.abilities, boundaries: persona?.boundaries ?? actor.boundaries,
+      relationship: actor.relationship, backstory: persona?.privateBackground ?? actor.backstory },
+    ...(persona ? { persona: { needs: persona.needs, longTermGoal: persona.longTermGoal, relationships: persona.relationships,
+      source: `${template.id}@${template.version}:persona-${targetId}` } } : {}),
     rules: template.publicRules ?? [], knowledge, observations: visiblePerceptions(state, scope, targetId).slice(-20),
   };
 }
