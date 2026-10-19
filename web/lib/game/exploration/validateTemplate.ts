@@ -1,9 +1,13 @@
 import { attributeRuleSchema, characterPersonaSchema, publicWorldCharacterSchema, worldItemInstanceSchema, worldItemSchema, worldKey, worldRanksSchema, ExplorationError } from "./contracts";
 import type { WorldEffect, WorldTemplate } from "./templateTypes";
+import { drawPoolIssues } from "../draws/pools";
 
 /** Static and published templates share this validator and the same engine. */
 export function validateWorldTemplate(template: WorldTemplate): void {
   const fail = (message: string): never => { throw new ExplorationError(`世界模板无效：${message}`); };
+  const poolIssues = drawPoolIssues(template.drawPools ?? [], template);
+  if (poolIssues.length) fail(poolIssues.join("；"));
+  if (template.drawPools?.some((pool) => pool.entries.some((entry) => entry.source === "generated")) && !template.acquisitionRules) fail("生成池缺少已发布的超自然政策");
   const ids = <T extends { id: string }>(items: T[], label: string, limit: number) => {
     if (items.length > limit || new Set(items.map((item) => item.id)).size !== items.length) fail(`${label}超量或 ID 重复`);
     for (const item of items) worldKey.parse(item.id);

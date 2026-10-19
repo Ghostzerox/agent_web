@@ -30,7 +30,7 @@ export function createWorldGenerationService(repository: GameWorldRepository, ge
         const sections = [...new Set(input.sections)].filter((section) => !draft.lockedSections.includes(section));
         if (draft.content?.items.definitions.length && sections.includes("items")) throw new WorldDesignError("WORLD_INVALID", "已有道具请从逐项设计入口修改，不用世界整稿生成覆盖。");
         if (!sections.length) throw new WorldDesignError("WORLD_INVALID", "所选部分已全部锁定；没有发起模型调用。");
-        if (!draft.content && sections.length !== Object.keys(worldBlueprintSchema.shape).length)
+        if (!draft.content && sections.length !== Object.keys(worldBlueprintSchema.shape).filter((key) => key !== "drawPools").length)
           throw new WorldDesignError("WORLD_INVALID", "首次生成需要完整草稿；之后再局部重生成。");
         if (signal?.aborted) throw new WorldDesignError("WORLD_GENERATION_FAILED", "生成已取消，原草稿保留。");
         const messages = [

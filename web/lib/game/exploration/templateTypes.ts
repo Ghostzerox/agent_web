@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import type { DrawPool } from "../draws/contracts";
 import type { attributeRuleSchema, characterPersonaSchema, ExplorationState, WorldHistory, WorldCharacter } from "./contracts";
 
 export type WorldCondition = { flag?: string; learned?: string; item?: string; minTick?: number };
@@ -13,6 +14,8 @@ export type WorldTemplate = {
   initial: { coins: number; progress: ExplorationState["progress"]; player: WorldCharacter; message: string };
   waitMessage?: string;
   numericPolicy?: "qualitative" | "light" | "specified";
+  acquisitionRules?: { magic: "forbidden" | "allowed" };
+  drawPools?: DrawPool[];
   attributeRules?: z.infer<typeof attributeRuleSchema>[];
   personas?: Record<string, z.infer<typeof characterPersonaSchema>>;
   characterNotes?: Record<string, string[]>;

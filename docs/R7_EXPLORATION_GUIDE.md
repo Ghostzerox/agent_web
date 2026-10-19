@@ -4,7 +4,7 @@
 
 用户粗描述驱动的世界 / 道具 / 人物 / 事件创作及完整人物认知隔离，已登记为 [R10待排期规划](ENTERTAINMENT_CREATION_AND_CHARACTER_PLAN.md)，不属于本页已交付能力。
 
-R10.2现已交付语义输入和主持 / 人物请求隔离；本页记录R7基础玩法，人物调用、记忆和输入的当前规则以 [R10.2指南](R10_ACTOR_ISOLATION_GUIDE.md) 为准。[R10.3世界创作](WORLD_CREATION_GUIDE.md)已可发布单区域新世界；[R10.4道具 / 人物设计](ITEM_CHARACTER_DESIGN_GUIDE.md)已接入，抽卡 / 复杂事件设计与完整事件知识传播仍待后续阶段。
+R10.2现已交付语义输入和主持 / 人物请求隔离；本页记录R7基础玩法，人物调用、记忆和输入的当前规则以 [R10.2指南](R10_ACTOR_ISOLATION_GUIDE.md) 为准。[R10.3世界创作](WORLD_CREATION_GUIDE.md)已可发布单区域新世界；[R10.4道具 / 人物设计](ITEM_CHARACTER_DESIGN_GUIDE.md)与[R10.4.1抽卡获取](ITEM_DRAW_GUIDE.md)已接入同一引擎，复杂事件设计与完整事件知识传播仍待后续阶段。
 
 ## 进入与游玩
 

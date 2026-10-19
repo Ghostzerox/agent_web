@@ -10,8 +10,8 @@ const path = (id: string, action = "") => `/api/v1/game-worlds/${encodeURICompon
 export const listWorldDrafts = () => requestJson<WorldDraftSummary[]>("/api/v1/game-worlds");
 export const getWorldDraft = (id: string) => requestJson<WorldDraftDetail>(path(id));
 export const createWorldDraft = (input: WorldBrief) => requestJson<WorldDraft>("/api/v1/game-worlds", { method: "POST", body: JSON.stringify(input) });
-export const saveWorldDraft = (draft: WorldDraft) => requestJson<WorldDraft>(path(draft.id), { method: "PATCH", body: JSON.stringify({
-  expectedVersion: draft.version, input: draft.input, content: draft.content, lockedSections: draft.lockedSections,
+export const saveWorldDraft = (draft: WorldDraft, drawPoolsConfirmed?: true) => requestJson<WorldDraft>(path(draft.id), { method: "PATCH", body: JSON.stringify({
+  expectedVersion: draft.version, input: draft.input, content: draft.content, lockedSections: draft.lockedSections, drawPoolsConfirmed,
 }) });
 export const generateWorldDraft = (id: string, expectedVersion: number, sections: WorldSection[], requestId: string, signal?: AbortSignal) =>
   requestJson<WorldDraft>(path(id, "generate"), { method: "POST", body: JSON.stringify({ expectedVersion, sections, requestId }), signal });

@@ -1,7 +1,10 @@
 import type { WorldBlueprint, WorldBrief } from "./contracts";
 import type { AssetDesignContent } from "./assetContracts";
 
-export function assetDesignIssues(input: WorldBrief, world: WorldBlueprint, design: AssetDesignContent): string[] {
+export type AssetRuleContext = Pick<WorldBlueprint, "ranks" | "itemRules"> & {
+  region: { startId: string; locations: { id: string }[] }; characters: { id: string }[];
+};
+export function assetDesignIssues(input: Pick<WorldBrief, "magic" | "numericPolicy">, world: AssetRuleContext, design: AssetDesignContent): string[] {
   const issues: string[] = [];
   if (design.kind === "item") {
     for (const field of ["quality", "rating", "tier"] as const) if (!world.ranks[field].some((rank) => rank.id === design[field])) issues.push(`物品${field}不属于当前世界字典。`);

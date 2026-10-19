@@ -1,0 +1,17 @@
+import { requestJson } from "./jsonRequest";
+import type { DrawData, DrawPool, DrawStatus } from "@/lib/game/draws/contracts";
+import type { ItemDesign } from "@/lib/game/worlds/assetContracts";
+import type { ExplorationState, WorldItem } from "@/lib/game/exploration/contracts";
+export type ItemDraw = { id: string; sessionId: string; parentTurnId: string; expectedVersion: number; version: number;
+  data: DrawData; status: DrawStatus; settledTurnId: string | null; createdAt: string; updatedAt: string };
+export type DrawContext = { sessionId: string; parentTurnId: string; version: number; status: string; coins: number; templateId: string; templateVersion: string;
+  fixedItems: WorldItem[]; ranks: ExplorationState["view"]["ranks"];
+  pools: { pool: DrawPool; probabilities: { entryId: string; probability: number }[] }[]; draws: ItemDraw[]; history: ItemDraw[] };
+const path = (id: string, action = "") => `/api/v1/game-draws/${encodeURIComponent(id)}${action ? `/${action}` : ""}`;
+export const listGameDraws = (sessionId: string, parentTurnId: string) => requestJson<DrawContext>(`/api/v1/game-draws?sessionId=${encodeURIComponent(sessionId)}&parentTurnId=${encodeURIComponent(parentTurnId)}`);
+export const getGameDraw = (id: string) => requestJson<ItemDraw>(path(id));
+export const prepareGameDraw = (sessionId: string, input: { requestId: string; parentTurnId: string; expectedVersion: number; poolId: string; keywords: string; confirmed: true }) => requestJson<ItemDraw>("/api/v1/game-draws", { method: "POST", body: JSON.stringify({ sessionId, input }) });
+export const generateDrawItem = (id: string, attemptId: string, signal?: AbortSignal) => requestJson<ItemDraw>(path(id, "generate"), { method: "POST", body: JSON.stringify({ attemptId, confirmed: true }), signal });
+export const editDrawItem = (row: ItemDraw, item: ItemDesign) => requestJson<ItemDraw>(path(row.id), { method: "PATCH", body: JSON.stringify({ expectedVersion: row.version, item }) });
+export const settleGameDraw = (row: ItemDraw) => requestJson<ItemDraw>(path(row.id, "settle"), { method: "POST", body: JSON.stringify({ expectedVersion: row.version, confirmed: true }) });
+export const cancelGameDraw = (id: string) => requestJson<ItemDraw>(path(id, "cancel"), { method: "POST", body: JSON.stringify({ confirmed: true }) });

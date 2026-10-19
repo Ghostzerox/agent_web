@@ -3,6 +3,7 @@ import type { WorldTemplate } from "../exploration/templateTypes";
 import { validateWorldTemplate } from "../exploration/validateTemplate";
 import { worldBlueprintSchema, WorldDesignError, type WorldBlueprint, type WorldBrief } from "./contracts";
 import { worldAssetIssues } from "./assetValidation";
+import { drawPoolIssues } from "../draws/pools";
 
 export function worldDraftIssues(input: WorldBrief, content: WorldBlueprint | null): string[] {
   if (!content) return ["尚无结构化世界草稿，请生成或填写后再发布。"]; const issues: string[] = [];
@@ -30,6 +31,7 @@ export function worldDraftIssues(input: WorldBrief, content: WorldBlueprint | nu
   if (input.numericPolicy !== "light" && content.ranks.levelsPerTier !== undefined) issues.push("定性世界 / 指定属性世界不得强制每阶等级数。");
   if (input.numericPolicy === "light" && content.ranks.levelsPerTier === undefined) issues.push("轻数值世界需要明确每阶等级数。");
   issues.push(...worldAssetIssues(input, content), ...content.conflicts.map((line) => `待解决冲突：${line}`));
+  issues.push(...drawPoolIssues(content.drawPools ?? [], { items: content.items.definitions, locations: content.region.locations, ranks: content.ranks, numericPolicy: input.numericPolicy, slots: content.itemRules.slots }));
   return [...new Set(issues)];
 }
 
@@ -48,7 +50,7 @@ export function compileWorld(id: string, revision: number, input: WorldBrief, ra
     speech: person.speech, faction: person.profile.faction, appearance: person.profile.appearance, backstory: person.profile.publicBackground });
   const template: WorldTemplate = {
     id: worldId, version, hostContract: "exploration.v1", world: overview.name, region: region.name, start: region.startId,
-    numericPolicy: input.numericPolicy,
+    numericPolicy: input.numericPolicy, acquisitionRules: { magic: input.magic }, drawPools: content.drawPools ?? [],
     publicRules: [input.magic === "forbidden" ? "本世界禁止超自然能力。" : "超自然能力遵循当前世界规则。", ...input.constraints,
       `时代：${overview.era}`, `技术：${overview.technology}`, `超自然规则：${overview.supernatural}`],
     hostNotes: content.authorNotes,

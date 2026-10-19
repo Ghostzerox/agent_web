@@ -213,7 +213,7 @@ describe("current exploration service boundary regression", () => {
 });
 
 describe("R10 synthetic future acceptance corpus — explicitly pending, not passed", () => {
-  for (const sample of R10_SEMANTIC_CASES.filter((sample) => sample.owner === "R10.4.1" || sample.owner === "R10.5"))
+  for (const sample of R10_SEMANTIC_CASES.filter((sample) => sample.owner === "R10.5"))
     it.todo(`${sample.id} ${sample.owner}: ${sample.title} | ${sample.input} → ${sample.expected}`);
 });
 

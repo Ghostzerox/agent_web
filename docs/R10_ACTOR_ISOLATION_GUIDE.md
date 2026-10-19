@@ -1,6 +1,6 @@
 # R10.2：主持 / 人物隔离
 
-2026-10-19。R7 探索路径现已接入语义输入、人物感知记录与独立模型请求；不会改写旧 d20 玩法。[R10.3世界创作](WORLD_CREATION_GUIDE.md)已交付基础闭环，[R10.4道具与人物设计](ITEM_CHARACTER_DESIGN_GUIDE.md)已接入独立私有资料，复杂事件创作与抽卡仍在后续阶段，见 [R10规划](ENTERTAINMENT_CREATION_AND_CHARACTER_PLAN.md)。规范起点和原有缺口见 [R10.1基线](R10_SEMANTIC_BOUNDARY_BASELINE.md)。
+2026-10-19。R7 探索路径现已接入语义输入、人物感知记录与独立模型请求；不会改写旧 d20 玩法。[R10.3世界创作](WORLD_CREATION_GUIDE.md)已交付基础闭环，[R10.4道具与人物设计](ITEM_CHARACTER_DESIGN_GUIDE.md)已接入独立私有资料，[R10.4.1抽卡](ITEM_DRAW_GUIDE.md)确认入库不自动写入人物感知；复杂事件创作仍在后续阶段，见 [R10规划](ENTERTAINMENT_CREATION_AND_CHARACTER_PLAN.md)。规范起点和原有缺口见 [R10.1基线](R10_SEMANTIC_BOUNDARY_BASELINE.md)。
 
 ## 使用方式
 

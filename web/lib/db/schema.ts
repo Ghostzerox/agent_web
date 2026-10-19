@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import type { WorldBlueprint, WorldBrief, WorldOrigins, WorldSection } from "@/lib/game/worlds/contracts";
 import type { WorldTemplate } from "@/lib/game/exploration/templateTypes";
+import type { DrawData, DrawStatus } from "@/lib/game/draws/contracts";
 import type { ActionDefinition, ActionEntry } from "@/lib/tasks/actions";
 import type { MemoryControls } from "@/lib/memory/controls";
 import type { PalaceRoom } from "@/lib/memory/palace";
@@ -712,6 +713,7 @@ export const gameSessions = pgTable(
   },
   (table) => [
     index("game_sessions_user_updated_idx").on(table.userId, table.updatedAt),
+    uniqueIndex("game_sessions_id_owner_key").on(table.id, table.userId),
     check(
       "game_sessions_kind_supported",
       sql`${table.kind} IN ('roleplay', 'tabletop', 'interactive-story')`,
@@ -1574,6 +1576,17 @@ export const gameWorldSaves = pgTable("game_world_saves", {
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   requestId: uuid("request_id").notNull(), fingerprint: text("fingerprint").notNull(),
 }, (table) => [uniqueIndex("game_world_save_request").on(table.userId, table.requestId)]);
+
+export const gameItemDraws = pgTable("game_item_draws", {
+  id: uuid("id").primaryKey(), sessionId: uuid("session_id").notNull(), userId: uuid("user_id").notNull(),
+  parentTurnId: uuid("parent_turn_id").notNull().references(() => gameTurns.id, { onDelete: "cascade" }),
+  expectedVersion: integer("expected_version").notNull(), fingerprint: text("fingerprint").notNull(),
+  data: jsonb("data").$type<DrawData>().notNull(), status: text("status").$type<DrawStatus>().notNull(),
+  version: integer("version").notNull().default(1), settledTurnId: uuid("settled_turn_id").references(() => gameTurns.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (table) => [foreignKey({ columns: [table.sessionId, table.userId], foreignColumns: [gameSessions.id, gameSessions.userId] }).onDelete("cascade"),
+  index("game_item_draws_branch_idx").on(table.sessionId, table.parentTurnId, table.createdAt)]);
 
 export type GameSessionRecord = typeof gameSessions.$inferSelect;
 export type GameCharacterRecord = typeof gameCharacters.$inferSelect;

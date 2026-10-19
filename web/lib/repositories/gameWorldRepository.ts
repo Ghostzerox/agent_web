@@ -9,7 +9,7 @@ import { compileWorld, worldDraftIssues } from "@/lib/game/worlds/compile";
 import { getWorldTemplate } from "@/lib/game/exploration/catalog";
 import { validateWorldTemplate } from "@/lib/game/exploration/validateTemplate";
 import { startWorld } from "@/lib/game/exploration/engine";
-import { updateWorldDraftSchema, worldBriefSchema, WorldDesignError, type WorldOrigins } from "@/lib/game/worlds/contracts";
+import { updateWorldDraftSchema, worldBriefSchema, WorldDesignError, WORLD_SECTIONS, type WorldOrigins } from "@/lib/game/worlds/contracts";
 
 export function createGameWorldRepository<H extends PgQueryResultHKT>(db: PgDatabase<H, typeof schema>) {
   const get = async (id: string) => {
@@ -29,8 +29,10 @@ export function createGameWorldRepository<H extends PgQueryResultHKT>(db: PgData
     },
     async update(id: string, raw: unknown, generation?: { receipt: { requestId: string; fingerprint: string }; origins: WorldOrigins }) {
       const input = updateWorldDraftSchema.parse(raw); const previous = await get(id);
+      if (stableJson(previous.content?.drawPools ?? []) !== stableJson(input.content?.drawPools ?? []) && !input.drawPoolsConfirmed)
+        throw new WorldDesignError("WORLD_INVALID", "卡池规则发生变化，请先审阅概率、数量、虚构成本与放回规则并明确确认。");
       const origins = generation?.origins ?? { ...previous.origins };
-      if (!generation) for (const section of Object.keys(input.content ?? {}) as (keyof WorldOrigins)[])
+      if (!generation) for (const section of WORLD_SECTIONS)
         if (stableJson(previous.content?.[section]) !== stableJson(input.content?.[section])) origins[section] = "user";
       const [row] = await db.update(drafts).set({ input: input.input, content: input.content, lockedSections: [...new Set(input.lockedSections)], origins,
         generationReceipt: generation?.receipt ?? null, version: sql`${drafts.version} + 1`, updatedAt: new Date() })

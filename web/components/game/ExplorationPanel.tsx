@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useAppQuery } from "@/components/platform/useAppQuery";
 import type { ExplorationAction, ExplorationState, WorldCharacter, WorldItem } from "@/lib/game/exploration/contracts";
 import type { PerceptionRecord, SemanticInput } from "@/lib/game/exploration/semanticContracts";
 import { searchGameHistory } from "@/lib/api/gameSessionClient";
@@ -110,7 +111,8 @@ function HistoryPanel({ state, sessionId, parentTurnId, onError }: { state: Expl
 
 export function ExplorationPanel({ state, sessionId, parentTurnId, disabled, run, onError }: { state: ExplorationState;
   sessionId: string; parentTurnId: string | null; disabled: boolean; run: Run; onError: (message: string | null) => void }) {
-  const [tab, setTab] = useState<Tab>("map");
+  const query = useAppQuery();
+  const [tab, setTab] = useState<Tab>(() => query.get("panel") === "items" ? "items" : "map");
   const current = state.view.locations.find((location) => location.id === state.locationId)!;
   const present = Object.values(state.characters).filter((person) => person.locationId === state.locationId && person.controller !== "user");
   return <section aria-label="大世界探索工作区" className="space-y-4 rounded-2xl bg-[var(--workspace-bg)] p-3 sm:p-5">

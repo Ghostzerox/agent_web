@@ -176,13 +176,16 @@ describe("R10.4 real SQL authoring and shared exploration engine", () => {
     const foreignWorld = crypto.randomUUID(); await pg.query("INSERT INTO game_world_drafts(id,user_id,input,content) VALUES ($1,$2,$3,$4)", [foreignWorld, foreign, JSON.stringify(brief), JSON.stringify(blankWorldBlueprint(brief))]);
     await expect(designs.list(foreignWorld)).rejects.toMatchObject({ code: "WORLD_NOT_FOUND" });
     await expect(designs.get(crypto.randomUUID())).rejects.toMatchObject({ code: "WORLD_NOT_FOUND" });
-    await expect(rollbackDatabase(createPgliteMigrationDatabase(pg), await loadMigrations())).rejects.toThrow("R10.4 authoring data exists");
+    const migrations = await loadMigrations();
+    await expect(rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).resolves.toBe("0036_game_item_draws.sql");
+    await expect(rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).rejects.toThrow("R10.4 authoring data exists");
+    await migrateDatabase(createPgliteMigrationDatabase(pg), migrations);
     expect((await designs.get(row.id)).appliedWorldVersion).toBe(changed.version);
   });
 });
 
 it("upgrades only editable legacy drafts once and safely reverses an unused migration without rewriting published definitions", async () => {
-  const pg = new PGlite(); const migrations = await loadMigrations(); const adapter = createPgliteMigrationDatabase(pg);
+  const pg = new PGlite(); const migrations = (await loadMigrations()).slice(0, 36); const adapter = createPgliteMigrationDatabase(pg);
   try {
     await migrateDatabase(adapter, migrations.slice(0, 35)); const id = crypto.randomUUID(); const owner = crypto.randomUUID();
     const modern = blankWorldBlueprint(brief); const { itemRules, items, ...old } = modern; void itemRules; void items;

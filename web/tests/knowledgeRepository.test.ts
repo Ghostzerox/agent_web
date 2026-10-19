@@ -140,6 +140,7 @@ describe("R5.2 knowledge lifecycle and personal source deletion", () => {
     const migrations = await loadMigrations();
     const conversations = createConversationRepository(database);
     const existing = await conversations.createConversation({ title: "保留旧数据", mode: "auto" });
+    expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0036_game_item_draws.sql");
     expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0035_game_asset_designs.sql");
     expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0034_game_world_authoring.sql");
     expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0033_task_actions.sql");
@@ -149,7 +150,7 @@ describe("R5.2 knowledge lifecycle and personal source deletion", () => {
     expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0029_knowledge_retrieval_audit.sql");
     expect(await rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).toBe("0028_knowledge_library.sql");
     expect(await conversations.getConversation(existing.id)).not.toBeNull();
-    expect(await migrateDatabase(createPgliteMigrationDatabase(pg), migrations)).toEqual(["0028_knowledge_library.sql", "0029_knowledge_retrieval_audit.sql", "0030_conversation_summaries.sql", "0031_memory_palaces.sql", "0032_memory_controls.sql", "0033_task_actions.sql", "0034_game_world_authoring.sql", "0035_game_asset_designs.sql"]);
+    expect(await migrateDatabase(createPgliteMigrationDatabase(pg), migrations)).toEqual(["0028_knowledge_library.sql", "0029_knowledge_retrieval_audit.sql", "0030_conversation_summaries.sql", "0031_memory_palaces.sql", "0032_memory_controls.sql", "0033_task_actions.sql", "0034_game_world_authoring.sql", "0035_game_asset_designs.sql", "0036_game_item_draws.sql"]);
     expect(await createKnowledgeRepository(database).listCollections()).toEqual([]);
   });
 });

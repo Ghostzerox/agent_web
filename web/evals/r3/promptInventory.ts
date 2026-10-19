@@ -2,7 +2,7 @@ import { GAME_PROMPT_VERSION, TASK_PROMPT_PROFILES } from "@/lib/ai/taskPromptPr
 import { EXPLORATION_PROMPT_VERSION } from "@/lib/game/exploration/prompt";
 
 /** Audit data only; runtime generation uses the actual builders below. */
-export const PROMPT_BASELINE_VERSION = "r10/item-character-design-v1";
+export const PROMPT_BASELINE_VERSION = "r10/draw-item-design-v1";
 export const BASELINE_SOURCE_COMMIT = "0421ae01be2243f14958d8006d7d446d6db2866f";
 
 export const PROMPT_ENTRY_POINTS = [
@@ -22,6 +22,7 @@ export const AUXILIARY_PROMPT_ENTRY_POINTS = [
   { id: "context-summary", source: "lib/api/conversationSummaryApi.ts", builder: "lib/conversation/summary.ts", version: "branch-summary/r5.5-v1", fallback: "full raw branch or explicit input-limit error; never automatic regeneration" },
   { id: "world-authoring", source: "lib/game/worlds/generation.ts", builder: "lib/game/worlds/generation.ts", version: "r10/world-authoring-v2", fallback: "invalid/aborted/stale output preserves draft; explicit generate only; tested in worldAuthoring.test.ts" },
   { id: "item-character-design", source: "lib/game/worlds/assetGeneration.ts", builder: "lib/game/worlds/assetGeneration.ts", version: "r10/item-character-design-v1", fallback: "explicit fields/locks; invalid, stale or canceled result preserves design; confirmation never grants inventory" },
+  { id: "draw-item-design", source: "lib/game/draws/generation.ts", builder: "lib/game/draws/generation.ts", version: "r10/draw-item-design-v1", fallback: "durable at-most-once attempt claim; locked host sample; failed/stale/cancelled output never grants or deducts; explicit retry or manual design" },
 ] as const;
 
 /** Every module from the R3–R5 planning matrix, including non-generative services. */
@@ -51,6 +52,7 @@ export const MODEL_CALLER_FILES = [
   "lib/game/gameTurnService.ts", "lib/game/gameNarrativeGenerator.ts",
   "lib/game/exploration/turn.ts",
   "lib/game/worlds/generation.ts", "lib/api/gameWorldApi.ts", "lib/game/worlds/assetGeneration.ts", "lib/api/gameAssetDesignApi.ts",
+  "lib/game/draws/generation.ts", "lib/api/gameDrawApi.ts",
   "lib/api/conversationSummaryApi.ts",
 ] as const;
 
@@ -63,6 +65,7 @@ export const PROMPT_SOURCE_FILES = [...new Set([
   "lib/game/contracts.ts", "lib/game/exploration/contracts.ts", "lib/game/exploration/semanticContracts.ts", "lib/game/exploration/perception.ts",
   "lib/game/worlds/blueprint.ts", "lib/game/worlds/contracts.ts", "lib/game/worlds/compile.ts",
   "lib/game/worlds/assetContracts.ts", "lib/game/worlds/assetValidation.ts", "lib/game/worlds/assetBlueprint.ts",
+  "lib/game/draws/contracts.ts", "lib/game/draws/pools.ts", "lib/game/draws/items.ts", "lib/repositories/gameDrawRepository.ts", "lib/game/exploration/runtimeItems.ts",
   "lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts",
   "lib/repositories/conversationRepository.ts",
   "lib/knowledge/retrieval.ts", "lib/knowledge/citations.ts", "lib/repositories/knowledgeRetrievalRepository.ts", "lib/repositories/knowledgeRepository.ts",

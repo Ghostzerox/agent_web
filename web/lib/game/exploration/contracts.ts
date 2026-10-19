@@ -41,6 +41,16 @@ export const worldItemInstanceSchema = z.object({
   quantity: z.number().int().min(1).max(999), equippedSlot: worldKey.nullable(),
   source: text,
 }).strict();
+export const acquiredItemSchema = z.object({ definition: worldItemSchema,
+  useEffect: z.object({ locationId: worldKey.nullable(), requiresCondition: text.max(120).nullable(), addCondition: text.max(120).nullable(), removeCondition: text.max(120).nullable() }).strict().nullable(),
+}).strict();
+const acquisitionSchema = z.object({ items: z.array(acquiredItemSchema).max(50),
+  receipts: z.array(z.object({ requestId: z.uuid(), poolId: worldKey, entryId: worldKey, definitionId: worldKey,
+    quantity: z.number().int().min(1).max(99), sourceTurnId: z.uuid() }).strict()).max(200),
+}).strict().superRefine((value, ctx) => {
+  if (new Set(value.items.map((item) => item.definition.id)).size !== value.items.length || new Set(value.receipts.map((receipt) => receipt.requestId)).size !== value.receipts.length)
+    ctx.addIssue({ code: "custom", message: "获取目录或回执重复。" });
+});
 export const worldHistorySchema = z.object({
   id: z.string().min(1).max(120), tick: z.number().int().min(0),
   kind: z.enum(["fact", "rumor", "legend", "opinion"]),
@@ -92,6 +102,7 @@ export const explorationStateSchema = z.object({
     events: z.array(eventView).max(50), epics: z.array(epicView).max(20),
   }).strict(),
   lastResult: text,
+  acquisitions: acquisitionSchema.optional(),
   cognition: cognitionSchema.optional(),
   receipt: z.object({ requestId: z.uuid(), fingerprint: z.string().regex(/^[a-f0-9]{64}$/u) }).strict().optional(),
 }).strict().superRefine((state, ctx) => {
