@@ -4,6 +4,7 @@ import { gameDiceRequestSchema } from "@/lib/game/dice";
 import { gameCharacterAttributesSchema } from "@/lib/game/state";
 import { gameToolRequestSchema } from "./toolkit";
 import { explorationActionSchema } from "./exploration/contracts";
+import { semanticInputSchema } from "./exploration/semanticContracts";
 
 export const GAME_SESSION_KINDS = [
   "roleplay",
@@ -107,8 +108,23 @@ export const createGameTurnSchema = z
     toolOnly: z.boolean().optional(),
     explorationAction: explorationActionSchema.optional(),
     narrate: z.boolean().optional(),
+    semanticInput: semanticInputSchema.optional(),
   })
   .strict().superRefine((input, context) => {
+    if (input.semanticInput) {
+      if (!input.requestId || input.toolRequest || input.toolOnly || input.diceRequests.length || input.checkRequest)
+        context.addIssue({ code: "custom", message: "语义输入需要请求ID，且不能混用其他游戏工具。" });
+      const dialogues = input.semanticInput.filter((part) => part.kind === "dialogue");
+      if (new Set(dialogues.map((part) => part.targetId)).size > 1)
+        context.addIssue({ code: "custom", message: "每回合只能选择一位回复角色。" });
+      if (new Set(dialogues.map((part) => part.channel)).size > 1)
+        context.addIssue({ code: "custom", message: "同一回合台词的交流范围必须一致，避免定向内容被公开回复泄漏。" });
+      if (input.explorationAction && (!input.narrate || !["talk", "ask", "help", "negotiate"].includes(input.explorationAction.action) ||
+        dialogues.length === 0 || dialogues.some((part) => part.targetId !== (input.explorationAction as { targetId?: string }).targetId)))
+        context.addIssue({ code: "custom", message: "带语义输入的结构化动作只能是与目标一致的AI交谈。" });
+    }
+    if (input.narrate && !input.semanticInput)
+      context.addIssue({ code: "custom", message: "AI人物交流需要明确的语义输入，请更新客户端后重试。" });
     if (input.explorationAction && (!input.requestId || input.toolRequest || input.toolOnly || input.diceRequests.length || input.checkRequest)) context.addIssue({ code: "custom", message: "探索动作需要请求 ID，且不能混用其他工具。" });
     if (input.narrate && (!input.explorationAction || !["talk", "ask", "help", "negotiate"].includes(input.explorationAction.action))) context.addIssue({ code: "custom", message: "仅人物交流动作可选择 AI 润色。" });
     if (input.toolRequest && !input.requestId) context.addIssue({ code: "custom", path: ["requestId"], message: "工具请求必须有幂等 ID。" });

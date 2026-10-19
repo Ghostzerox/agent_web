@@ -1,6 +1,6 @@
 // Synthetic acceptance inputs, not production DTOs or an implemented policy engine.
-// Pending cases become executable assertions when their owning feature is implemented.
-export const R10_PENDING_SEMANTIC_CASES = [
+// R10.2 cases have executable coverage; later stages remain explicit TODOs.
+export const R10_SEMANTIC_CASES = [
   { id: "P01", owner: "R10.2", title: "private thought is not audible dialogue",
     input: "玩家私下想：我藏起了蓝色钥匙；对守灯人只说：晚上好。",
     expected: "守灯人的实际请求与记忆没有蓝色钥匙，只收到晚上好。" },

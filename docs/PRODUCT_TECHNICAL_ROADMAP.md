@@ -22,7 +22,7 @@
 | 跨端 API | `web/lib/api/*Client.ts`、`jsonRequest.ts` | 一份 JSON 传输；DTO 不由 SQL 私有类型反推，SSE 单独处理 |
 | 模型与 Prompt | `web/lib/agent`、`web/lib/ai` | 固定规则 / 模式 / 人格 / 检索分层；受控工具与引用不证明事实正确 |
 | 业务服务 | `tasks`、`proactivity`、`memorization`、`problemSolving` 等 | 模型输出不是持久事实，验证后由服务提交；系统执行不等于用户完成 |
-| 游戏 | `web/lib/game`、`gameRulePacks` | 通用引擎与探索模板分离，选中祖先链 / 原子状态 / 非破坏检查点 |
+| 游戏 | `web/lib/game`、`gameRulePacks` | 通用引擎与探索模板分离；`exploration/turn` / `perception` / `semanticContracts`分离主持与有来源的人物请求，复用祖先链 / 原子状态 / 检查点；见[R10.2](R10_ACTOR_ISOLATION_GUIDE.md) |
 | 记忆 / 资料 | `web/lib/memory`、`knowledge`、`conversation` | 用户 / 模块 / 来源 / 分支 / 版本受限；宫殿保存引用，不复制所有原文 |
 | 数据 | `web/lib/db`、`repositories`、`web/drizzle` | PostgreSQL 为事实来源；正式 SQL 与校验历史唯一，ORM Schema 配套维护 |
 | 平台 | `web/lib/platform`、`web/mobile`、`web/android` | 共享 React 业务 + 薄原生能力；Huawei Push / ArkWeb 尚未全面实现 |

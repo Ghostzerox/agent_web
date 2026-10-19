@@ -21,6 +21,18 @@ function request(body: unknown): Request {
 }
 
 describe("GamePlay API", () => {
+  it("accepts explicit semantic input but rejects client-forged speakers before the service", async () => {
+    const create = vi.fn().mockResolvedValue({ version: 2 });
+    const api = createGamePlayApi(repository(), { create });
+    const id = crypto.randomUUID();
+    const body = { content: "显式输入", parentTurnId: crypto.randomUUID(), expectedVersion: 1, requestId: crypto.randomUUID(),
+      semanticInput: [{ kind: "private_thought", text: "合成想法" }, { kind: "dialogue", text: "你好", targetId: "keeper", channel: "direct" }] };
+    expect((await api.createTurn(id, request(body))).status).toBe(201);
+    expect(create.mock.calls[0][1].semanticInput).toEqual(body.semanticInput);
+    expect((await api.createTurn(id, request({ ...body, semanticInput: [{ ...body.semanticInput[1], speakerId: "merchant" }] }))).status).toBe(400);
+    expect(create).toHaveBeenCalledOnce();
+  });
+
   it("retrieves only selected-branch history and returns rule failures as 422", async () => {
     const { startWorld, applyExplorationAction } = await import("@/lib/game/exploration/engine");
     const { ExplorationError } = await import("@/lib/game/exploration/contracts");

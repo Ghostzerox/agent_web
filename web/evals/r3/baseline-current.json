@@ -1,5 +1,5 @@
 {
-  "version": "r7/template-separation-v1",
+  "version": "r10/actor-isolation-v1",
   "sourceHashes": {
     "lib/agent/modeRegistry.ts": "2a49e61916594174008e8de5c39a9f012568aa8188d69bc188d3e2831ae9dbac",
     "lib/agent/policyLayer.ts": "347f8749b03f23a976db86520ea3985b70bada2a9ca5fa404f128550b3ff9cab",
@@ -12,9 +12,14 @@
     "lib/api/modelApi.ts": "f565cfcc55ac2f0533dc73b2f5bf20f0788c3e9089e5ae206d6c5a5bc60c955d",
     "lib/api/promptExportApi.ts": "60d20757be7a9fa862fa2c33e0aff1558a501505d6cfe31d4519aba2a62bd19a",
     "lib/conversation/summary.ts": "f1666b7ff133a6f3ba0396bcb7551364a224362e098eab2272713967b31f9576",
-    "lib/game/exploration/prompt.ts": "64a5e5a8ebf38364e8b340470a666299c0befecb999073c7371c4e3742a36a91",
+    "lib/game/contracts.ts": "e64c2acbc69dd125a681f03da3ea8c45fc5230709cb39625737ac9b544139de7",
+    "lib/game/exploration/contracts.ts": "1117be7b18a545803b7778d846747f4d1f112c23027a96a719d1210c185debc6",
+    "lib/game/exploration/perception.ts": "a07d03c7ead4e7b2ed3fe76ced55c1c7ea4454dc5de212dd9a1b7526ce76f9e1",
+    "lib/game/exploration/prompt.ts": "8dd9f3a27bdc9c29389b9d56838696e8cc337dd5f7f16a814e71989368a142cf",
+    "lib/game/exploration/semanticContracts.ts": "8501f4fb5d9c3d9c1a77bd4a59043b4ed7e43f6218a9f43fd2fb0d70ae4b872a",
+    "lib/game/exploration/turn.ts": "0d08fc99b60fdd4595f5ed8b4f2e355d80e86c0ad3149afd09fe51e5ef943a09",
     "lib/game/gameNarrativeGenerator.ts": "ebcf66f31a95e97cf2111a6e806498b3e3855b674857bb1db112dbfc736c482a",
-    "lib/game/gameTurnService.ts": "e931150364782a657dbab351b3f55448b296d718fe45123702518c46d82ddb4a",
+    "lib/game/gameTurnService.ts": "1b6c5f1f40a1ab0223a8cfe0cbe5abb2e046b8ced6670b8942787f8706392348",
     "lib/game/toolkit.ts": "742d9f8aa21be45014ed6a2f322906d11c893c1fd08e05399cb2bef04471ef5b",
     "lib/knowledge/audit.ts": "4af15095289fcb5496920567cf8de3bce9483760ece5ed80f1cdc267eeb958dc",
     "lib/knowledge/citations.ts": "4fcc676c1f1c601b1d6dc3507643aac1fe205f1862cd7efe1f3506b397052100",

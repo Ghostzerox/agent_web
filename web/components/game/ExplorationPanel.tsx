@@ -2,12 +2,13 @@
 
 import { useRef, useState } from "react";
 import type { ExplorationAction, ExplorationState, WorldCharacter, WorldItem } from "@/lib/game/exploration/contracts";
+import type { PerceptionRecord, SemanticInput } from "@/lib/game/exploration/semanticContracts";
 import { searchGameHistory } from "@/lib/api/gameSessionClient";
 import type { ExplorationHistoryResult } from "@/lib/game/exploration/history";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import { requestNavigationPermission } from "@/lib/platform/navigationGuard";
 
-type Run = (action: ExplorationAction, content?: string, narrate?: boolean) => Promise<boolean>;
+type Run = (action: ExplorationAction, content?: string, narrate?: boolean, semanticInput?: SemanticInput) => Promise<boolean>;
 const button = "rounded-lg border border-[var(--workspace-border)] px-3 py-2 text-xs font-medium hover:bg-[var(--workspace-bg)] disabled:opacity-40 disabled:cursor-not-allowed";
 const card = "rounded-xl border border-[var(--workspace-border)] bg-[var(--workspace-surface)] p-4 space-y-3";
 const tabs = [["map", "地图"], ["items", "背包与装备"], ["people", "人物"], ["events", "事件与史诗"], ["history", "历史与传记"]] as const;
@@ -45,9 +46,11 @@ function ItemCard({ item, definition, state, disabled, run }: { item: Exploratio
   </article>;
 }
 
-function CharacterCard({ person, here, disabled, run }: { person: WorldCharacter; here: boolean; disabled: boolean; run: Run }) {
+function CharacterCard({ person, here, disabled, run, perceptions }: { person: WorldCharacter; here: boolean; disabled: boolean; run: Run; perceptions: PerceptionRecord[] }) {
   const [content, setContent] = useState("");
-  useNavigationGuard(Boolean(content.trim()), "人物对话还有未发送的草稿，切换工作区后需要重新输入。");
+  const [thought, setThought] = useState("");
+  const [channel, setChannel] = useState<"direct" | "public">("direct");
+  useNavigationGuard(Boolean(content.trim() || thought.trim()), "人物对话还有未发送的草稿，切换工作区后需要重新输入。");
   return <article className={card}>
     <div><h5 className="font-semibold">{person.name} <span className="text-xs font-normal text-zinc-500">{person.category === "important" ? "重要角色" : person.category === "player" ? "玩家" : "NPC"} · {here ? "在场" : "其他地点"}</span></h5><p className="mt-1 text-sm text-zinc-500">{person.identity} · {person.faction}</p></div>
     <p className="text-sm">{person.personality}</p><p className="text-xs">近期目标：{person.goals.join("、")}</p>
@@ -56,7 +59,11 @@ function CharacterCard({ person, here, disabled, run }: { person: WorldCharacter
       <p>外貌：{person.appearance}</p><p>过往：{person.backstory}</p><p>表达：{person.speech}</p><p>价值：{person.values.join("、")}</p><p>边界：{person.boundaries.join("、")}</p>
       <p>能力：{person.abilities.join("、") || "未展示"}</p><p>已交流信息：{person.knownInformation.join(" / ") || "尚无"}</p>
       <p>承诺：{person.promises.join(" / ") || "无"}</p><p>悬而未决：{person.unresolved.join("、") || "无"}</p><p>个人线：{person.arc}</p>
-      <p>近期记忆：{person.memories.join(" / ") || "尚无"}</p><p>控制者 {person.controller}；角色重要性不改变玩家控制权。</p>
+      <p>旧版无类型记忆（保留查看，不直接传给人物AI）：{person.memories.join(" / ") || "尚无"}</p><p>控制者 {person.controller}；角色重要性不改变玩家控制权。</p>
+      <details><summary className="cursor-pointer">有来源的交流与感知（{perceptions.length}）</summary>
+        {perceptions.slice(-20).map((entry, index) => <p key={`${entry.sourceRequestId}:${index}`} className="break-all">[{entry.kind} / {entry.evidence}] {entry.text} · 时刻{entry.tick} · 来源{entry.sourceRequestId}</p>)}
+        <p>台词与AI回应是交流记录，不自动成为世界事实；其他地点或定向交流不会广播给所有人物。</p>
+      </details>
     </div></details>
     {here && person.controller !== "user" && <>
       <div className="flex flex-wrap gap-2"><button className={button} disabled={disabled} onClick={() => void run({ action: "talk", targetId: person.id })}>与{person.name}交谈</button>
@@ -67,8 +74,14 @@ function CharacterCard({ person, here, disabled, run }: { person: WorldCharacter
       </div>
       <details><summary className="cursor-pointer text-xs text-violet-600">自由 AI 对话（点击发送才调用模型）</summary><div className="mt-3 space-y-2">
         <label className="block text-xs">对{person.name}说<textarea disabled={disabled} maxLength={2000} value={content} onChange={(event) => setContent(event.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-[var(--workspace-border)] bg-transparent p-3 text-sm" /></label>
-        <button className={button} disabled={disabled || !content.trim()} onClick={() => void run({ action: "talk", targetId: person.id }, content.trim(), true).then((saved) => { if (saved) setContent(""); })}>发送给{person.name} · 调用 AI</button>
-        <p className="text-xs text-zinc-500">只提供这位角色的已知信息；叙事不直接结算物品、关系或承诺。草稿不会因失败清空。</p>
+        <label className="block text-xs">交流范围<select aria-label={`与${person.name}的交流范围`} value={channel} onChange={(event) => setChannel(event.target.value as "direct" | "public")} className="ml-2 rounded border border-[var(--workspace-border)] bg-[var(--workspace-surface)] p-2"><option value="direct">定向交流，仅对方收到</option><option value="public">公开交流，当前在场人物可听见</option></select></label>
+        <details><summary className="cursor-pointer text-xs">附带私人想法（不传给对方）</summary><label className="block text-xs">你的私人想法<textarea disabled={disabled} maxLength={2000} value={thought} onChange={(event) => setThought(event.target.value)} rows={2} className="mt-1 w-full rounded-lg border border-[var(--workspace-border)] bg-transparent p-3 text-sm" /></label></details>
+        <button className={button} disabled={disabled || !content.trim()} onClick={() => {
+          const parts: SemanticInput = [...(thought.trim() ? [{ kind: "private_thought" as const, text: thought.trim() }] : []),
+            { kind: "dialogue", text: content.trim(), targetId: person.id, channel }];
+          void run({ action: "talk", targetId: person.id }, content.trim(), true, parts).then((saved) => { if (saved) { setContent(""); setThought(""); } });
+        }}>发送给{person.name} · 调用 AI</button>
+        <p className="text-xs text-zinc-500">只提供这位角色有来源的信息；私人想法只存入本局，不进入对方请求。叙事不直接结算物品、关系或承诺，失败保留草稿。</p>
       </div></details>
     </>}
   </article>;
@@ -121,7 +134,7 @@ export function ExplorationPanel({ state, sessionId, parentTurnId, disabled, run
         const definition = state.view.items.find((entry) => entry.id === item.definitionId);
         return definition && <ItemCard key={item.id} item={item} definition={definition} state={state} disabled={disabled} run={run} />;
       })}</div></>}
-      {tab === "people" && <div className="grid gap-3 xl:grid-cols-2">{Object.values(state.characters).length === 0 && <p className="text-sm text-zinc-500">还没遇见人物，先去集市或灯塔看看。</p>}{Object.values(state.characters).map((person) => <CharacterCard key={person.id} person={person} here={person.locationId === current.id} disabled={disabled} run={run} />)}</div>}
+      {tab === "people" && <div className="grid gap-3 xl:grid-cols-2">{Object.values(state.characters).length === 0 && <p className="text-sm text-zinc-500">还没遇见人物，先去集市或灯塔看看。</p>}{Object.values(state.characters).map((person) => <CharacterCard key={person.id} person={person} here={person.locationId === current.id} disabled={disabled} run={run} perceptions={state.cognition?.records.filter((entry) => entry.audience.includes(person.id)) ?? []} />)}</div>}
       {tab === "events" && <>
         {state.view.events.length === 0 && <p className="text-sm text-zinc-500">尚未触发公开事件。可以自由探索，无需接受任何主线。</p>}
         {state.view.events.map((event) => <article key={event.id} className={card}><h4 className="font-semibold">{event.name} <span className="text-xs font-normal text-zinc-500">{event.scope === "world" ? "世界" : event.scope === "character" ? "人物" : "地方"}事件 · {event.settled ? "已结束" : event.locationId === current.id ? "可在此处理" : "前往对应地点处理"}</span></h4><p className="text-sm text-zinc-500">{event.description}</p>{event.choices.map((choice) => <div key={choice.id} className="space-y-1"><button className={button} disabled={disabled || !choice.available || event.locationId !== current.id} onClick={() => {

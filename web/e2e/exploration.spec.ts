@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
-import { applyExplorationAction } from "../lib/game/exploration/engine";
+import { resolveExplorationTurn } from "../lib/game/exploration/turn";
+import { createGameTurnSchema } from "../lib/game/contracts";
+import type { GameSessionDetail as ServerGameSessionDetail } from "../lib/repositories/gameSessionRepository";
 import type { ExplorationAction } from "../lib/game/exploration/contracts";
 import { initialGameState } from "../lib/game/state";
 import type { GameSessionDetail } from "../lib/api/gameSessionClient";
@@ -29,13 +31,18 @@ async function mockWorld(page: Page) {
     if (url.pathname.endsWith("/status")) { detail.status = req.postDataJSON().status; detail.version++; return route.fulfill({ json: { data: detail } }); }
     if (url.pathname.endsWith("/turns")) {
       const input = req.postDataJSON(); expect(input.expectedVersion).toBe(detail.version); expect(input.requestId).toMatch(/^[a-f0-9-]{36}$/u);
-      if (input.explorationAction.action === "start") expect(input.explorationAction).toMatchObject({ templateId: "fog-harbor", templateVersion: "1.0.0" });
-      if (input.narrate) { modelCalls++; if (rejectAI) return route.fulfill({ status: 503, json: { error: { code: "MODEL_CONFIGURATION_ERROR", message: "合成模型暂不可用，草稿保留" } } }); }
+      if (input.explorationAction?.action === "start") expect(input.explorationAction).toMatchObject({ templateId: "fog-harbor", templateVersion: "1.0.0" });
       const parent = detail.turns.find((turn) => turn.id === input.parentTurnId);
-      const exploration = applyExplorationAction(parent?.stateSnapshot.exploration, input.explorationAction, input.requestId);
+      const session: ServerGameSessionDetail = { ...detail, createdAt: new Date(detail.createdAt), updatedAt: new Date(detail.updatedAt),
+        characters: [], checkpoints: [], events: [], turns: detail.turns.map((turn) => ({ ...turn, createdAt: new Date(turn.createdAt) })) };
+      let resolved: Awaited<ReturnType<typeof resolveExplorationTurn>>;
+      try {
+        resolved = await resolveExplorationTurn(session, createGameTurnSchema.parse(input), parent?.stateSnapshot ?? initialGameState("雾港", "合成区域"), "a".repeat(64),
+          { generate: async () => { modelCalls++; if (rejectAI) throw new Error("合成模型暂不可用，草稿保留"); return { content: '{"narrative":"合成回应：晚上好","statePatch":{}}', model: "mock-model" }; } });
+      } catch (error) { return route.fulfill({ status: 503, json: { error: { code: "MODEL_CONFIGURATION_ERROR", message: error instanceof Error ? error.message : "合成失败" } } }); }
       detail.activeLeafTurnId = crypto.randomUUID(); detail.version++;
-      detail.turns.push({ id: detail.activeLeafTurnId, sessionId: detail.id, parentTurnId: input.parentTurnId, playerContent: input.content,
-        assistantContent: exploration.lastResult, model: input.narrate ? "mock-model" : "host-exploration/v1", statePatch: {}, stateSnapshot: { ...initialGameState("雾港", "合成区域"), exploration }, createdAt: "2026-10-18T00:00:00Z" });
+      detail.turns.push({ id: detail.activeLeafTurnId, sessionId: detail.id, parentTurnId: input.parentTurnId, playerContent: resolved.playerContent,
+        assistantContent: resolved.assistantContent, model: resolved.model, statePatch: {}, stateSnapshot: resolved.state, createdAt: "2026-10-18T00:00:00Z" });
       return route.fulfill({ status: 201, json: { data: detail } });
     }
     if (url.pathname.endsWith("/export")) return route.fulfill({ json: { data: { filename: "synthetic-exploration.json", mediaType: "application/json", content: JSON.stringify({ schemaVersion: 3, session: detail }), directory: "game-exports", shareTitle: "合成导出", shareText: "合成记录", dialogTitle: "导出" } } });
@@ -105,4 +112,30 @@ test("NPC AI failure preserves drafts and canceled local navigation", async ({ p
   await expect(page.getByRole("alert").filter({ hasText: "合成模型暂不可用" })).toContainText("草稿保留"); await expect(page.getByRole("textbox", { name: "对阿岚说", exact: true })).toHaveValue("这座港口对你意味着什么？");
   allowNavigation = false; await page.getByRole("tab", { name: "地图", exact: true }).click(); await expect(page.getByRole("textbox", { name: "对阿岚说", exact: true })).toBeVisible();
   expect(game.modelCalls()).toBe(1);
+});
+
+test("typed exploration input preserves private drafts and separates actor speech from OOC notes", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 900 }); page.on("dialog", (dialog) => dialog.accept());
+  const game = await mockWorld(page); const workspace = page.getByRole("region", { name: "大世界探索工作区" });
+  await workspace.getByRole("button", { name: "前往盐风集市", exact: true }).click();
+  await page.getByRole("tab", { name: "人物", exact: true }).click();
+  await workspace.getByText("自由 AI 对话（点击发送才调用模型）", { exact: true }).click();
+  await workspace.getByText("附带私人想法（不传给对方）", { exact: true }).click();
+  await page.getByRole("textbox", { name: "你的私人想法", exact: true }).fill("SYNTH_PRIVATE_UI");
+  await page.getByRole("textbox", { name: "对阿岚说", exact: true }).fill("晚上好");
+  game.rejectAI(true); await workspace.getByRole("button", { name: "发送给阿岚 · 调用 AI", exact: true }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "合成模型暂不可用" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "你的私人想法", exact: true })).toHaveValue("SYNTH_PRIVATE_UI");
+  game.rejectAI(false); await workspace.getByRole("button", { name: "发送给阿岚 · 调用 AI", exact: true }).click();
+  await expect(page.getByRole("textbox", { name: "你的私人想法", exact: true })).toHaveValue("");
+  expect(game.state()!.cognition!.records.find((entry) => entry.kind === "private_thought")?.audience).toEqual(["player"]);
+  expect(game.detail.turns.at(-1)!.playerContent).toContain("[台词 / 定向 → merchant]");
+  const before = game.detail.turns.length;
+  await page.getByLabel("探索输入类型", { exact: true }).selectOption("ooc_instruction");
+  await page.getByLabel("你的行动或台词", { exact: true }).fill("想设计一座雪城，暂不修改世界");
+  await page.getByRole("button", { name: "发送并继续", exact: true }).click();
+  await expect.poll(() => game.detail.turns.length).toBe(before + 1);
+  expect(game.modelCalls()).toBe(2); // One failed and one successful actor call; OOC is host-only.
+  expect(game.detail.turns.at(-1)!.playerContent).toContain("[场外创作指令]");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 });

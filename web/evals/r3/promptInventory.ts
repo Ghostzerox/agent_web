@@ -2,8 +2,8 @@ import { GAME_PROMPT_VERSION, TASK_PROMPT_PROFILES } from "@/lib/ai/taskPromptPr
 import { EXPLORATION_PROMPT_VERSION } from "@/lib/game/exploration/prompt";
 
 /** Audit data only; runtime generation uses the actual builders below. */
-export const PROMPT_BASELINE_VERSION = "r7/template-separation-v1";
-export const BASELINE_SOURCE_COMMIT = "b2f973e20d1a4fcff77e371d79366f3eac0330ab";
+export const PROMPT_BASELINE_VERSION = "r10/actor-isolation-v1";
+export const BASELINE_SOURCE_COMMIT = "0421ae01be2243f14958d8006d7d446d6db2866f";
 
 export const PROMPT_ENTRY_POINTS = [
   { id: "chat", source: "lib/api/modelApi.ts", builder: "lib/agent/promptBuilder.ts", versions: ["r3.2/mode-prompts-v1", "mode-registry/r3.2-v1", "persona-profile/r3.2-v1", "memory-context/v2", "web-search-context/v2"], transport: "chat", format: "Markdown + optional citations", context: "server Persona, confirmed relevant memory, selected branch, optional search", fallback: "visible error / cancel, no fabricated complete answer" },
@@ -14,7 +14,7 @@ export const PROMPT_ENTRY_POINTS = [
   { id: "memorization", source: "lib/plugins/hostCapabilityAdapters.ts", builder: "lib/plugins/hostCapabilityAdapters.ts", versions: [TASK_PROMPT_PROFILES["memorization"].version], transport: "agent", format: "JSON score/feedback/missedPoints", context: "plugin-authorized target, recitation, localScore; no global memory", fallback: "caller retains deterministic scoring if model evaluation unavailable" },
   { id: "problem-solving", source: "lib/plugins/hostCapabilityAdapters.ts", builder: "lib/plugins/hostCapabilityAdapters.ts", versions: [TASK_PROMPT_PROFILES["problem-solving"].version], transport: "agent", format: "validated JSON; hint/guided/check/explain; optional attached image", context: "problem, answer, prior attempt, bounded deterministic tool evidence", fallback: "invalid result or unsupported-image error; service retains existing record" },
   { id: "review-card", source: "lib/plugins/hostCapabilityAdapters.ts", builder: "lib/plugins/hostCapabilityAdapters.ts", versions: [TASK_PROMPT_PROFILES["review-card"].version], transport: "agent", format: "JSON front/back/reason/tags", context: "selected problem/attempt only", fallback: "invalid result error, no automatic task creation" },
-{ id: "game", source: "lib/game/gameTurnService.ts", builder: "lib/game/gameTurnService.ts", versions: [GAME_PROMPT_VERSION, EXPLORATION_PROMPT_VERSION], transport: "game", format: "JSON narrative/statePatch; code validates and applies patch", context: "legacy world/characters and dice/check; exploration uses bounded public scene or one NPC knowledge scope", fallback: "invalid/empty/provider error, no partial turn committed" },
+{ id: "game", source: "lib/game/gameTurnService.ts", builder: "lib/game/exploration/prompt.ts", explorationSource: "lib/game/exploration/turn.ts", legacyBuilder: "lib/game/gameTurnService.ts", versions: [GAME_PROMPT_VERSION, EXPLORATION_PROMPT_VERSION], transport: "game", format: "JSON narrative/statePatch; exploration requires empty patch", context: "legacy world/characters and dice/check; exploration director and sourced per-actor perceptions are separate, typed private/OOC notes do not generate", fallback: "invalid/empty/provider error, no partial turn committed" },
 ] as const;
 export type PromptEntryId = typeof PROMPT_ENTRY_POINTS[number]["id"];
 // Auxiliary paid operation, separately tested with source/branch/approval fixtures; not a new user mode.
@@ -45,6 +45,7 @@ export const MODEL_CALLER_FILES = [
   "lib/tasks/personalBriefingGenerator.ts", "lib/tasks/bookRecommendationGenerator.ts",
   "lib/tasks/reflectionQuestionGenerator.ts", "lib/plugins/hostCapabilityAdapters.ts",
   "lib/game/gameTurnService.ts", "lib/game/gameNarrativeGenerator.ts",
+  "lib/game/exploration/turn.ts",
   "lib/api/conversationSummaryApi.ts",
 ] as const;
 
@@ -54,6 +55,7 @@ export const PROMPT_SOURCE_FILES = [...new Set([
   "lib/persona/personaProfile.ts", "lib/memory/memoryRetrieval.ts", "lib/search/webSearch.ts",
   "lib/proactivity/proactivityPolicy.ts", "lib/api/promptExportApi.ts",
   "lib/tools/sourceTools.ts", "lib/game/toolkit.ts", "lib/game/exploration/prompt.ts",
+  "lib/game/contracts.ts", "lib/game/exploration/contracts.ts", "lib/game/exploration/semanticContracts.ts", "lib/game/exploration/perception.ts",
   "lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts",
   "lib/repositories/conversationRepository.ts",
   "lib/knowledge/retrieval.ts", "lib/knowledge/citations.ts", "lib/repositories/knowledgeRetrievalRepository.ts", "lib/repositories/knowledgeRepository.ts",

@@ -69,7 +69,8 @@ describe("GameSessionRepository", () => {
     } });
     await expect(service.create(current.id, { content: "错误版本", parentTurnId: null, expectedVersion: current.version, requestId: crypto.randomUUID(), diceRequests: [], checkRequest: null, explorationAction: { action: "start", templateId: "fog-harbor", templateVersion: "2.0.0" } })).rejects.toThrow("不一致");
     const run = async (action: import("@/lib/game/exploration/contracts").ExplorationAction, narrate = false) => {
-      current = await service.create(current.id, { content: "合成区域验收", parentTurnId: current.activeLeafTurnId, expectedVersion: current.version, diceRequests: [], checkRequest: null, requestId: crypto.randomUUID(), explorationAction: action, narrate });
+      current = await service.create(current.id, { content: "合成区域验收", parentTurnId: current.activeLeafTurnId, expectedVersion: current.version, diceRequests: [], checkRequest: null, requestId: crypto.randomUUID(), explorationAction: action, narrate,
+        ...(narrate && "targetId" in action ? { semanticInput: [{ kind: "dialogue" as const, text: "你好", targetId: action.targetId, channel: "direct" as const }] } : {}) });
     };
     await run({ action: "start", templateId: "fog-harbor", templateVersion: "1.0.0" });
     const earlyExport = exportGameSessionArtifact(current, "json", now).content;
@@ -78,7 +79,7 @@ describe("GameSessionRepository", () => {
     expect(modelCalls).toBe(0);
     await run({ action: "talk", targetId: "keeper" }, true);
     expect(modelCalls).toBe(1); expect(current.turns.at(-1)?.assistantContent).toContain("问你");
-    expect(current.turns.at(-1)?.stateSnapshot.exploration?.characters.keeper.memories.at(-1)).toContain("对话记录");
+    expect(current.turns.at(-1)?.stateSnapshot.exploration?.cognition?.records.at(-1)).toMatchObject({ kind: "reply", speakerId: "keeper", evidence: "statement" });
     const version = current.version;
     output = '{"narrative":"凭空获得金币","statePatch":{"adjustResources":{"gold":999}}}';
     await expect(run({ action: "talk", targetId: "keeper" }, true)).rejects.toMatchObject({ code: "GAME_OUTPUT_INVALID" });
@@ -88,6 +89,42 @@ describe("GameSessionRepository", () => {
     expect(exported.schemaVersion).toBe(3); expect(exported.session.turns.at(-1).stateSnapshot.exploration.schemaVersion).toBe(1);
     expect(exportGameSessionArtifact(current, "markdown", now).content).toContain("### 探索记录");
     expect((await pglite.query<{ total: number }>("SELECT (SELECT count(*) FROM action_items)::int + (SELECT count(*) FROM scheduled_tasks)::int AS total")).rows[0].total).toBe(0);
+  });
+
+  it("persists typed private/actor records, exports types and excludes abandoned-branch dialogue after checkpoint restore", async () => {
+    const now = new Date("2026-10-19T00:00:00Z");
+    let current = await repository.create({ ...FOG_HARBOR_PRESET, now });
+    current = await repository.updateStatus(current.id, { status: "active", expectedVersion: current.version, now });
+    const prompts: string[] = [];
+    const service = createGameTurnService(repository, { generate: async (messages) => {
+      prompts.push(JSON.stringify(messages)); return { content: '{"narrative":"合成角色回应","statePatch":{}}', model: "synthetic-r10" };
+    } });
+    for (const action of [{ action: "start" as const, templateId: "fog-harbor", templateVersion: "1.0.0" }, { action: "move" as const, targetId: "market" }])
+      current = await service.create(current.id, { content: "探索", parentTurnId: current.activeLeafTurnId, expectedVersion: current.version,
+        requestId: crypto.randomUUID(), diceRequests: [], checkRequest: null, explorationAction: action });
+    current = await repository.createCheckpoint(current.id, { name: "交流前", note: "", expectedVersion: current.version, now });
+    const checkpoint = current.checkpoints[0].id;
+    const input = { content: "待保存语义", parentTurnId: current.activeLeafTurnId, expectedVersion: current.version,
+      requestId: crypto.randomUUID(), diceRequests: [], checkRequest: null, semanticInput: [
+        { kind: "private_thought" as const, text: "SYNTH_PRIVATE_KEY" },
+        { kind: "dialogue" as const, targetId: "merchant", channel: "direct" as const, text: "SYNTH_LEFT_BRANCH" },
+      ] };
+    current = await service.create(current.id, input);
+    const reloaded = (await repository.get(current.id))!;
+    const cognition = reloaded.turns.at(-1)!.stateSnapshot.exploration!.cognition!;
+    expect(cognition.lastInput).toEqual(input.semanticInput);
+    expect(cognition.records.find((entry) => entry.kind === "private_thought")?.audience).toEqual(["player"]);
+    expect(prompts[0]).not.toContain("SYNTH_PRIVATE_KEY"); expect(prompts[0]).toContain("SYNTH_LEFT_BRANCH");
+    expect(exportGameSessionArtifact(reloaded, "markdown", now).content).toContain("[私人想法]");
+    expect((await service.create(current.id, input)).version).toBe(current.version);
+    expect(prompts).toHaveLength(1);
+    current = await repository.restoreCheckpoint(current.id, checkpoint, { expectedVersion: current.version, now });
+    current = await service.create(current.id, { ...input, requestId: crypto.randomUUID(), parentTurnId: current.activeLeafTurnId,
+      expectedVersion: current.version, semanticInput: [{ kind: "dialogue", targetId: "merchant", channel: "direct", text: "你好" }] });
+    expect(prompts[1]).not.toMatch(/SYNTH_LEFT_BRANCH|SYNTH_PRIVATE_KEY/u);
+    const final = (await repository.get(current.id))!;
+    expect(final.turns.find((turn) => turn.id === reloaded.activeLeafTurnId)?.playerContent).toContain("SYNTH_LEFT_BRANCH");
+    expect(final.turns.at(-1)!.stateSnapshot.exploration!.cognition!.records.some((entry) => entry.text.includes("SYNTH_LEFT_BRANCH"))).toBe(false);
   });
 
   it("persists exploration receipts, inventory and checkpoints atomically across branches", async () => {

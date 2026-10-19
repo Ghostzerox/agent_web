@@ -33,7 +33,7 @@ describe("R7.4 characters, agency and knowledge", () => {
     const state = atTower();
     state.history.push({ id: "private", tick: 1, text: "玩家私下调查的密码XYZ", kind: "fact", origin: "play", source: "private", locationId: "archive", actorIds: [], eventId: null });
     state.characters.merchant.knownInformation = ["商人私下获悉的信息ABC"];
-    const text = JSON.stringify(explorationMessages(state, "你好", "keeper"));
+    const text = JSON.stringify(explorationMessages(state, "你好", "keeper", [], [], { sessionId: "test", sources: new Map() }));
     expect(text).not.toContain("密码XYZ"); expect(text).not.toContain("信息ABC");
     expect(text).not.toContain("守望者盟约："); expect(text).toContain("林汐"); expect(text).toContain('statePatch');
     expect(explorationMessages(state, "你好")[1].content.length).toBeLessThanOrEqual(EXPLORATION_CONTEXT_BUDGET + 100);

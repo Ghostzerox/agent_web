@@ -6,15 +6,18 @@ import { createGameTurnService } from "@/lib/game/gameTurnService";
 import { applyExplorationAction, startWorld } from "@/lib/game/exploration/engine";
 import { worldItemSchema } from "@/lib/game/exploration/contracts";
 import { EXPLORATION_CONTEXT_BUDGET } from "@/lib/game/exploration/prompt";
+import { explorationMessages } from "@/lib/game/exploration/prompt";
+import { actorContext, perceptionScope } from "@/lib/game/exploration/perception";
 import { initialGameState } from "@/lib/game/state";
 import type { GameSessionDetail, GameSessionRepositoryPort } from "@/lib/repositories/gameSessionRepository";
-import { R10_PENDING_SEMANTIC_CASES } from "./fixtures/r10SemanticCases";
+import { R10_SEMANTIC_CASES } from "./fixtures/r10SemanticCases";
 
 const sessionId = "11111111-1111-4111-8111-111111111111";
 const rootId = "22222222-2222-4222-8222-222222222222";
 const savedId = "33333333-3333-4333-8333-333333333333";
 const siblingId = "44444444-4444-4444-8444-444444444444";
 const requestId = "55555555-5555-4555-8555-555555555555";
+const previousRequestId = "66666666-6666-4666-8666-666666666666";
 const now = new Date("2026-10-19T08:00:00Z");
 const markers = {
   own: "SYNTH_ACTOR_KNOWLEDGE", player: "SYNTH_PLAYER_SECRET",
@@ -34,6 +37,7 @@ function syntheticSession(): GameSessionDetail {
   exploration.instances[0].source = markers.inventory;
   exploration.flags[markers.flag] = true;
   exploration.conditions = [markers.condition];
+  exploration.receipt = { requestId: previousRequestId, fingerprint: "a".repeat(64) };
   return {
     id: sessionId, userId: "00000000-0000-4000-8000-000000000001", title: "合成认知基线",
     kind: "interactive-story", status: "active", worldName: "合成探索",
@@ -65,8 +69,9 @@ function harness(detail = syntheticSession(), output = { narrative: "合成回�
     deleteCharacter: vi.fn(), updateStatus: vi.fn(), createCheckpoint: vi.fn(),
     restoreCheckpoint: vi.fn(), deleteCheckpoint: vi.fn(),
     appendTurn: vi.fn(async (_id, input) => {
-      saved = { ...saved, version: saved.version + 1, activeLeafTurnId: savedId,
-        turns: [...saved.turns, { id: savedId, sessionId, parentTurnId: input.parentTurnId,
+      const id = saved.turns.some((turn) => turn.id === savedId) ? crypto.randomUUID() : savedId;
+      saved = { ...saved, version: saved.version + 1, activeLeafTurnId: id,
+        turns: [...saved.turns, { id, sessionId, parentTurnId: input.parentTurnId,
           playerContent: input.playerContent, assistantContent: input.assistantContent,
           model: input.model, statePatch: input.statePatch, stateSnapshot: input.stateSnapshot, createdAt: now }] };
       return structuredClone(saved);
@@ -76,40 +81,42 @@ function harness(detail = syntheticSession(), output = { narrative: "合成回�
 }
 
 function dialogue(overrides: Partial<CreateGameTurnRequest> = {}): CreateGameTurnRequest {
+  const targetId = overrides.explorationAction && "targetId" in overrides.explorationAction ? overrides.explorationAction.targetId : "keeper";
   return createGameTurnSchema.parse({ content: "晚上好。", parentTurnId: rootId,
     expectedVersion: 1, requestId, explorationAction: { action: "talk", targetId: "keeper" },
-    narrate: true, ...overrides });
+    narrate: true, semanticInput: overrides.narrate === false ? undefined : [{ kind: "dialogue", text: "晚上好。", targetId, channel: "direct" }], ...overrides });
 }
 
 const denyNetwork = vi.fn(() => { throw new Error("R10 baseline must not use the network"); });
 beforeEach(() => { denyNetwork.mockClear(); vi.stubGlobal("fetch", denyNetwork); });
 afterEach(() => { try { expect(denyNetwork).not.toHaveBeenCalled(); } finally { vi.unstubAllGlobals(); } });
 
-describe("R10.1 current executable boundary baseline (not R10.2 acceptance)", () => {
+describe("current exploration service boundary regression", () => {
   it("C01 captures only the selected character scope at the real provider port", async () => {
     const { service, requests } = harness();
     await service.create(sessionId, dialogue());
     expect(requests).toHaveLength(1);
-    expect(requests[0]).toMatchObject({ business: "game", promptVersion: "r7/exploration-v1" });
+    expect(requests[0]).toMatchObject({ business: "game", promptVersion: "r10/exploration-v2" });
     const serialized = JSON.stringify(requests[0].messages);
-    expect(serialized).toContain(markers.own);
+    expect(serialized).not.toContain(markers.own); // Unsourced legacy text is no longer actor knowledge.
     expect(serialized).toContain("合成边界：不替玩家决定内心");
     for (const marker of Object.values(markers).filter((marker) => marker !== markers.own))
       expect(serialized).not.toContain(marker);
-    expect(requests[0].messages.at(-1)).toMatchObject({ role: "user", content: "晚上好。" });
+    expect(JSON.parse(requests[0].messages.at(-1)!.content as string).dialogue[0].text).toBe("晚上好。");
   });
 
   it("C02 keeps unrelated state excluded during context budget fallback", async () => {
     const detail = syntheticSession();
-    const target = detail.turns[0].stateSnapshot.exploration!.characters.keeper;
-    target.knownInformation = Array.from({ length: 20 }, () => "K".repeat(590));
-    target.memories = Array.from({ length: 20 }, () => "M".repeat(590));
+    const state = detail.turns[0].stateSnapshot.exploration!;
+    state.cognition = { sessionId, worldId: state.templateId, worldVersion: state.templateVersion,
+      records: Array.from({ length: 20 }, () => ({ sourceRequestId: previousRequestId, tick: state.tick,
+        locationId: state.locationId, kind: "dialogue" as const, speakerId: "player", audience: ["keeper"], evidence: "statement" as const, text: "K".repeat(1900) })) };
     const { service, requests } = harness(detail);
     await service.create(sessionId, dialogue());
     const context = requests[0].messages.at(-2)!.content as string;
     const parsed = JSON.parse(context.slice(context.indexOf("\n") + 1));
-    expect(parsed.characters).toHaveLength(1); // The bounded fallback path actually ran.
-    expect(parsed.characters[0].id).toBe("keeper");
+    expect(parsed.observations.length).toBeLessThan(20); // The bounded actor-only path actually ran.
+    expect(parsed.actorId).toBe("keeper");
     expect(context.length).toBeLessThan(EXPLORATION_CONTEXT_BUDGET + 100);
     for (const marker of Object.values(markers).filter((marker) => marker !== markers.own))
       expect(JSON.stringify(requests[0].messages)).not.toContain(marker);
@@ -198,12 +205,120 @@ describe("R10.1 current executable boundary baseline (not R10.2 acceptance)", ()
     // This is a current-format audit, NOT acceptance of the future P09 contract.
   });
 
-  it.each(["semanticInput", "creationDraft", "numericPolicy"])("C12 does not silently accept unimplemented field %s", (field) => {
+  it.each(["perceptionScope", "creationDraft", "numericPolicy"])("C12 does not silently accept unimplemented/client-authoritative field %s", (field) => {
     expect(createGameTurnSchema.safeParse({ ...dialogue(), [field]: {} }).success).toBe(false);
   });
 });
 
 describe("R10 synthetic future acceptance corpus — explicitly pending, not passed", () => {
-  for (const sample of R10_PENDING_SEMANTIC_CASES)
+  for (const sample of R10_SEMANTIC_CASES.filter((sample) => sample.owner !== "R10.2"))
     it.todo(`${sample.id} ${sample.owner}: ${sample.title} | ${sample.input} → ${sample.expected}`);
+});
+
+describe("R10.2 executable semantic acceptance", () => {
+  it("P01 filters private thoughts out of actual actor requests and typed dialogue memory", async () => {
+    const { service, requests } = harness();
+    const result = await service.create(sessionId, dialogue({ content: "蓝色钥匙也藏在旧的content里",
+      semanticInput: [{ kind: "private_thought", text: "我藏起了蓝色钥匙" }, { kind: "dialogue", text: "晚上好", targetId: "keeper", channel: "direct" }] }));
+    expect(JSON.stringify(requests)).not.toContain("蓝色钥匙");
+    expect(JSON.stringify(requests)).toContain("晚上好");
+    const saved = result.turns.at(-1)!;
+    expect(saved.playerContent).toContain("[私人想法]");
+    expect(saved.playerContent).not.toContain("旧的content");
+    const thoughts = saved.stateSnapshot.exploration!.cognition!.records.filter((entry) => entry.kind === "private_thought");
+    expect(thoughts[0].audience).toEqual(["player"]);
+    expect(JSON.stringify(saved.stateSnapshot.exploration!.characters.keeper.memories)).not.toContain("蓝色钥匙");
+  });
+
+  it("P02 preserves narration/action semantics without converting them to speech or world facts", async () => {
+    const { service, requests } = harness();
+    const result = await service.create(sessionId, createGameTurnSchema.parse({ content: "语义输入", parentTurnId: rootId,
+      expectedVersion: 1, requestId, semanticInput: [{ kind: "world_narration", text: "港外下雨" }, { kind: "action", text: "收起伞" }] }));
+    const turn = result.turns.at(-1)!;
+    expect(turn.playerContent).toContain("[旁白建议]"); expect(turn.playerContent).toContain("[行动意图]");
+    expect(JSON.stringify(turn.stateSnapshot.exploration!.cognition)).not.toContain("玩家说");
+    expect(requests[0].messages[0].content).toContain("中文主持人");
+    expect(turn.stateSnapshot.exploration!.flags).toEqual(syntheticSession().turns[0].stateSnapshot.exploration!.flags);
+  });
+
+  it("P03 saves OOC intentions and private thoughts without model calls or world mutations", async () => {
+    const before = syntheticSession(); const { service, requests } = harness(before);
+    const result = await service.create(sessionId, createGameTurnSchema.parse({ content: "记录", parentTurnId: rootId, expectedVersion: 1, requestId,
+      semanticInput: [{ kind: "ooc_instruction", text: "先设计一座雪城草稿" }, { kind: "private_thought", text: "暂不说出口" }] }));
+    expect(requests).toHaveLength(0);
+    const state = result.turns.at(-1)!.stateSnapshot.exploration!;
+    expect(state.locationId).toBe(before.turns[0].stateSnapshot.exploration!.locationId);
+    expect(state.tick).toBe(before.turns[0].stateSnapshot.exploration!.tick);
+    expect(state.cognition!.lastInput?.[0].kind).toBe("ooc_instruction");
+    expect(state.cognition!.records.every((entry) => entry.audience.length === 1 && entry.audience[0] === "player")).toBe(true);
+  });
+
+  it("P04 distributes direct/public dialogue only to actual recipients at that location", async () => {
+    for (const channel of ["direct", "public"] as const) {
+      const detail = syntheticSession();
+      detail.turns[0].stateSnapshot.exploration!.characters.merchant.locationId = "tower";
+      const { service } = harness(detail);
+      const result = await service.create(sessionId, dialogue({ semanticInput: [{ kind: "dialogue", text: "SYNTH_WHISPER", targetId: "keeper", channel }] }));
+      const state = result.turns.at(-1)!.stateSnapshot.exploration!;
+      const context = actorContext(state, "merchant", perceptionScope(result, result.activeLeafTurnId));
+      expect(JSON.stringify(context).includes("SYNTH_WHISPER")).toBe(channel === "public");
+      expect(state.cognition!.records.find((entry) => entry.kind === "dialogue")!.audience).not.toContain("archivist");
+    }
+  });
+
+  it("P05 keeps rumor provenance in initial knowledge and bounded sourced memory", async () => {
+    const detail = syntheticSession(); detail.turns[0].stateSnapshot.exploration!.characters.merchant.locationId = "tower";
+    const { service } = harness(detail);
+    const result = await service.create(sessionId, dialogue({ explorationAction: { action: "talk", targetId: "merchant" } }));
+    const context = actorContext(result.turns.at(-1)!.stateSnapshot.exploration!, "merchant", perceptionScope(result, result.activeLeafTurnId));
+    expect(context.knowledge.find((entry) => entry.source.endsWith(":lens-rumor"))).toMatchObject({ evidence: "rumor", method: "initial-knowledge" });
+    expect(context.observations.filter((entry) => entry.kind === "dialogue" || entry.kind === "reply").every((entry) => entry.evidence === "statement")).toBe(true);
+  });
+
+  it("P06 never lets lastResult, raw history, content or legacy memories bypass actor scope", () => {
+    const detail = syntheticSession(); const state = detail.turns[0].stateSnapshot.exploration!;
+    state.lastResult = "SYNTH_HOST_SECRET";
+    state.characters.keeper.memories = ["SYNTH_HOST_SECRET"];
+    state.characters.keeper.knownInformation = ["SYNTH_HOST_SECRET"];
+    const messages = explorationMessages(state, "SYNTH_HOST_SECRET", "keeper", [{ playerContent: "SYNTH_HOST_SECRET", assistantContent: "SYNTH_HOST_SECRET" }], [], perceptionScope(detail, rootId));
+    expect(JSON.stringify(messages)).not.toContain("SYNTH_HOST_SECRET");
+  });
+
+  it("P07 rejects invalid actor scopes at the builder itself rather than falling back", () => {
+    const detail = syntheticSession(); const state = detail.turns[0].stateSnapshot.exploration!;
+    for (const target of ["missing", "merchant", "player"])
+      expect(() => explorationMessages(state, "hello", target, [], [], perceptionScope(detail, rootId))).toThrow("不能回退");
+    expect(() => explorationMessages(state, "hello", "keeper")).toThrow("来源范围");
+  });
+
+  it("P08 filters wrong-session/world/revision, sibling and future sources before requests", async () => {
+    for (const mutation of ["none", "session", "world", "revision"] as const) {
+      const detail = syntheticSession(); const state = detail.turns[0].stateSnapshot.exploration!;
+      state.cognition = { sessionId: mutation === "session" ? siblingId : sessionId,
+        worldId: mutation === "world" ? "other-world" : state.templateId,
+        worldVersion: mutation === "revision" ? "99.0.0" : state.templateVersion,
+        records: [
+          { sourceRequestId: previousRequestId, tick: state.tick, locationId: "tower", kind: "dialogue", speakerId: "player", audience: ["keeper"], evidence: "statement", text: "SYNTH_VALID_SOURCE" },
+          { sourceRequestId: siblingId, tick: state.tick, locationId: "tower", kind: "dialogue", speakerId: "player", audience: ["keeper"], evidence: "statement", text: "SYNTH_OTHER_SCOPE" },
+          { sourceRequestId: previousRequestId, tick: state.tick + 1, locationId: "tower", kind: "dialogue", speakerId: "player", audience: ["keeper"], evidence: "statement", text: "SYNTH_FUTURE_SCOPE" },
+        ] };
+      const sibling = structuredClone(detail.turns[0]);
+      sibling.id = siblingId; sibling.parentTurnId = rootId;
+      sibling.stateSnapshot.exploration!.receipt = { requestId: siblingId, fingerprint: "b".repeat(64) };
+      detail.turns.push(sibling); detail.activeLeafTurnId = siblingId;
+      const { service, requests } = harness(detail);
+      await service.create(sessionId, dialogue());
+      const serialized = JSON.stringify(requests);
+      expect(serialized).not.toMatch(/SYNTH_OTHER_SCOPE|SYNTH_FUTURE_SCOPE/u);
+      expect(serialized.includes("SYNTH_VALID_SOURCE")).toBe(mutation === "none");
+    }
+  });
+
+  it("rejects impersonated speakers and mixed public/private dialogue channels", () => {
+    expect(createGameTurnSchema.safeParse({ ...dialogue(), semanticInput: [{ kind: "dialogue", text: "hi", targetId: "keeper", channel: "direct", speakerId: "merchant" }] }).success).toBe(false);
+    expect(createGameTurnSchema.safeParse({ ...dialogue(), semanticInput: [
+      { kind: "dialogue", text: "secret", targetId: "keeper", channel: "direct" },
+      { kind: "dialogue", text: "hello everyone", targetId: "keeper", channel: "public" },
+    ] }).success).toBe(false);
+  });
 });

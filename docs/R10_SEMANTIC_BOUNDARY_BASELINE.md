@@ -1,6 +1,6 @@
 # R10.1：语义与边界基线
 
-状态：2026-10-19，语义规范、现状审计与离线基线已建立。本文定义后续实现必须遵守的语义，不宣称新 DTO、创作系统、人物隔离或抽卡已经上线。任务拆分见 [R10规划](ENTERTAINMENT_CREATION_AND_CHARACTER_PLAN.md)，排序只看 [产品主线](PRODUCT_MAINLINE_GUIDE.md)。
+状态：2026-10-19，记录 **R10.1交付时** 的规范、现状审计与离线基线，不是当前运行指南。R10.2现已接入输入类型和人物请求隔离，见 [当前指南](R10_ACTOR_ISOLATION_GUIDE.md)；原测试已随实现更新，P01–P08不再TODO。创作 / 抽卡仍待后续阶段；任务拆分见 [R10规划](ENTERTAINMENT_CREATION_AND_CHARACTER_PLAN.md)，排序只看 [产品主线](PRODUCT_MAINLINE_GUIDE.md)。
 
 ## 1. 本期交付边界
 

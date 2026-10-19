@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cognitionSchema } from "./semanticContracts";
 
 // Independent of the legacy game-state.v2 and export-v3 compatibility contracts.
 export const EXPLORATION_STATE_VERSION = 1;
@@ -81,6 +82,7 @@ export const explorationStateSchema = z.object({
     events: z.array(eventView).max(50), epics: z.array(epicView).max(20),
   }).strict(),
   lastResult: text,
+  cognition: cognitionSchema.optional(),
   receipt: z.object({ requestId: z.uuid(), fingerprint: z.string().regex(/^[a-f0-9]{64}$/u) }).strict().optional(),
 }).strict().superRefine((state, ctx) => {
   const ids = state.instances.map((item) => item.id);

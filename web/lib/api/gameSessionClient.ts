@@ -1,6 +1,7 @@
 import { requestJson } from "@/lib/api/jsonRequest";
 import type { GameToolRequest } from "@/lib/game/toolkit";
 import type { ExplorationAction } from "@/lib/game/exploration/contracts";
+import type { SemanticInput } from "@/lib/game/exploration/semanticContracts";
 import type { ExplorationHistoryQuery, ExplorationHistoryResult } from "@/lib/game/exploration/history";
 import type {
   GameCharacterController,
@@ -213,7 +214,7 @@ export function createGameTurn(
   expectedVersion: number,
   diceRequests: GameDiceRequest[] = [],
   checkRequest: GameRuleCheckRequest | null = null,
-  toolOptions: { requestId?: string; toolRequest?: GameToolRequest; toolOnly?: boolean; explorationAction?: ExplorationAction; narrate?: boolean } = {},
+  toolOptions: { requestId?: string; toolRequest?: GameToolRequest; toolOnly?: boolean; explorationAction?: ExplorationAction; narrate?: boolean; semanticInput?: SemanticInput } = {},
 ): Promise<GameSessionDetail> {
   return request(`/api/v1/game-sessions/${encodeURIComponent(sessionId)}/turns`, {
     method: "POST",

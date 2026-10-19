@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, type FormEvent } from "react";
 import { GameToolkitPanel } from "./GameToolkitPanel";
 import { ExplorationPanel } from "./ExplorationPanel";
 import type { ExplorationAction } from "@/lib/game/exploration/contracts";
+import { SEMANTIC_LABELS, type SemanticInput, type SemanticKind } from "@/lib/game/exploration/semanticContracts";
 import { sessionExplorationTemplate } from "@/lib/game/exploration/templateReference";
 import { findExplorationTemplate } from "@/lib/game/exploration/templateCatalog";
 import type { GameToolRequest } from "@/lib/game/toolkit";
@@ -44,6 +45,9 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
   const turns = useMemo(() => detail.turns ?? [], [detail.turns]);
   const activeLeafTurnId = detail.activeLeafTurnId ?? null;
   const [content, setContent] = useState("");
+  const [inputKind, setInputKind] = useState<SemanticKind>("action");
+  const [targetId, setTargetId] = useState("");
+  const [channel, setChannel] = useState<"direct" | "public">("direct");
   const [branchSelection, setBranchSelection] = useState<{
     sessionId: string;
     parentTurnId: string | null;
@@ -71,6 +75,8 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
     return parent?.stateSnapshot ?? initialGameState(detail.worldName, detail.worldPremise, detail.characters);
   }, [byId, detail.characters, detail.worldName, detail.worldPremise, parentTurnId]);
   const checkCharacters = Object.entries(selectedState.characters);
+  const present = Object.values(selectedState.exploration?.characters ?? {}).filter((person) => person.controller !== "user" && person.locationId === selectedState.exploration?.locationId);
+  const selectedTarget = present.find((person) => person.id === targetId)?.id ?? present[0]?.id ?? "";
   const resolvedCheckCharacterId = checkCharacters.some(([id]) => id === checkCharacterId)
     ? checkCharacterId
     : checkCharacters[0]?.[0] ?? "";
@@ -107,7 +113,7 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
     if (!content.trim() || detail.status !== "active") return;
     setBusy(true);
     onError(null);
-    onNotice("AI 正在续写所选剧情线，请稍候…");
+    onNotice(selectedState.exploration && ["private_thought", "ooc_instruction"].includes(inputKind) ? "正在保存本局记录，不调用AI。" : "AI 正在回应所选输入，请稍候…");
     try {
       const diceRequests: GameDiceRequest[] = !selectedState.exploration && useDice
         ? [{
@@ -127,6 +133,11 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
             purpose: checkPurpose.trim(),
           }
         : null;
+      const semanticInput: SemanticInput | undefined = selectedState.exploration ? [inputKind === "dialogue"
+        ? { kind: "dialogue", targetId: selectedTarget, channel, text: content.trim() }
+        : { kind: inputKind, text: content.trim() }] : undefined;
+      const key = JSON.stringify({ session: detail.id, parentTurnId, version: detail.version, semanticInput });
+      if (semanticInput && toolRetry.current?.key !== key) toolRetry.current = { key, requestId: crypto.randomUUID() };
       const next = await createGameTurn(
         detail.id,
         content.trim(),
@@ -134,9 +145,11 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
         detail.version,
         diceRequests,
         checkRequest,
+        semanticInput ? { semanticInput, requestId: toolRetry.current!.requestId } : {},
       );
       onChange(next);
       setContent("");
+      toolRetry.current = null;
       setBranchSelection(null);
       setUseDice(false);
       setUseCheck(false);
@@ -182,13 +195,13 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
     finally { setBusy(false); }
   };
 
-  const runExploration = async (explorationAction: ExplorationAction, playerContent?: string, narrate = false) => {
+  const runExploration = async (explorationAction: ExplorationAction, playerContent?: string, narrate = false, semanticInput?: SemanticInput) => {
     if (busy || detail.status !== "active") return false;
     setBusy(true); onError(null); onNotice(narrate ? "AI 正在回应；只有这次明确发送会调用模型。" : null);
-    const key = JSON.stringify({ session: detail.id, parentTurnId, version: detail.version, explorationAction, playerContent, narrate });
+    const key = JSON.stringify({ session: detail.id, parentTurnId, version: detail.version, explorationAction, playerContent, narrate, semanticInput });
     if (toolRetry.current?.key !== key) toolRetry.current = { key, requestId: crypto.randomUUID() };
     try {
-      const next = await createGameTurn(detail.id, playerContent ?? `探索动作：${explorationAction.action}`, parentTurnId, detail.version, [], null, { requestId: toolRetry.current.requestId, explorationAction, narrate });
+      const next = await createGameTurn(detail.id, playerContent ?? `探索动作：${explorationAction.action}`, parentTurnId, detail.version, [], null, { requestId: toolRetry.current.requestId, explorationAction, narrate, ...(semanticInput ? { semanticInput } : {}) });
       onChange(next); setBranchSelection(null); toolRetry.current = null;
       onNotice(narrate ? "人物对话与宿主结果已保存。" : "探索动作已保存；未调用 AI。");
       return true;
@@ -262,8 +275,12 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
               {turns.length > 0 && <button type="button" onClick={() => selectBranch(turns.find((turn) => turn.stateSnapshot.exploration)?.id ?? null)} className="font-medium text-violet-700 dark:text-violet-300">从开头分支</button>}
             </div>
           </div>
-          <textarea id="game-turn-content" required maxLength={8_000} rows={4} value={content} onChange={(event) => setContent(event.target.value)} className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-3 text-sm outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-950" placeholder="例如：我把旧信放在吧台上，问老板是否认识落款的人。" />
-          {selectedState.exploration && <p className="text-xs text-zinc-500">自由叙事会调用 AI；确定的移动、物品和事件变化请用上方动作确认，不会由文案直接改动存档。</p>}
+          {selectedState.exploration && <div className="flex flex-wrap gap-3 text-xs">
+            <label>探索输入类型<select aria-label="探索输入类型" value={inputKind} onChange={(event) => setInputKind(event.target.value as SemanticKind)} className="ml-2 rounded-lg border border-zinc-300 bg-[var(--workspace-surface)] p-2">{Object.entries(SEMANTIC_LABELS).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
+            {inputKind === "dialogue" && <><label>回复人物<select aria-label="回复人物" value={selectedTarget} onChange={(event) => setTargetId(event.target.value)} className="ml-2 rounded-lg border border-zinc-300 bg-[var(--workspace-surface)] p-2">{!present.length && <option value="">当前没有可交流人物</option>}{present.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label><label>交流范围<select aria-label="台词交流范围" value={channel} onChange={(event) => setChannel(event.target.value as "direct" | "public")} className="ml-2 rounded-lg border border-zinc-300 bg-[var(--workspace-surface)] p-2"><option value="direct">定向</option><option value="public">公开给在场人物</option></select></label></>}
+          </div>}
+          <textarea id="game-turn-content" required maxLength={selectedState.exploration ? 2000 : 8000} rows={4} value={content} onChange={(event) => setContent(event.target.value)} className="w-full rounded-xl border border-zinc-300 bg-white px-3 py-3 text-sm outline-none focus:border-violet-500 dark:border-zinc-700 dark:bg-zinc-950" placeholder="请明确区分台词、行动意图和私人想法，不要混写。" />
+          {selectedState.exploration && <p className="text-xs text-zinc-500">台词只传给选定人物；行动意图 / 旁白建议交给主持，不视为已发生。私人想法 / 场外指令仅保存、不调用AI，也不让NPC知情。世界编辑与发布将在后续创作工作台提供。</p>}
           {!selectedState.exploration && <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-900 dark:bg-amber-950/20">
             <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
               <input type="checkbox" checked={useDice} onChange={(event) => {
@@ -334,7 +351,7 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
               </div>
             )}
           </div>}
-          <button type="submit" disabled={busy || !content.trim() || (!selectedState.exploration && ((useDice && !dicePurpose.trim()) || (useCheck && (!resolvedCheckCharacterId || !resolvedCheckAttribute || !checkPurpose.trim()))))} className="rounded-xl bg-violet-700 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">{busy ? "AI 正在续写…" : parentTurnId === activeLeafTurnId ? "发送并继续" : "创建新分支"}</button>
+          <button type="submit" disabled={busy || !content.trim() || Boolean(selectedState.exploration && inputKind === "dialogue" && !selectedTarget) || (!selectedState.exploration && ((useDice && !dicePurpose.trim()) || (useCheck && (!resolvedCheckCharacterId || !resolvedCheckAttribute || !checkPurpose.trim()))))} className="rounded-xl bg-violet-700 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50">{busy ? "正在处理…" : parentTurnId === activeLeafTurnId ? "发送并继续" : "创建新分支"}</button>
         </form>
       )}
     </section>
