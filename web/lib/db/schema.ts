@@ -672,6 +672,7 @@ export const gameAssetDesigns = pgTable("game_asset_designs", {
 }, (table) => [foreignKey({ columns: [table.worldId, table.userId], foreignColumns: [gameWorldDrafts.id, gameWorldDrafts.userId] }).onDelete("restrict"),
   index("game_asset_designs_world_idx").on(table.worldId, table.userId, table.updatedAt)]);
 
+
 export const gameWorldRevisions = pgTable("game_world_revisions", {
   id: uuid("id").defaultRandom().primaryKey(), worldId: uuid("world_id").notNull(), userId: uuid("user_id").notNull(),
   revision: integer("revision").notNull(), draftVersion: integer("draft_version").notNull(),
@@ -1587,6 +1588,21 @@ export const gameItemDraws = pgTable("game_item_draws", {
   updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
 }, (table) => [foreignKey({ columns: [table.sessionId, table.userId], foreignColumns: [gameSessions.id, gameSessions.userId] }).onDelete("cascade"),
   index("game_item_draws_branch_idx").on(table.sessionId, table.parentTurnId, table.createdAt)]);
+
+export const gameEventDesigns = pgTable("game_event_designs", {
+  id: uuid("id").defaultRandom().primaryKey(), userId: uuid("user_id").notNull(), worldId: uuid("world_id"), sessionId: uuid("session_id"),
+  parentTurnId: uuid("parent_turn_id").references((): AnyPgColumn => gameTurns.id, { onDelete: "cascade" }), sourceVersion: integer("source_version").notNull(),
+  sourceSnapshot: jsonb("source_snapshot").$type<import("@/lib/game/events/source").EventSnapshot>().notNull(),
+  brief: text("brief").notNull(), content: jsonb("content").$type<import("@/lib/game/events/contracts").EventDefinition>().notNull(),
+  lockedFields: jsonb("locked_fields").$type<import("@/lib/game/events/contracts").EventField[]>().notNull().default(sql`'[]'::jsonb`),
+  origins: jsonb("origins").$type<Record<string, "ai" | "user">>().notNull().default(sql`'{}'::jsonb`),
+  generation: jsonb("generation").$type<import("@/lib/game/events/source").EventGenerationState>().notNull().default(sql`'{"attempts":[],"active":null,"error":null}'::jsonb`),
+  version: integer("version").notNull().default(1), appliedWorldVersion: integer("applied_world_version"),
+  appliedTurnId: uuid("applied_turn_id").references((): AnyPgColumn => gameTurns.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(), updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (table) => [foreignKey({ columns: [table.worldId, table.userId], foreignColumns: [gameWorldDrafts.id, gameWorldDrafts.userId] }).onDelete("restrict"),
+  foreignKey({ columns: [table.sessionId, table.userId], foreignColumns: [gameSessions.id, gameSessions.userId] }).onDelete("cascade"),
+  index("game_event_designs_source_idx").on(table.userId, table.worldId, table.sessionId, table.updatedAt)]);
 
 export type GameSessionRecord = typeof gameSessions.$inferSelect;
 export type GameCharacterRecord = typeof gameCharacters.$inferSelect;

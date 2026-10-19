@@ -1,5 +1,5 @@
 // Synthetic acceptance inputs, not production DTOs or an implemented policy engine.
-// R10.2 cases have executable coverage; later stages remain explicit TODOs.
+// P01–P13 now have executable coverage in the actor, world, asset, draw and event stage tests.
 export const R10_SEMANTIC_CASES = [
   { id: "P01", owner: "R10.2", title: "private thought is not audible dialogue",
     input: "玩家私下想：我藏起了蓝色钥匙；对守灯人只说：晚上好。",

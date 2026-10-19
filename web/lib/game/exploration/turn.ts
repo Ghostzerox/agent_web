@@ -10,6 +10,7 @@ import { appendPerception, perceptionScope, recordPerceptions } from "./percepti
 import { formatSemanticInput } from "./semanticContracts";
 import { getWorldTemplate } from "./catalog";
 import type { WorldTemplateResolver } from "./templateRegistry";
+import { recordEventKnowledge } from "../events/knowledge";
 
 export async function resolveExplorationTurn(session: GameSessionDetail, input: CreateGameTurnRequest,
   parent: GameState, fingerprint: string, generator: GameNarrativeGeneratorPort, signal?: AbortSignal, resolve: WorldTemplateResolver = getWorldTemplate) {
@@ -33,6 +34,7 @@ export async function resolveExplorationTurn(session: GameSessionDetail, input: 
   state.receipt = { requestId: input.requestId!, fingerprint };
   const scope = perceptionScope(session, input.parentTurnId, { requestId: input.requestId!, state });
   recordPerceptions(state, scope, input.requestId!, input.semanticInput, action, resolve);
+  recordEventKnowledge(parent.exploration, state, resolve(state.templateId, state.templateVersion), input.requestId!, action);
   const targetId = dialogues[0]?.targetId;
   const shouldGenerate = Boolean(input.narrate || (input.semanticInput &&
     input.semanticInput.some((part) => !["private_thought", "ooc_instruction"].includes(part.kind))));

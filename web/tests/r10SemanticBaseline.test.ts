@@ -10,7 +10,6 @@ import { explorationMessages } from "@/lib/game/exploration/prompt";
 import { actorContext, perceptionScope } from "@/lib/game/exploration/perception";
 import { initialGameState } from "@/lib/game/state";
 import type { GameSessionDetail, GameSessionRepositoryPort } from "@/lib/repositories/gameSessionRepository";
-import { R10_SEMANTIC_CASES } from "./fixtures/r10SemanticCases";
 
 const sessionId = "11111111-1111-4111-8111-111111111111";
 const rootId = "22222222-2222-4222-8222-222222222222";
@@ -210,11 +209,6 @@ describe("current exploration service boundary regression", () => {
   it.each(["perceptionScope", "creationDraft", "numericPolicy"])("C12 does not silently accept unimplemented/client-authoritative field %s", (field) => {
     expect(createGameTurnSchema.safeParse({ ...dialogue(), [field]: {} }).success).toBe(false);
   });
-});
-
-describe("R10 synthetic future acceptance corpus — explicitly pending, not passed", () => {
-  for (const sample of R10_SEMANTIC_CASES.filter((sample) => sample.owner === "R10.5"))
-    it.todo(`${sample.id} ${sample.owner}: ${sample.title} | ${sample.input} → ${sample.expected}`);
 });
 
 describe("R10.2 executable semantic acceptance", () => {

@@ -112,7 +112,11 @@ function HistoryPanel({ state, sessionId, parentTurnId, onError }: { state: Expl
 export function ExplorationPanel({ state, sessionId, parentTurnId, disabled, run, onError }: { state: ExplorationState;
   sessionId: string; parentTurnId: string | null; disabled: boolean; run: Run; onError: (message: string | null) => void }) {
   const query = useAppQuery();
-  const [tab, setTab] = useState<Tab>(() => query.get("panel") === "items" ? "items" : "map");
+  const requestedTab: Tab = query.get("panel") === "items" ? "items" : query.get("panel") === "events" ? "events" : "map";
+  const [selection, setSelection] = useState<{ requested: Tab; tab: Tab } | null>(null);
+  // Query hydration happens after first paint in both clients. Follow a deep link until the user selects a tab.
+  const tab = selection?.requested === requestedTab ? selection.tab : requestedTab;
+  const setTab = (value: Tab) => setSelection({ requested: requestedTab, tab: value });
   const current = state.view.locations.find((location) => location.id === state.locationId)!;
   const present = Object.values(state.characters).filter((person) => person.locationId === state.locationId && person.controller !== "user");
   return <section aria-label="大世界探索工作区" className="space-y-4 rounded-2xl bg-[var(--workspace-bg)] p-3 sm:p-5">
@@ -137,7 +141,7 @@ export function ExplorationPanel({ state, sessionId, parentTurnId, disabled, run
         const definition = state.view.items.find((entry) => entry.id === item.definitionId);
         return definition && <ItemCard key={item.id} item={item} definition={definition} state={state} disabled={disabled} run={run} />;
       })}</div></>}
-      {tab === "people" && <div className="grid gap-3 xl:grid-cols-2">{Object.values(state.characters).length === 0 && <p className="text-sm text-zinc-500">还没遇见人物，先去集市或灯塔看看。</p>}{Object.values(state.characters).map((person) => <CharacterCard key={person.id} person={person} here={person.locationId === current.id} disabled={disabled} run={run} perceptions={state.cognition?.records.filter((entry) => entry.audience.includes(person.id)) ?? []} />)}</div>}
+      {tab === "people" && <div className="grid gap-3 xl:grid-cols-2">{Object.values(state.characters).length === 0 && <p className="text-sm text-zinc-500">还没遇见人物，先去集市或灯塔看看。</p>}{Object.values(state.characters).map((person) => <CharacterCard key={person.id} person={person} here={person.locationId === current.id} disabled={disabled} run={run} perceptions={state.cognition?.records.filter((entry) => entry.audience.includes(person.id) && entry.audience.includes("player")) ?? []} />)}</div>}
       {tab === "events" && <>
         {state.view.events.length === 0 && <p className="text-sm text-zinc-500">尚未触发公开事件。可以自由探索，无需接受任何主线。</p>}
         {state.view.events.map((event) => <article key={event.id} className={card}><h4 className="font-semibold">{event.name} <span className="text-xs font-normal text-zinc-500">{event.scope === "world" ? "世界" : event.scope === "character" ? "人物" : "地方"}事件 · {event.settled ? "已结束" : event.locationId === current.id ? "可在此处理" : "前往对应地点处理"}</span></h4><p className="text-sm text-zinc-500">{event.description}</p>{event.choices.map((choice) => <div key={choice.id} className="space-y-1"><button className={button} disabled={disabled || !choice.available || event.locationId !== current.id} onClick={() => {

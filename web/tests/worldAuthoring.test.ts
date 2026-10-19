@@ -190,6 +190,7 @@ describe("R10.3 persisted world creation and playable revisions", () => {
   it("fences a newer authoring downgrade without deleting existing game sessions", async () => {
     const migrationDB = createPgliteMigrationDatabase(pglite); const migrations = await loadMigrations();
     // New R10.4 data deliberately fences a lossy downgrade; old sessions still remain intact.
+    await expect(rollbackDatabase(migrationDB, migrations)).resolves.toBe("0037_game_event_designs.sql");
     await expect(rollbackDatabase(migrationDB, migrations)).resolves.toBe("0036_game_item_draws.sql");
     await expect(rollbackDatabase(migrationDB, migrations)).rejects.toThrow("R10.4 authoring data exists");
     await migrateDatabase(migrationDB, migrations);

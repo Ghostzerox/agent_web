@@ -207,6 +207,7 @@ describe("R10.4.1 real SQL pending draws, branch snapshots and shared inventory"
     const row = await prepare(session); expect((await call([row.id, "settle"], { expectedVersion: row.version })).status).toBe(400);
     expect((await api(new Request(`http://local/api/v1/game-draws?sessionId=${crypto.randomUUID()}&parentTurnId=${session.activeLeafTurnId}`))).status).toBe(404);
     const other = await setup(); await expect(draws.prepare(other.session.id, { requestId: crypto.randomUUID(), parentTurnId: session.activeLeafTurnId, expectedVersion: other.session.version, poolId: "fixed", keywords: "", confirmed: true })).rejects.toThrow("所选分支");
+    await expect(rollbackDatabase(migrationDb, await loadMigrations())).resolves.toBe("0037_game_event_designs.sql");
     await expect(rollbackDatabase(migrationDb, await loadMigrations())).rejects.toThrow("draw data exists");
     expect((await draws.get(row.id)).data.sample.quantity).toBe(2);
   });

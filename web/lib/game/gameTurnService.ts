@@ -166,7 +166,7 @@ export function createGameTurnService(
   generator: GameNarrativeGeneratorPort = createGameNarrativeGenerator(),
   now: () => Date = () => new Date(),
   createSeed: () => string = () => crypto.randomUUID(),
-  loadTemplate?: (sessionId: string, templateId: string, version: string) => Promise<WorldTemplate>,
+  loadTemplate?: (sessionId: string, templateId: string, version: string, parentTurnId?: string | null) => Promise<WorldTemplate>,
 ) {
   return {
     async create(
@@ -207,7 +207,7 @@ export function createGameTurnService(
       let resolve: WorldTemplateResolver = getWorldTemplate;
       const reference = input.explorationAction?.action === "start" ? input.explorationAction : currentState.exploration;
       if (reference && loadTemplate) {
-        const definition = await loadTemplate(sessionId, reference.templateId, reference.templateVersion);
+        const definition = await loadTemplate(sessionId, reference.templateId, reference.templateVersion, input.parentTurnId);
         resolve = (id, version) => {
           if (id !== definition.id || version !== definition.version) throw new ExplorationError("世界修订与当前存档不一致。");
           return definition;

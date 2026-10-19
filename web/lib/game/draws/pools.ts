@@ -38,7 +38,7 @@ export function eligibleDrawEntries(pool: DrawPool, state: ExplorationState, tem
     if (state.instances.length >= 150 && (!item?.stackable || !state.instances.some((instance) => instance.definitionId === item.id && instance.owner === "player" && !instance.equippedSlot && instance.quantity + entry.maxQuantity <= 999))) return false;
     // Unique definitions already placed anywhere in the immutable world cannot be cloned by a pool.
     return Boolean(item && (!item.unique || !template.instances.some((instance) => instance.definitionId === item.id)
-      && !state.instances.some((instance) => instance.definitionId === item.id) && !receipts.some((receipt) => receipt.definitionId === item.id)));
+      && !state.instances.some((instance) => instance.definitionId === item.id) && !state.issuedUniqueItems?.includes(item.id) && !receipts.some((receipt) => receipt.definitionId === item.id)));
   });
 }
 

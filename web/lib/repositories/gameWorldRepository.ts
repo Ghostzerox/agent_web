@@ -1,8 +1,12 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { stableJson } from "@/lib/ai/stableJson";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import * as schema from "@/lib/db/schema";
 import { gameWorldDrafts as drafts, gameWorldRevisions as revisions, gameWorldSaves as saves, users } from "@/lib/db/schema";
+import { gameEventDesigns, gameSessions, gameTurns } from "@/lib/db/schema";
+import { gameTurnPath } from "@/lib/game/turnTree";
+import { withAcquiredItems } from "@/lib/game/exploration/runtimeItems";
+import type { ExplorationState } from "@/lib/game/exploration/contracts";
 import { LOCAL_USER_ID } from "./conversationRepository";
 import { createGameSessionRepository } from "./gameSessionRepository";
 import { compileWorld, worldDraftIssues } from "@/lib/game/worlds/compile";
@@ -31,6 +35,8 @@ export function createGameWorldRepository<H extends PgQueryResultHKT>(db: PgData
       const input = updateWorldDraftSchema.parse(raw); const previous = await get(id);
       if (stableJson(previous.content?.drawPools ?? []) !== stableJson(input.content?.drawPools ?? []) && !input.drawPoolsConfirmed)
         throw new WorldDesignError("WORLD_INVALID", "卡池规则发生变化，请先审阅概率、数量、虚构成本与放回规则并明确确认。");
+      if (stableJson(previous.content?.eventDesigns ?? []) !== stableJson(input.content?.eventDesigns ?? []) && !input.eventDesignsConfirmed)
+        throw new WorldDesignError("WORLD_INVALID", "事件规则发生变化，请先审阅条件、范围、拒绝路径与后果，并明确确认。");
       const origins = generation?.origins ?? { ...previous.origins };
       if (!generation) for (const section of WORLD_SECTIONS)
         if (stableJson(previous.content?.[section]) !== stableJson(input.content?.[section])) origins[section] = "user";
@@ -81,12 +87,28 @@ export function createGameWorldRepository<H extends PgQueryResultHKT>(db: PgData
         return session;
       });
     },
-    async resolveSessionTemplate(sessionId: string, templateId: string, version: string) {
+    async resolveSessionTemplate(sessionId: string, templateId: string, version: string, parentTurnId?: string | null) {
       const [row] = await db.select({ definition: revisions.definition }).from(saves).innerJoin(revisions, eq(saves.revisionId, revisions.id))
         .where(and(eq(saves.sessionId, sessionId), eq(saves.userId, LOCAL_USER_ID), eq(revisions.userId, LOCAL_USER_ID)));
-      if (!row) return getWorldTemplate(templateId, version);
-      if (row.definition.id !== templateId || row.definition.version !== version) throw new WorldDesignError("WORLD_INVALID", "请求的世界与存档固定修订不一致，不能切换或覆盖。");
-      validateWorldTemplate(row.definition); return row.definition;
+      const definition = row?.definition ?? getWorldTemplate(templateId, version);
+      if (definition.id !== templateId || definition.version !== version) throw new WorldDesignError("WORLD_INVALID", "请求的世界与存档固定修订不一致，不能切换或覆盖。");
+      let resolved = definition;
+      let validationState: ExplorationState | undefined;
+      if (parentTurnId) {
+        const [owner] = await db.select({ id: gameSessions.id }).from(gameSessions).where(and(eq(gameSessions.id, sessionId), eq(gameSessions.userId, LOCAL_USER_ID)));
+        if (!owner) throw new WorldDesignError("WORLD_NOT_FOUND", "存档不存在。");
+        const turns = await db.select().from(gameTurns).where(eq(gameTurns.sessionId, sessionId));
+        const path = gameTurnPath(turns, parentTurnId); const state = path.at(-1)?.stateSnapshot.exploration;
+        if (!state || state.templateId !== templateId || state.templateVersion !== version) throw new WorldDesignError("WORLD_INVALID", "事件来源分支与世界不匹配。");
+        validationState = state;
+        const ids = state.eventPlanIds ?? [];
+        if (ids.length) {
+          const rows = await db.select().from(gameEventDesigns).where(and(eq(gameEventDesigns.userId, LOCAL_USER_ID), eq(gameEventDesigns.sessionId, sessionId), inArray(gameEventDesigns.id, ids)));
+          if (rows.length !== ids.length || rows.some((plan) => !path.some((turn) => turn.id === plan.appliedTurnId))) throw new WorldDesignError("WORLD_INVALID", "事件计划缺失或不属于当前祖先分支。");
+          resolved = { ...definition, events: [...definition.events, ...ids.map((id) => rows.find((plan) => plan.id === id)!.content)] };
+        }
+      }
+      validateWorldTemplate(validationState ? withAcquiredItems(resolved, validationState) : resolved); return resolved;
     },
   };
 }

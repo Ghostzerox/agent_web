@@ -1,11 +1,13 @@
 import type { z } from "zod";
 import type { DrawPool } from "../draws/contracts";
+import type { eventDetailsSchema, eventKnowledgeSchema } from "../events/contracts";
 import type { attributeRuleSchema, characterPersonaSchema, ExplorationState, WorldHistory, WorldCharacter } from "./contracts";
 
-export type WorldCondition = { flag?: string; learned?: string; item?: string; minTick?: number };
+export type WorldCondition = { flag?: string; learned?: string; item?: string; minTick?: number; relationship?: { actorId: string; atLeast: "wary" | "neutral" | "friendly" | "trusted" } };
 export type WorldEffect = {
   flags?: string[]; discover?: string[]; reveal?: string[]; grant?: string[];
   coins?: number; condition?: string; removeCondition?: string;
+  rewards?: { definitionId: string; quantity: number }[];
   character?: { id: string; relationship?: "wary" | "neutral" | "friendly" | "trusted"; reason: string; important?: boolean; locationId?: string; removeUnresolved?: string[] };
   progress?: ExplorationState["progress"];
 };
@@ -36,8 +38,9 @@ export type WorldTemplate = {
   lore: (Omit<WorldHistory, "tick" | "source"> & { source: string })[];
   events: { id: string; name: string; scope: "local" | "character" | "world"; locationId: string; actorIds: string[];
     stages: { id: string; description: string; terminal: boolean; choices: { id: string; label: string; cost: string;
-      requires?: WorldCondition; coinCost?: number; consume?: string; next: string; effect: WorldEffect; result: string }[] }[];
-    trigger: WorldCondition }[];
+      requires?: WorldCondition; coinCost?: number; consume?: string; next: string; effect: WorldEffect; result: string;
+      refusal?: boolean; knowledge?: z.infer<typeof eventKnowledgeSchema>[] }[] }[];
+    trigger: WorldCondition; details?: z.infer<typeof eventDetailsSchema> }[];
   epics: { id: string; name: string; chapters: string[]; keyActors: string[];
     milestones: { flag: string; text: string }[]; endings: { flag: string; text: string; consequences: string[] }[] }[];
 };

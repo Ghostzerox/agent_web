@@ -4,6 +4,7 @@ import { validateWorldTemplate } from "../exploration/validateTemplate";
 import { worldBlueprintSchema, WorldDesignError, type WorldBlueprint, type WorldBrief } from "./contracts";
 import { worldAssetIssues } from "./assetValidation";
 import { drawPoolIssues } from "../draws/pools";
+import { eventDesignIssues } from "../events/validation";
 
 export function worldDraftIssues(input: WorldBrief, content: WorldBlueprint | null): string[] {
   if (!content) return ["尚无结构化世界草稿，请生成或填写后再发布。"]; const issues: string[] = [];
@@ -32,6 +33,11 @@ export function worldDraftIssues(input: WorldBrief, content: WorldBlueprint | nu
   if (input.numericPolicy === "light" && content.ranks.levelsPerTier === undefined) issues.push("轻数值世界需要明确每阶等级数。");
   issues.push(...worldAssetIssues(input, content), ...content.conflicts.map((line) => `待解决冲突：${line}`));
   issues.push(...drawPoolIssues(content.drawPools ?? [], { items: content.items.definitions, locations: content.region.locations, ranks: content.ranks, numericPolicy: input.numericPolicy, slots: content.itemRules.slots }));
+  const events = content.eventDesigns ?? [];
+  if (new Set([content.hook.id, ...events.map((event) => event.id)]).size !== events.length + 1) issues.push("事件ID与初始交互或其他事件重复。");
+  for (const event of events) issues.push(...eventDesignIssues(event, { items: content.items.definitions, instances: content.items.placements, acquisitionRules: { magic: input.magic }, locations: content.region.locations,
+    characters: content.characters.filter((person) => person.id !== "player").map((person) => ({ card: { id: person.id } })),
+    lore: [...content.lore, ...content.characters.flatMap((person) => person.profile.secrets.map((_, index) => ({ id: `${person.id}-secret-${index}` })))] }));
   return [...new Set(issues)];
 }
 
@@ -84,7 +90,7 @@ export function compileWorld(id: string, revision: number, input: WorldBrief, ra
         { id: "accept", label: hook.acceptText, cost: "无消耗；确认后写入本分支", next: "completed", effect: {}, result: hook.outcome },
         { id: "decline", label: "暂不参与", cost: "无消耗", next: "declined", effect: {}, result: hook.declineOutcome },
       ] }, { id: "completed", description: hook.outcome, terminal: true, choices: [] }, { id: "declined", description: hook.declineOutcome, terminal: true, choices: [] },
-    ] }], epics: [],
+    ] }, ...(content.eventDesigns ?? [])], epics: [],
   };
   validateWorldTemplate(template); return template;
 }

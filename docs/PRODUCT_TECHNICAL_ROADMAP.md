@@ -22,7 +22,7 @@
 | 跨端 API | `web/lib/api/*Client.ts`、`jsonRequest.ts` | 一份 JSON 传输；DTO 不由 SQL 私有类型反推，SSE 单独处理 |
 | 模型与 Prompt | `web/lib/agent`、`web/lib/ai` | 固定规则 / 模式 / 人格 / 检索分层；受控工具与引用不证明事实正确 |
 | 业务服务 | `tasks`、`proactivity`、`memorization`、`problemSolving` 等 | 模型输出不是持久事实，验证后由服务提交；系统执行不等于用户完成 |
-| 游戏 | `web/lib/game`、`gameRulePacks` | 通用引擎与探索模板分离；[人物隔离](R10_ACTOR_ISOLATION_GUIDE.md)按来源过滤；[世界创作](WORLD_CREATION_GUIDE.md)与[道具 / 人物设计](ITEM_CHARACTER_DESIGN_GUIDE.md)持久草稿与发布修订，经存档绑定解析，共用祖先链 / 原子状态 / 引擎；[抽卡](ITEM_DRAW_GUIDE.md)持久认领 / 宿主随机 / 确认入库，生成定义只进分支目录 |
+| 游戏 | `web/lib/game`、`gameRulePacks` | 通用引擎与探索模板分离；[人物隔离](R10_ACTOR_ISOLATION_GUIDE.md)按来源过滤；[世界创作](WORLD_CREATION_GUIDE.md)与[道具 / 人物设计](ITEM_CHARACTER_DESIGN_GUIDE.md)持久草稿与发布修订；[抽卡](ITEM_DRAW_GUIDE.md)与[事件](EVENT_CREATION_GUIDE.md)复用原库存 / 祖先链 / 原子状态 / 引擎，明确确认、有限规则与来源感知，不做平行模拟系统 |
 | 记忆 / 资料 | `web/lib/memory`、`knowledge`、`conversation` | 用户 / 模块 / 来源 / 分支 / 版本受限；宫殿保存引用，不复制所有原文 |
 | 数据 | `web/lib/db`、`repositories`、`web/drizzle` | PostgreSQL 为事实来源；正式 SQL 与校验历史唯一，ORM Schema 配套维护 |
 | 平台 | `web/lib/platform`、`web/mobile`、`web/android` | 共享 React 业务 + 薄原生能力；Huawei Push / ArkWeb 尚未全面实现 |
@@ -37,7 +37,7 @@ API 服务与 Worker 使用相同业务实现。Web / Worker 可共享镜像层�
 - 行动 / 打卡 / 目标保存用户行为事实；提醒关联只是辅助，不自动完成行动。
 - Vault 加密 API Key；Provider / Base URL / Model 不加密。完整 Key 不从读取接口返回。
 - 记忆、资料、摘要和探索状态有来源、范围与版本边界。用户可查看 / 关闭 / 删除相应数据。
-- 当前37对迁移 / 回滚 SQL：R10.3增加世界草稿、发布修订和存档绑定，R10.4增加独立设计稿与可编辑世界草稿的一次性结构升级；R10.4.1追加0036抽卡回执表及会话所有权索引；前36份不改写，Docker命名卷不因构建替换。新迁移、备份与恢复见 [数据库手册](DATABASE_OPERATIONS.md)。
+- 当前38对迁移 / 回滚 SQL：R10.3增加世界草稿、发布修订和存档绑定，R10.4增加独立设计稿与可编辑世界草稿的一次性结构升级；R10.4.1追加0036抽卡回执表及会话所有权索引，R10.5追加0037事件草稿与私有来源快照；前37份不改写，Docker命名卷不因构建替换。新迁移、备份与恢复见 [数据库手册](DATABASE_OPERATIONS.md)。
 
 ## 规范与待完成边界
 

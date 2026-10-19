@@ -3,12 +3,14 @@ import { getWorldTemplate } from "./catalog";
 import type { WorldCondition, WorldEffect, WorldTemplate } from "./templateTypes";
 import type { WorldTemplateResolver } from "./templateRegistry";
 import { withAcquiredItems } from "./runtimeItems";
+import { grantInventoryItem } from "./inventory";
 
 export function meets(state: ExplorationState, condition?: WorldCondition): boolean {
   return !condition || ((!condition.flag || state.flags[condition.flag] === true)
     && (!condition.learned || state.learned.includes(condition.learned))
     && (!condition.item || state.instances.some((item) => item.owner === "player" && item.definitionId === condition.item))
-    && (!condition.minTick || state.tick >= condition.minTick));
+    && (!condition.minTick || state.tick >= condition.minTick)
+    && (!condition.relationship || ["wary", "neutral", "friendly", "trusted"].indexOf(state.characters[condition.relationship.actorId]?.relationship ?? "") >= ["wary", "neutral", "friendly", "trusted"].indexOf(condition.relationship.atLeast)));
 }
 function fail(message: string): never { throw new ExplorationError(message); }
 const add = (values: string[], value: string) => { if (!values.includes(value)) values.push(value); };
@@ -49,10 +51,14 @@ function transfer(state: ExplorationState, instanceId: string, from: string, to:
   }
 }
 
-export function applyWorldEffect(state: ExplorationState, template: WorldTemplate, effect: WorldEffect) {
+export function applyWorldEffect(state: ExplorationState, template: WorldTemplate, effect: WorldEffect, source = `effect-${state.tick}`) {
   for (const flag of effect.flags ?? []) state.flags[flag] = true;
   for (const id of effect.discover ?? []) add(state.discovered, id);
   for (const id of effect.grant ?? []) spawn(state, template, id, "player");
+  for (const [index, reward] of (effect.rewards ?? []).entries()) {
+    const definition = template.items.find((item) => item.id === reward.definitionId) ?? fail("奖励定义不存在。");
+    grantInventoryItem(state, template, definition, reward.quantity, `reward-${source.slice(0, 36)}-${index}`, `event:${source}`);
+  }
   if (effect.coins) state.coins += effect.coins;
   if (effect.condition) add(state.conditions, effect.condition);
   if (effect.removeCondition) state.conditions = state.conditions.filter((item) => item !== effect.removeCondition);
@@ -119,12 +125,12 @@ export function projectWorld(state: ExplorationState, template = getWorldTemplat
       points: location.id === state.locationId ? location.points.filter((point) => meets(state, point.requires)).map(({ id, name, description }) => ({ id, name, description })) : [],
     })), items: template.items.filter((item) => state.instances.some((instance) => instance.definitionId === item.id &&
       (instance.owner === "player" || instance.owner === state.locationId || state.characters[instance.owner]?.locationId === state.locationId))),
-    events: template.events.filter((event) => state.events[event.id] && state.discovered.includes(event.locationId)).map((event) => {
+    events: template.events.filter((event) => state.events[event.id] && (event.details ? state.knownEvents?.includes(event.id) : state.discovered.includes(event.locationId))).map((event) => {
       const runtime = state.events[event.id]; const stage = event.stages.find((entry) => entry.id === runtime.stage)!;
       return { id: event.id, name: event.name, scope: event.scope, locationId: event.scope === "character" ? state.characters[event.actorIds[0]]?.locationId ?? event.locationId : event.locationId, actorIds: event.actorIds,
         stage: stage.id, description: stage.description, settled: runtime.settled,
-        choices: stage.choices.map((choice) => ({ id: choice.id, label: choice.label, cost: choice.cost,
-          available: meets(state, choice.requires) && state.coins >= (choice.coinCost ?? 0)
+        choices: stage.choices.map((choice) => ({ id: choice.id, label: choice.label, cost: event.details ? `${choice.cost.slice(0, 160)} · 钱币成本${choice.coinCost ?? 0} / 变化${choice.effect.coins ?? 0} · 消耗${choice.consume ?? "无"} · 奖励${(choice.effect.rewards ?? []).map((entry) => `${entry.definitionId}×${entry.quantity}`).join("、") || "无"}`.slice(0, 600) : choice.cost,
+          available: meets(state, choice.requires) && state.coins >= (choice.coinCost ?? 0) + Math.max(0, -(choice.effect.coins ?? 0))
             && (!choice.consume || state.instances.some((item) => item.owner === "player" && item.definitionId === choice.consume && !item.equippedSlot)) })) };
     }), epics: template.epics.filter((epic) => epic.milestones.some((item) => state.flags[item.flag]) || epic.endings.some((item) => state.flags[item.flag])).map((epic) => {
       const ending = epic.endings.find((item) => state.flags[item.flag]);
@@ -135,6 +141,21 @@ export function projectWorld(state: ExplorationState, template = getWorldTemplat
     }),
   };
   return explorationStateSchema.parse(state);
+}
+
+/** Confirmed rules trigger once; merely drafting an event never calls this function. */
+export function refreshWorldEvents(state: ExplorationState, template: WorldTemplate, source: string): ExplorationState {
+  for (const event of template.events) {
+    if (!event.details) continue;
+    if (!state.events[event.id] && meets(state, event.trigger)) state.events[event.id] = { stage: event.stages[0].id, settled: false };
+    const location = event.scope === "character" ? state.characters[event.actorIds[0]]?.locationId ?? event.locationId : event.locationId;
+    if (event.details && state.events[event.id] && (location === state.locationId && event.details.visibility === "local" || event.details.visibility === "participants" && event.actorIds.includes("player")) && !state.knownEvents?.includes(event.id)) {
+      (state.knownEvents ??= []).push(event.id);
+      state.history.push({ id: `${source}:event-${event.id}`, tick: state.tick, kind: "fact", origin: "play", text: `事件开启：${event.name}`,
+        locationId: location, actorIds: event.actorIds, eventId: event.id, source });
+    }
+  }
+  state.history = state.history.slice(-200); return projectWorld(state, template);
 }
 
 export function startWorld(templateId: string, version: string, resolve: WorldTemplateResolver = getWorldTemplate): ExplorationState {
@@ -152,7 +173,7 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
   const action = explorationActionSchema.parse(rawAction);
   if (action.action === "start") {
     if (raw) fail("这条剧情线已经开启世界，不可覆盖存档。");
-    return startWorld(action.templateId, action.templateVersion, resolve);
+    return refreshWorldEvents(startWorld(action.templateId, action.templateVersion, resolve), resolve(action.templateId, action.templateVersion), source);
   }
   if (!raw) fail("请先开启探索世界。");
   const state = explorationStateSchema.parse(structuredClone(raw));
@@ -263,6 +284,7 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
     const eventLocation = event.scope === "character" ? state.characters[event.actorIds[0]]?.locationId ?? event.locationId : event.locationId;
     if (eventLocation !== state.locationId) fail("需要到事件发生地点交互。");
     if (runtime.settled) fail("事件已经结束，不重复结算。");
+    if (event.details && !state.knownEvents?.includes(event.id)) fail("所选人物视角尚未发现此事件。");
     const stage = event.stages.find((entry) => entry.id === runtime.stage)!;
     const choice = stage.choices.find((entry) => entry.id === action.choiceId) ?? fail("当前阶段没有该选项。");
     if (!meets(state, choice.requires)) fail(`尚不符合条件：${choice.cost}`);
@@ -273,7 +295,7 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
       item.quantity--; state.instances = state.instances.filter((entry) => entry.quantity > 0);
     }
     state.coins -= choice.coinCost ?? 0;
-    applyWorldEffect(state, template, choice.effect);
+    applyWorldEffect(state, template, choice.effect, source);
     runtime.stage = choice.next;
     runtime.settled = event.stages.find((entry) => entry.id === choice.next)?.terminal ?? fail("事件阶段无效。");
     state.lastResult = choice.result;
@@ -282,6 +304,7 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
   state.history.push({ id: `${source}:${state.tick}`, tick: state.tick, kind: "fact", origin: "play", text: state.lastResult,
     locationId: state.locationId, actorIds: action.action === "choose" ? template.events.find((entry) => entry.id === action.eventId)!.actorIds : "targetId" in action && state.characters[action.targetId] ? [action.targetId] : [], eventId: action.action === "choose" ? action.eventId : null, source });
   for (const event of template.events) {
+    if (event.details) continue; // New definitions use explicit discovery/knowledge, not global event narration.
     if (!state.events[event.id] && meets(state, event.trigger)) {
       state.events[event.id] = { stage: event.stages[0].id, settled: false };
       state.history.push({ id: `${source}:event-${event.id}`, tick: state.tick, kind: "fact", origin: "play", text: `事件开启：${event.name}`,
@@ -290,5 +313,5 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
   }
   // Full records remain in immutable turn snapshots; context keeps a bounded working chronology.
   state.history = state.history.slice(-200);
-  return projectWorld(state, resolve(state.templateId, state.templateVersion));
+  return refreshWorldEvents(state, resolve(state.templateId, state.templateVersion), source);
 }

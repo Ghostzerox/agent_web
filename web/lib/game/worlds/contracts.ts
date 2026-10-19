@@ -2,6 +2,7 @@ import { z } from "zod";
 import { numericPolicySchema, worldRanksSchema } from "../exploration/contracts";
 import { characterDesignSchema, itemRulesSchema, worldItemsSchema } from "./assetContracts";
 import { drawPoolsSchema } from "../draws/contracts";
+import { eventDefinitionSchema } from "../events/contracts";
 
 const text = z.string().trim().min(1).max(600);
 const lines = z.array(text).max(12);
@@ -20,6 +21,7 @@ export const worldBlueprintSchema = z.object({
   itemRules: itemRulesSchema,
   items: worldItemsSchema,
   drawPools: drawPoolsSchema.optional(),
+  eventDesigns: z.array(eventDefinitionSchema).max(12).optional(),
   region: z.object({ name: text, startId: key, locations: z.array(z.object({
     id: key, name: text.max(120), description: text, exits: z.array(key).max(8), discovery: text,
   }).strict()).min(2).max(8) }).strict(),
@@ -39,6 +41,7 @@ export const updateWorldDraftSchema = z.object({
   expectedVersion: z.number().int().positive(), input: worldBriefSchema,
   content: worldBlueprintSchema.nullable(), lockedSections: z.array(worldSectionSchema).max(WORLD_SECTIONS.length),
   drawPoolsConfirmed: z.literal(true).optional(),
+  eventDesignsConfirmed: z.literal(true).optional(),
 }).strict();
 export const generateWorldSchema = z.object({ expectedVersion: z.number().int().positive(), requestId: z.uuid(),
   sections: z.array(worldSectionSchema).min(1).max(WORLD_SECTIONS.length) }).strict();

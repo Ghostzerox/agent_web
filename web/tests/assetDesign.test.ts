@@ -177,6 +177,7 @@ describe("R10.4 real SQL authoring and shared exploration engine", () => {
     await expect(designs.list(foreignWorld)).rejects.toMatchObject({ code: "WORLD_NOT_FOUND" });
     await expect(designs.get(crypto.randomUUID())).rejects.toMatchObject({ code: "WORLD_NOT_FOUND" });
     const migrations = await loadMigrations();
+    await expect(rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).resolves.toBe("0037_game_event_designs.sql");
     await expect(rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).resolves.toBe("0036_game_item_draws.sql");
     await expect(rollbackDatabase(createPgliteMigrationDatabase(pg), migrations)).rejects.toThrow("R10.4 authoring data exists");
     await migrateDatabase(createPgliteMigrationDatabase(pg), migrations);

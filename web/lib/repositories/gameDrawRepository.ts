@@ -10,6 +10,9 @@ import { stableJson } from "@/lib/ai/stableJson";
 import { DrawError, prepareDrawSchema, type DrawData, type DrawStatus } from "@/lib/game/draws/contracts";
 import { eligibleDrawEntries, sampleDraw } from "@/lib/game/draws/pools";
 import { blankDrawItem, settleDrawInventory, validateDrawItem } from "@/lib/game/draws/items";
+import { refreshWorldEvents } from "@/lib/game/exploration/engine";
+import { perceptionScope, recordPerceptions } from "@/lib/game/exploration/perception";
+import { recordEventKnowledge } from "@/lib/game/events/knowledge";
 
 export class GameDrawRepository<T extends PgQueryResultHKT = PgQueryResultHKT> {
   constructor(private readonly db: PgDatabase<T, typeof schema>) {}
@@ -23,7 +26,7 @@ export class GameDrawRepository<T extends PgQueryResultHKT = PgQueryResultHKT> {
     const parent = session.turns.find((turn) => turn.id === parentTurnId);
     if (!parent?.stateSnapshot.exploration) throw new DrawError("DRAW_INVALID", "请先在所选分支开启探索世界。");
     const state = parent.stateSnapshot.exploration;
-    const template = await createGameWorldRepository(this.db).resolveSessionTemplate(sessionId, state.templateId, state.templateVersion);
+    const template = await createGameWorldRepository(this.db).resolveSessionTemplate(sessionId, state.templateId, state.templateVersion, parentTurnId);
     return { session, parent, state, template };
   }
   async list(sessionId: string, parentTurnId: string) {
@@ -112,6 +115,9 @@ export class GameDrawRepository<T extends PgQueryResultHKT = PgQueryResultHKT> {
       if (!eligibleDrawEntries(row.data.pool, state, template).some((entry) => entry.id === row.data.sample.entry.id)) throw new DrawError("DRAW_INVALID", "抽样条目在当前分支已不可用，未扣除 / 发奖。");
       const exploration = settleDrawInventory(state, row.data, id, row.parentTurnId, template);
       exploration.receipt = { requestId: id, fingerprint: row.fingerprint };
+      refreshWorldEvents(exploration, template, id);
+      recordPerceptions(exploration, perceptionScope(session, row.parentTurnId, { requestId: id, state: exploration }), id, undefined);
+      recordEventKnowledge(state, exploration, template, id);
       const next = await createGameSessionRepository(repo.db).appendTurn(session.id, { expectedVersion: session.version, parentTurnId: row.parentTurnId,
         playerContent: `确认获取：${row.data.pool.name}`, assistantContent: exploration.lastResult, model: "host-item-draw/v1", statePatch: {},
         stateSnapshot: { ...parent.stateSnapshot, exploration }, events: [], now: new Date() });

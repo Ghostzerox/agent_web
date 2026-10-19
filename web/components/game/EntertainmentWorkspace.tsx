@@ -7,9 +7,12 @@ import { WorldCreationWorkspace } from "./WorldCreationWorkspace";
 import { AssetDesignWorkspace } from "./AssetDesignWorkspace";
 import { DrawPoolWorkspace } from "./DrawPoolWorkspace";
 import { DrawSessionWorkspace } from "./DrawSessionWorkspace";
+import { EventDesignWorkspace } from "./EventDesignWorkspace";
 export function EntertainmentWorkspace() {
   const params = useAppQuery();
   const section = params.get("section");
+  if (params.get("view") === "creator" && params.get("world") && section === "design-events") return <EventDesignWorkspace key={`${params.get("world")}:${params.get("event") ?? "list"}`} source={{ kind: "world", worldId: params.get("world")! }} id={params.get("event")} />;
+  if (params.get("view") === "events" && params.get("session") && params.get("parent")) return <EventDesignWorkspace key={`${params.get("session")}:${params.get("parent")}:${params.get("event") ?? "list"}`} source={{ kind: "session", sessionId: params.get("session")!, parentTurnId: params.get("parent")! }} id={params.get("event")} />;
   if (params.get("view") === "draws" && params.get("session") && params.get("parent"))
     return <DrawSessionWorkspace key={`${params.get("session")}:${params.get("parent")}:${params.get("draw") ?? "list"}`} sessionId={params.get("session")!} parentTurnId={params.get("parent")!} drawId={params.get("draw")} />;
   if (params.get("view") === "creator" && params.get("world") && section === "draw-pools") return <DrawPoolWorkspace key={params.get("world")} worldId={params.get("world")!} />;

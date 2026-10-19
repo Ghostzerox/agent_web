@@ -1,6 +1,7 @@
 import { assetDesignIssues } from "../worlds/assetValidation";
 import { itemDesignSchema, type ItemDesign } from "../worlds/assetContracts";
 import { projectWorld } from "../exploration/engine";
+import { grantInventoryItem } from "../exploration/inventory";
 import type { ExplorationState } from "../exploration/contracts";
 import type { WorldTemplate } from "../exploration/templateTypes";
 import { DrawError, type DrawData } from "./contracts";
@@ -47,10 +48,8 @@ export function settleDrawInventory(raw: ExplorationState, data: DrawData, reque
   const quantity = data.sample.quantity;
   if (definition.unique && (state.instances.some((item) => item.definitionId === definition.id) || template.instances.some((item) => item.definitionId === definition.id)
     || acquisitions.receipts.some((receipt) => receipt.definitionId === definition.id))) throw new DrawError("DRAW_INVALID", "唯一物品已存在，不会生成副本。");
-  const stack = definition.stackable && !definition.unique ? state.instances.find((item) => item.owner === "player" && item.definitionId === definition.id && !item.equippedSlot && item.quantity + quantity <= 999) : undefined;
   const source = `draw:${requestId}:${sourceTurnId}:${data.pool.id}/${entry.id}`;
-  if (stack) { stack.quantity += quantity; stack.source = source; }
-  else state.instances.push({ id: `draw-${requestId}`, definitionId: definition.id, owner: "player", quantity, equippedSlot: null, source });
+  grantInventoryItem(state, template, definition, quantity, `draw-${requestId}`, source);
   state.coins -= data.pool.coinCost;
   acquisitions.receipts.push({ requestId, poolId: data.pool.id, entryId: entry.id, definitionId: definition.id, quantity, sourceTurnId });
   state.lastResult = `获得${definition.name.slice(0, 120)} × ${quantity}；消耗${data.pool.coinCost}枚虚构钱币。${data.pool.explanation.slice(0, 200)}`;

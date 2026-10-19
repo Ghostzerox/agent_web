@@ -1,6 +1,7 @@
 import { attributeRuleSchema, characterPersonaSchema, publicWorldCharacterSchema, worldItemInstanceSchema, worldItemSchema, worldKey, worldRanksSchema, ExplorationError } from "./contracts";
 import type { WorldEffect, WorldTemplate } from "./templateTypes";
 import { drawPoolIssues } from "../draws/pools";
+import { eventDesignIssues } from "../events/validation";
 
 /** Static and published templates share this validator and the same engine. */
 export function validateWorldTemplate(template: WorldTemplate): void {
@@ -97,8 +98,9 @@ export function validateWorldTemplate(template: WorldTemplate): void {
     if (!locations.has(entry.locationId) || entry.actorIds.some((id) => !actors.has(id)) || (entry.eventId && !events.has(entry.eventId))) fail("史料关联不存在");
   }
   for (const event of template.events) {
+    if (event.details) { const issues = eventDesignIssues(event, template); if (issues.length) fail(issues.join("；")); }
     condition(event.trigger); const stages = ids(event.stages, "事件阶段", 20);
-    if (!locations.has(event.locationId) || event.actorIds.some((id) => !actors.has(id)) || !event.stages.length || event.stages[0].terminal) fail("事件起始配置无效");
+    if (!locations.has(event.locationId) || event.actorIds.some((id) => !actors.has(id) && !(event.details && id === "player")) || !event.stages.length || event.stages[0].terminal) fail("事件起始配置无效");
     for (const stage of event.stages) {
       ids(stage.choices, "事件选项", 10);
       if (stage.terminal && stage.choices.length) fail("结束阶段不能再次结算");
