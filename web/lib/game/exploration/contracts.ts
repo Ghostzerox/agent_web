@@ -14,7 +14,7 @@ const record = <T extends z.ZodType>(value: T, limit = 100) => z.record(worldKey
 const rank = z.object({ id: worldKey, name: z.string().min(1).max(60), meaning: text }).strict();
 export const worldRanksSchema = z.object({
   rating: z.array(rank).min(1).max(12), quality: z.array(rank).min(1).max(12),
-  tier: z.array(rank).min(1).max(12), levelsPerTier: z.number().int().min(1).max(10),
+  tier: z.array(rank).min(1).max(12), levelsPerTier: z.number().int().min(1).max(10).optional(),
 }).strict().superRefine((value, ctx) => {
   for (const field of ["rating", "quality", "tier"] as const) {
     if (new Set(value[field].map((item) => item.id)).size !== value[field].length)
@@ -23,7 +23,7 @@ export const worldRanksSchema = z.object({
 });
 export const worldItemSchema = z.object({
   id: worldKey, name: text, description: text, quality: worldKey, tier: worldKey,
-  rating: worldKey, level: z.number().int().min(1).max(10),
+  rating: worldKey, level: z.number().int().min(1).max(10).optional(),
   stackable: z.boolean(), unique: z.boolean(), slot: worldKey.nullable(),
   abilities: lines, consumable: z.boolean(), price: z.number().int().min(0).max(10000),
 }).strict();
@@ -71,13 +71,14 @@ export const explorationStateSchema = z.object({
   discovered: keys, visited: keys, learned: keys, flags: record(z.boolean()),
   coins: z.number().int().min(0).max(1000000), conditions: lines,
   wallets: record(z.number().int().min(0).max(1000000), 50),
-  progress: z.object({ rating: worldKey, tier: worldKey, level: z.number().int().min(1).max(10) }).strict(),
+  progress: z.object({ rating: worldKey, tier: worldKey, level: z.number().int().min(1).max(10).optional() }).strict(),
   instances: z.array(worldItemInstanceSchema).max(150),
   characters: record(publicWorldCharacterSchema, 50),
   events: record(z.object({ stage: worldKey, settled: z.boolean() }).strict(), 50),
   history: z.array(worldHistorySchema).max(200),
   // Public projection only. Hidden template data is never serialized into snapshots.
   view: z.object({ world: text, region: text, ranks: worldRanksSchema, slots: keys,
+    numericPolicy: z.enum(["qualitative", "light"]).optional(), publicRules: lines.optional(),
     locations: z.array(locationView).max(100), items: z.array(worldItemSchema).max(100),
     events: z.array(eventView).max(50), epics: z.array(epicView).max(20),
   }).strict(),
@@ -91,8 +92,13 @@ export const explorationStateSchema = z.object({
     ctx.addIssue({ code: "custom", message: "当前位置 / 已访问地点必须已发现。" });
   if (!state.view.ranks.rating.some((rank) => rank.id === state.progress.rating)
     || !state.view.ranks.tier.some((rank) => rank.id === state.progress.tier)
-    || state.progress.level > state.view.ranks.levelsPerTier)
+    || (state.view.numericPolicy === "qualitative" ? state.progress.level !== undefined || state.view.ranks.levelsPerTier !== undefined :
+      state.progress.level === undefined || state.view.ranks.levelsPerTier === undefined || state.progress.level > state.view.ranks.levelsPerTier))
     ctx.addIssue({ code: "custom", message: "进度超出世界档位定义。" });
+  for (const item of state.view.items) {
+    if (state.view.numericPolicy === "qualitative" ? item.level !== undefined : item.level === undefined || item.level > (state.view.ranks.levelsPerTier ?? 0))
+      ctx.addIssue({ code: "custom", message: "物品等级不符合当前世界的数值策略。" });
+  }
 });
 
 export const explorationActionSchema = z.discriminatedUnion("action", [

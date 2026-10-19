@@ -7,6 +7,9 @@ import { applyGameTool } from "./toolkit";
 import { ExplorationError } from "./exploration/contracts";
 import { resolveExplorationTurn } from "./exploration/turn";
 import { explorationMessages } from "./exploration/prompt";
+import { getWorldTemplate } from "./exploration/catalog";
+import type { WorldTemplateResolver } from "./exploration/templateRegistry";
+import type { WorldTemplate } from "./exploration/templateTypes";
 import { rollGameDice, type GameDiceRoll } from "@/lib/game/dice";
 import {
   createGameNarrativeGenerator,
@@ -133,8 +136,9 @@ export function gamePromptMessages(
   currentState: GameState = stateAtParent(session, parentTurnId),
   events: readonly TrustedToolResult[] = [],
   currentTool?: NonNullable<GameState["toolkit"]>["lastResult"],
+  resolve: WorldTemplateResolver = getWorldTemplate,
 ): ChatCompletionMessage[] {
-  if (currentState.exploration) return explorationMessages(currentState.exploration, playerContent, undefined, gameTurnPath(session.turns, parentTurnId), session.safetyBoundaries);
+  if (currentState.exploration) return explorationMessages(currentState.exploration, playerContent, undefined, gameTurnPath(session.turns, parentTurnId), session.safetyBoundaries, undefined, resolve);
   const candidates = gameTurnPath(session.turns, parentTurnId).slice(-MAX_HISTORY_TURNS);
   const history: GameTurnRecord[] = [];
   let historyCharacters = 0;
@@ -162,6 +166,7 @@ export function createGameTurnService(
   generator: GameNarrativeGeneratorPort = createGameNarrativeGenerator(),
   now: () => Date = () => new Date(),
   createSeed: () => string = () => crypto.randomUUID(),
+  loadTemplate?: (sessionId: string, templateId: string, version: string) => Promise<WorldTemplate>,
 ) {
   return {
     async create(
@@ -199,10 +204,19 @@ export function createGameTurnService(
       }
 
       let currentState = stateAtParent(session, input.parentTurnId);
+      let resolve: WorldTemplateResolver = getWorldTemplate;
+      const reference = input.explorationAction?.action === "start" ? input.explorationAction : currentState.exploration;
+      if (reference && loadTemplate) {
+        const definition = await loadTemplate(sessionId, reference.templateId, reference.templateVersion);
+        resolve = (id, version) => {
+          if (id !== definition.id || version !== definition.version) throw new ExplorationError("世界修订与当前存档不一致。");
+          return definition;
+        };
+      }
       if (!input.parentTurnId && input.explorationAction?.action !== "start" && session.turns.some((turn) => turn.stateSnapshot.exploration)) throw new ExplorationError("探索世界请从已保存的世界起点开分支，不能在空根节点混用旧规则。");
       if (input.semanticInput && !currentState.exploration) throw new ExplorationError("语义输入只用于已开启的探索世界。");
       if (input.explorationAction || input.semanticInput) {
-        const resolved = await resolveExplorationTurn(session, input, currentState, fingerprint!, generator, signal);
+        const resolved = await resolveExplorationTurn(session, input, currentState, fingerprint!, generator, signal, resolve);
         return repository.appendTurn(sessionId, {
           parentTurnId: input.parentTurnId, playerContent: resolved.playerContent,
           assistantContent: resolved.assistantContent, model: resolved.model,
@@ -236,6 +250,7 @@ export function createGameTurnService(
         currentState,
         events,
         input.toolRequest ? currentState.toolkit?.lastResult : undefined,
+        resolve,
       );
       const generated = input.toolOnly ? { content: JSON.stringify({ narrative: `宿主工具 · ${currentState.toolkit!.lastResult!.action}\n\n${currentState.toolkit!.lastResult!.labels.join("\n")}`, statePatch: {} }), model: "host-tools/r4-v1" } : await generator.generate(messages, signal);
       const turn = parseGameModelTurn(generated.content);

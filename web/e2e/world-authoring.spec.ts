@@ -1,0 +1,77 @@
+import { expect, test } from "@playwright/test";
+import { PGlite } from "@electric-sql/pglite";
+import { drizzle } from "drizzle-orm/pglite";
+import * as schema from "../lib/db/schema";
+import { loadMigrations, migrateDatabase } from "../lib/db/migrations";
+import { createPgliteMigrationDatabase } from "../tests/helpers/pglite";
+import { createGameWorldRepository } from "../lib/repositories/gameWorldRepository";
+import { createGameSessionRepository } from "../lib/repositories/gameSessionRepository";
+import { createGameWorldApi } from "../lib/api/gameWorldApi";
+import { createGameSessionApi } from "../lib/api/gameSessionApi";
+import { createGamePlayApi } from "../lib/api/gamePlayApi";
+import { createGameTurnService } from "../lib/game/gameTurnService";
+import { createWorldGenerationService } from "../lib/game/worlds/generation";
+
+const mobile = process.env.WORLD_CREATION_MOBILE_BUNDLE === "true";
+for (const width of [360, 1440]) test(`world authoring publishes a playable pinned revision at ${width}px`, async ({ page }) => {
+  test.setTimeout(90000);
+  const pglite = new PGlite();
+  try {
+    await migrateDatabase(createPgliteMigrationDatabase(pglite), await loadMigrations());
+    const db = drizzle(pglite, { schema }); const worlds = createGameWorldRepository(db); const sessions = createGameSessionRepository(db);
+    let calls = 0;
+    const worldApi = createGameWorldApi(worlds, createWorldGenerationService(worlds, { generate: async () => {
+      calls++; return { content: JSON.stringify({ opening: { text: "合成开场：你踏入铜湾。", playerRole: "来访者" } }), model: "synthetic" };
+    } }));
+    const sessionApi = createGameSessionApi(sessions);
+    const playApi = createGamePlayApi(sessions, createGameTurnService(sessions, { generate: async () => {
+      throw new Error("Deterministic creation and movement must not call the model");
+    } }, undefined, undefined, worlds.resolveSessionTemplate));
+    await page.route("**/api/v1/**", async (route) => {
+      const req = route.request(); const url = new URL(req.url());
+      const request = new Request(req.url(), { method: req.method(), ...(req.postData() ? { body: req.postData()! } : {}) });
+      let result: Response;
+      if (url.pathname.startsWith("/api/v1/game-worlds")) result = await worldApi(request, url.pathname.split("/").slice(4));
+      else if (url.pathname === "/api/v1/game-sessions") result = await sessionApi.list();
+      else if (url.pathname.startsWith("/api/v1/game-sessions/")) {
+        const [, , , , id, action] = url.pathname.split("/");
+        result = action === "status" ? await playApi.updateStatus(id, request) : action === "turns" ? await playApi.createTurn(id, request) : await sessionApi.get(id);
+      } else return route.fulfill({ json: { data: [] } });
+      await route.fulfill({ status: result.status, contentType: "application/json", body: await result.text() });
+    });
+    await page.setViewportSize({ width, height: 900 }); page.on("dialog", (dialog) => dialog.accept());
+    await page.goto(mobile ? "/#/entertainment?view=worlds" : "/entertainment?view=worlds");
+    await page.getByRole("link", { name: "世界创作工作台", exact: true }).click();
+    await page.getByLabel("粗略世界描述", { exact: true }).fill("一座没有魔法的蒸汽港城，侧重交流与探索。");
+    await page.getByRole("button", { name: "保存创作起点（不调用AI）", exact: true }).click();
+    await page.getByRole("link", { name: "进入已保存草稿 →", exact: true }).click();
+    await page.getByRole("button", { name: "填写手动起始表单（不调用AI）", exact: true }).click();
+    await page.getByRole("button", { name: "保存草稿", exact: true }).click();
+    const nav = page.getByRole("navigation", { name: "世界创作局部导航" });
+    await nav.getByRole("link", { name: "世界概览", exact: true }).click();
+    await page.getByRole("textbox", { name: "名称", exact: true }).fill("合成铜湾");
+    await page.getByLabel("锁定此部分，AI不得重生成（仍可手动编辑）").check();
+    await page.getByRole("button", { name: "保存草稿", exact: true }).click();
+    await page.getByRole("button", { name: "AI重生成当前部分（可能费用）", exact: true }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "所选部分" })).toContainText("已全部锁定"); expect(calls).toBe(0);
+    await nav.getByRole("link", { name: "开场与玩家定位", exact: true }).click();
+    await page.getByRole("button", { name: "AI重生成当前部分（可能费用）", exact: true }).click();
+    await expect(page.getByRole("textbox", { name: "内容", exact: true })).toHaveValue("合成开场：你踏入铜湾。"); expect(calls).toBe(1);
+    await nav.getByRole("link", { name: "预览与发布", exact: true }).click();
+    if (width === 360 && !mobile) await page.getByRole("main", { name: "世界创作工作台", exact: true }).screenshot({ path: "test-results/world-creator-360.png" });
+    await expect(page.getByRole("button", { name: "确认发布当前草稿", exact: true })).toBeDisabled();
+    expect(await sessions.list()).toHaveLength(0);
+    await page.getByLabel("我已审阅当前草稿、硬约束与公开 / 隐藏设定，确认发布本版本").check();
+    await page.getByRole("button", { name: "确认发布当前草稿", exact: true }).click();
+    await page.getByRole("button", { name: "以r1创建存档", exact: true }).click();
+    await page.getByRole("link", { name: "打开新存档并开启探索 →", exact: true }).click();
+    await page.getByRole("button", { name: "开启探索世界", exact: true }).click();
+    const workspace = page.getByRole("region", { name: "大世界探索工作区" });
+    await expect(workspace).toContainText("合成铜湾"); await expect(workspace).toContainText("定性世界");
+    await workspace.getByRole("button", { name: "前往交会处", exact: true }).click();
+    await expect(workspace.getByRole("status")).toContainText("交会处"); expect(calls).toBe(1);
+    expect(await sessions.list()).toHaveLength(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+    if (width === 360 && !mobile) await page.screenshot({ path: "test-results/world-creation-360.png", fullPage: false });
+  } finally { await pglite.close(); }
+});

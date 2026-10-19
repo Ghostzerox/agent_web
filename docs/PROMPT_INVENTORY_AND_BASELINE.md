@@ -4,8 +4,8 @@
 
 ## 基线与边界
 
-- 当前文件：`web/evals/r3/baseline-current.json`，版本 `r10/actor-isolation-v1`；R10.2审查后更新了调用登记与源码指纹，原有80例的夹具 / 请求哈希均未改变，不新增平行基线。
-- 80 个合成案例：66 正常、14 边界；九类生成入口各至少五正常、一边界；登记 16 模块及一类辅助摘要调用。
+- 当前文件：`web/evals/r3/baseline-current.json`，版本 `r10/world-authoring-v1`；R10.3审查后更新了创作调用登记与源码指纹，原有80例的夹具 / 请求哈希均未改变，不新增平行基线。
+- 80 个合成案例：66 正常、14 边界；九类生成入口各至少五正常、一边界；登记16模块及摘要 / 世界创作两类辅助调用。
 - 清单、版本、缺口：`web/evals/r3/promptInventory.ts`；真实拼装和夹具：`promptBaseline.ts`。
 - 冻结 fixture、实际拼装消息、图片标志、消息数、文本字符数和当前源码指纹；新增调用位置必须登记。
 - Mock 不访问数据库、凭据或外网；字符数不是账单 Token。通过只表示拼装 / 验证契约维持，不表示语义、自然度、缓存或费用收益签收。
@@ -20,6 +20,7 @@
 | 背书评价、解题、复习卡 | 获授权插件操作和对应 Profile；抽背 / 拼写 / 算术工具不冒充模型 |
 | 独立游戏 | `lib/game/gameNarrativeGenerator.ts` + 通用玩法；探索由 `exploration/turn.ts` 分离主持 / 人物调用，来源感知另有专项测试，不冒称原80例已覆盖 |
 | 辅助分支总结 | `lib/conversation/summary.ts`；来源版本、分支范围、控制与原文降级另测 |
+| 世界创作 | `lib/game/worlds/generation.ts`；复用游戏Provider，独立用途版本；整稿 / 局部 / 锁定 / 失败和持久化由 `worldAuthoring.test.ts` 另测 |
 
 普通提醒、导航、设置、导出、记忆管理与设备 TTS 本身不生成回答。机器清单保存完整九类入口，不在文档重复复制版本表。
 

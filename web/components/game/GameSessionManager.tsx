@@ -10,6 +10,7 @@ import { FIRST_PARTY_PLUGIN_ACTIVITIES } from "@/lib/plugins/activityRegistry";
 import { explorationSessionInput } from "@/lib/game/exploration/templateCatalog";
 import { ExplorationTemplatePicker } from "./ExplorationTemplatePicker";
 import { requestNavigationPermission } from "@/lib/platform/navigationGuard";
+import { sessionExplorationTemplate } from "@/lib/game/exploration/templateReference";
 import {
   createGameCharacter,
   createGameSession,
@@ -39,6 +40,8 @@ export function GameSessionManager() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [explorationDraft, setExplorationDraft] = useState(false);
+  const templateId = detail && sessionExplorationTemplate(detail.worldRules)?.templateId;
+  const authoredWorldId = templateId?.startsWith("world-") ? templateId.slice(6) : null;
   useNavigationGuard(busy || Boolean(detail && !creating && JSON.stringify(world) !== JSON.stringify(detailWorld(detail))));
 
   const installDetail = (next: GameSessionDetail) => {
@@ -195,6 +198,7 @@ export function GameSessionManager() {
     <div className="mx-auto grid w-full max-w-7xl gap-5 lg:grid-cols-[17rem_minmax(0,1fr)]">
       <aside className="h-fit rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
         <details open><summary className="mb-3 min-h-11 cursor-pointer py-2 text-sm font-semibold">世界列表与创建入口</summary>
+        <AppLink href="/entertainment?view=creator" className="mb-2 block rounded-xl border border-violet-300 px-4 py-2.5 text-center text-sm text-violet-600">世界创作工作台</AppLink>
         <button type="button" disabled={busy} onClick={() => setExplorationDraft((open) => !open)} className="mb-2 w-full rounded-xl border border-violet-300 px-4 py-2.5 text-sm font-medium text-violet-700 dark:text-violet-300">大世界探索 · 选择模板</button>
         <button type="button" onClick={startNew} className="w-full rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-600">+ 新建游戏会话</button>
         <div className="mt-3 space-y-2 border-b border-zinc-200 pb-3 dark:border-zinc-800">
@@ -259,7 +263,7 @@ export function GameSessionManager() {
               <GameCheckpointPanel detail={detail} onChange={installDetail} onError={setError} onNotice={setNotice} />
             </div></details>
             <details className="rounded-2xl border border-[var(--workspace-border)] bg-[var(--workspace-surface)] p-4"><summary className="flex items-center font-medium">世界设定与角色卡</summary><div className="mt-3 space-y-5">
-            <form onSubmit={saveWorld} className="space-y-5 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 dark:border-zinc-800 dark:bg-zinc-950">
+            {authoredWorldId ? <div className="space-y-2 text-sm"><p>本局固定引用创建时发布的世界修订；编辑草稿或发布新版不会改写本局。</p><AppLink href={`/entertainment?view=creator&world=${authoredWorldId}&section=preview`} className="text-violet-600">查看创作草稿与已发布修订 →</AppLink></div> : <form onSubmit={saveWorld} className="space-y-5 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 dark:border-zinc-800 dark:bg-zinc-950">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-lg font-semibold">世界设定</h3>
@@ -270,7 +274,7 @@ export function GameSessionManager() {
               </div>
               <WorldFields value={world} onChange={setWorld} />
               <button type="submit" disabled={busy} className="rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-950">{busy ? "保存中…" : "保存世界设定"}</button>
-            </form>
+            </form>}
 
             <section className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm sm:p-6 dark:border-zinc-800 dark:bg-zinc-950">
               <div>

@@ -11,6 +11,11 @@ export type WorldTemplate = {
   id: string; version: string; hostContract: "exploration.v1"; world: string; region: string; start: string;
   initial: { coins: number; progress: ExplorationState["progress"]; player: WorldCharacter; message: string };
   waitMessage?: string;
+  numericPolicy?: "qualitative" | "light";
+  publicRules?: string[];
+  hostNotes?: string[];
+  authorLoreIds?: string[];
+  setting?: { premise: string; tone: string; era: string; technology: string; supernatural: string; cultures: string[]; factions: string[]; history: string[] };
   ranks: ExplorationState["view"]["ranks"]; slots: string[];
   locations: { id: string; name: string; description: string; exits: { to: string; requires?: WorldCondition; reason: string }[];
     points: { id: string; name: string; description: string; requires?: WorldCondition; effect: WorldEffect; result: string }[] }[];

@@ -17,6 +17,8 @@ import { GameStateValidationError } from "@/lib/game/state";
 import { ExplorationError } from "@/lib/game/exploration/contracts";
 import { explorationHistoryQuerySchema, searchWorldHistory } from "@/lib/game/exploration/history";
 import { gameTurnPath } from "@/lib/game/turnTree";
+import { createGameWorldRepository } from "@/lib/repositories/gameWorldRepository";
+import { WorldDesignError } from "@/lib/game/worlds/contracts";
 import { createGameSessionRepository, type GameSessionRepositoryPort } from "@/lib/repositories/gameSessionRepository";
 import { GameSessionRepositoryError } from "@/lib/game/errors";
 
@@ -74,6 +76,7 @@ function parseId(value: string): string {
 }
 
 function errorStatus(error: unknown): number {
+  if (error instanceof WorldDesignError) return error.code === "WORLD_NOT_FOUND" ? 404 : 422;
   if (error instanceof ExplorationError) return 422;
   if (error instanceof GamePlayInputError) return 400;
   if (error instanceof GameSessionRepositoryError) {
@@ -94,6 +97,7 @@ function errorStatus(error: unknown): number {
 }
 
 function publicError(error: unknown) {
+  if (error instanceof WorldDesignError) return { code: error.code, message: error.message, retryable: false };
   if (error instanceof ExplorationError) return { code: error.code, message: error.message, retryable: false };
   if (error instanceof GamePlayInputError) {
     return {
@@ -226,6 +230,6 @@ export function createGamePlayApi(
 }
 
 export function getGamePlayApi() {
-  const repository = createGameSessionRepository(getDatabase());
-  return createGamePlayApi(repository, createGameTurnService(repository));
+  const db = getDatabase(); const repository = createGameSessionRepository(db);
+  return createGamePlayApi(repository, createGameTurnService(repository, undefined, undefined, undefined, createGameWorldRepository(db).resolveSessionTemplate));
 }

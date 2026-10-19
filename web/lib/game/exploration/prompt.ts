@@ -2,14 +2,17 @@ import type { ChatCompletionMessage } from "@/lib/ai/messages";
 import { stableJson } from "@/lib/ai/stableJson";
 import { ExplorationError, type ExplorationState } from "./contracts";
 import { actorContext, type PerceptionScope } from "./perception";
+import { getWorldTemplate } from "./catalog";
+import type { WorldTemplateResolver } from "./templateRegistry";
 
 export const EXPLORATION_CONTEXT_BUDGET = 14000;
 export const EXPLORATION_PROMPT_VERSION = "r10/exploration-v2";
 export function explorationMessages(state: ExplorationState, content: string, targetId?: string,
-  history: readonly { playerContent: string; assistantContent: string }[] = [], boundaries: readonly string[] = [], scope?: PerceptionScope): ChatCompletionMessage[] {
+  history: readonly { playerContent: string; assistantContent: string }[] = [], boundaries: readonly string[] = [], scope?: PerceptionScope,
+  resolve: WorldTemplateResolver = getWorldTemplate): ChatCompletionMessage[] {
   if (targetId !== undefined) {
     if (!scope) throw new ExplorationError("人物调用必须提供服务端构建的来源范围。");
-    const context = actorContext(state, targetId, scope);
+    const context = actorContext(state, targetId, scope, resolve);
     const current = context.observations.filter((entry) => entry.sourceRequestId === scope.currentRequestId && entry.kind === "dialogue");
     let serialized = stableJson(context);
     while (serialized.length > EXPLORATION_CONTEXT_BUDGET && context.observations.length) {
@@ -36,7 +39,11 @@ export function explorationMessages(state: ExplorationState, content: string, ta
   }
   const present = Object.values(state.characters).filter((person) => person.locationId === state.locationId);
   const location = state.view.locations.find((place) => place.id === state.locationId);
+  const template = resolve(state.templateId, state.templateVersion);
+  const required = { rules: template.publicRules ?? [], hostNotes: template.hostNotes ?? [],
+    authorLore: template.lore.filter((entry) => template.authorLoreIds?.includes(entry.id)) };
   const context = {
+    ...required, setting: template.setting,
     location, characters: present, conditions: state.conditions, progress: state.progress,
     inventory: state.instances.filter((item) => item.owner === "player").map((item) => ({ ...item, definition: state.view.items.find((entry) => entry.id === item.definitionId) })),
     events: state.view.events.filter((event) => event.locationId === state.locationId && !event.settled),
@@ -45,11 +52,14 @@ export function explorationMessages(state: ExplorationState, content: string, ta
   };
   // Whole sections are limited before serialization; never truncate JSON in the middle of a field.
   let serialized = stableJson(context);
-  if (serialized.length > EXPLORATION_CONTEXT_BUDGET) serialized = stableJson({ location, trustedResult: state.lastResult,
+  if (serialized.length > EXPLORATION_CONTEXT_BUDGET) serialized = stableJson({ ...required, setting: template.setting, location, trustedResult: state.lastResult,
     characters: present.map((person) => ({ id: person.id, name: person.name, identity: person.identity, speech: person.speech,
       goals: person.goals.slice(0, 2), boundaries: person.boundaries.slice(0, 2), relationship: person.relationship,
       knownInformation: person.knownInformation.slice(-3), promises: person.promises.slice(-2) })) });
-  if (serialized.length > EXPLORATION_CONTEXT_BUDGET) serialized = stableJson({ location: { name: location?.name, description: location?.description }, trustedResult: state.lastResult });
+  if (serialized.length > EXPLORATION_CONTEXT_BUDGET) serialized = stableJson({ ...required,
+    setting: template.setting && { premise: template.setting.premise, tone: template.setting.tone },
+    location: { name: location?.name, description: location?.description }, trustedResult: state.lastResult });
+  if (serialized.length > EXPLORATION_CONTEXT_BUDGET) throw new ExplorationError("世界硬约束和主持资料超出预算，请精简后发布新修订。");
   return [
     { role: "system", content: `你是叙事型探索世界的中文主持人。只处理独立虚构 GameSession，不访问或写入现实记忆、任务或个人身份。
 普通交流不掷骰，不追求数值膨胀。评级、品质、等阶和等级不是成功概率。使用当前地点和本次宿主事实，保持角色动机、语气、边界与关系连续；NPC可以拒绝、协商、提出自己的需要。

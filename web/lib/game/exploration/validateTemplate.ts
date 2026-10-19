@@ -1,7 +1,7 @@
 import { publicWorldCharacterSchema, worldItemInstanceSchema, worldItemSchema, worldKey, worldRanksSchema, ExplorationError } from "./contracts";
 import type { WorldEffect, WorldTemplate } from "./templateTypes";
 
-/** Host templates are code-owned today. Validate every cross-reference before opening a save. */
+/** Static and published templates share this validator and the same engine. */
 export function validateWorldTemplate(template: WorldTemplate): void {
   const fail = (message: string): never => { throw new ExplorationError(`世界模板无效：${message}`); };
   const ids = <T extends { id: string }>(items: T[], label: string, limit: number) => {
@@ -35,13 +35,17 @@ export function validateWorldTemplate(template: WorldTemplate): void {
     for (const id of value.grant ?? []) if (!instances.has(id)) fail("发放未知物品实例");
     if (value.character && (!actors.has(value.character.id) || (value.character.locationId && !locations.has(value.character.locationId)))) fail("人物变更目标不存在");
     if (value.progress && (!template.ranks.rating.some((rank) => rank.id === value.progress!.rating)
-      || !template.ranks.tier.some((rank) => rank.id === value.progress!.tier) || value.progress.level < 1 || value.progress.level > template.ranks.levelsPerTier)) fail("进度档位无效");
+      || !template.ranks.tier.some((rank) => rank.id === value.progress!.tier)
+      || (template.numericPolicy === "qualitative" ? value.progress.level !== undefined || template.ranks.levelsPerTier !== undefined :
+        value.progress.level === undefined || template.ranks.levelsPerTier === undefined || value.progress.level < 1 || value.progress.level > template.ranks.levelsPerTier))) fail("进度档位无效");
   };
   effect({ progress: template.initial.progress });
   for (const item of template.items) {
     worldItemSchema.parse(item);
     if (!template.ranks.quality.some((rank) => rank.id === item.quality) || !template.ranks.tier.some((rank) => rank.id === item.tier)
-      || !template.ranks.rating.some((rank) => rank.id === item.rating) || item.level > template.ranks.levelsPerTier || (item.slot && !template.slots.includes(item.slot))) fail("物品档位或装备槽无效");
+      || !template.ranks.rating.some((rank) => rank.id === item.rating)
+      || (template.numericPolicy === "qualitative" ? item.level !== undefined : item.level === undefined || item.level > (template.ranks.levelsPerTier ?? 0))
+      || (item.slot && !template.slots.includes(item.slot))) fail("物品档位或装备槽无效");
   }
   for (const item of template.instances) {
     worldItemInstanceSchema.parse(item);

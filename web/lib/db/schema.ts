@@ -1,4 +1,6 @@
 import { sql } from "drizzle-orm";
+import type { WorldBlueprint, WorldBrief, WorldOrigins, WorldSection } from "@/lib/game/worlds/contracts";
+import type { WorldTemplate } from "@/lib/game/exploration/templateTypes";
 import type { ActionDefinition, ActionEntry } from "@/lib/tasks/actions";
 import type { MemoryControls } from "@/lib/memory/controls";
 import type { PalaceRoom } from "@/lib/memory/palace";
@@ -646,6 +648,25 @@ export const pluginCapabilityAudit = pgTable(
     ),
   ],
 );
+
+export const gameWorldDrafts = pgTable("game_world_drafts", {
+  id: uuid("id").defaultRandom().primaryKey(), userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  input: jsonb("input").$type<WorldBrief>().notNull(), content: jsonb("content").$type<WorldBlueprint | null>(),
+  origins: jsonb("origins").$type<WorldOrigins>().notNull().default(sql`'{}'::jsonb`),
+  lockedSections: jsonb("locked_sections").$type<WorldSection[]>().notNull().default(sql`'[]'::jsonb`),
+  generationReceipt: jsonb("generation_receipt").$type<{ requestId: string; fingerprint: string } | null>(),
+  version: integer("version").notNull().default(1), createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (table) => [uniqueIndex("game_world_draft_owner_key").on(table.id, table.userId), check("game_world_draft_version", sql`${table.version} > 0`)]);
+
+export const gameWorldRevisions = pgTable("game_world_revisions", {
+  id: uuid("id").defaultRandom().primaryKey(), worldId: uuid("world_id").notNull(), userId: uuid("user_id").notNull(),
+  revision: integer("revision").notNull(), draftVersion: integer("draft_version").notNull(),
+  definition: jsonb("definition").$type<WorldTemplate>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
+}, (table) => [foreignKey({ columns: [table.worldId, table.userId], foreignColumns: [gameWorldDrafts.id, gameWorldDrafts.userId] }).onDelete("restrict"),
+  uniqueIndex("game_world_revision_number").on(table.worldId, table.revision), uniqueIndex("game_world_revision_draft").on(table.worldId, table.draftVersion),
+  check("game_world_revision_positive", sql`${table.revision} > 0 AND ${table.draftVersion} > 0`)]);
 
 export const gameSessions = pgTable(
   "game_sessions",
@@ -1535,6 +1556,13 @@ export type PluginCapabilityGrantRecord = typeof pluginCapabilityGrants.$inferSe
 export type PluginStorageEntryRecord = typeof pluginStorageEntries.$inferSelect;
 export type PluginQuotaUsageRecord = typeof pluginQuotaUsage.$inferSelect;
 export type PluginCapabilityAuditRecord = typeof pluginCapabilityAudit.$inferSelect;
+export const gameWorldSaves = pgTable("game_world_saves", {
+  sessionId: uuid("session_id").primaryKey().references(() => gameSessions.id, { onDelete: "cascade" }),
+  revisionId: uuid("revision_id").notNull().references(() => gameWorldRevisions.id, { onDelete: "restrict" }),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  requestId: uuid("request_id").notNull(), fingerprint: text("fingerprint").notNull(),
+}, (table) => [uniqueIndex("game_world_save_request").on(table.userId, table.requestId)]);
+
 export type GameSessionRecord = typeof gameSessions.$inferSelect;
 export type GameCharacterRecord = typeof gameCharacters.$inferSelect;
 export type GameTurnRecord = typeof gameTurns.$inferSelect;

@@ -103,6 +103,8 @@ export function projectWorld(state: ExplorationState, template = getWorldTemplat
   validateWorldInventory(state, template);
   state.view = {
     world: template.world, region: template.region, ranks: template.ranks, slots: template.slots,
+    ...(template.numericPolicy ? { numericPolicy: template.numericPolicy } : {}),
+    ...(template.publicRules ? { publicRules: template.publicRules } : {}),
     locations: template.locations.filter((location) => state.discovered.includes(location.id)).map((location) => ({
       id: location.id, name: location.name, region: template.region,
       description: state.visited.includes(location.id) ? location.description : "尚未到访。",

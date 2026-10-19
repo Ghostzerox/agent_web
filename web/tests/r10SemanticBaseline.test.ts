@@ -4,7 +4,7 @@ import { createGameTurnSchema, type CreateGameTurnRequest } from "@/lib/game/con
 import { createGameNarrativeGenerator } from "@/lib/game/gameNarrativeGenerator";
 import { createGameTurnService } from "@/lib/game/gameTurnService";
 import { applyExplorationAction, startWorld } from "@/lib/game/exploration/engine";
-import { worldItemSchema } from "@/lib/game/exploration/contracts";
+import { explorationStateSchema, worldItemSchema } from "@/lib/game/exploration/contracts";
 import { EXPLORATION_CONTEXT_BUDGET } from "@/lib/game/exploration/prompt";
 import { explorationMessages } from "@/lib/game/exploration/prompt";
 import { actorContext, perceptionScope } from "@/lib/game/exploration/perception";
@@ -197,12 +197,14 @@ describe("current exploration service boundary regression", () => {
     expect(detail).toEqual(before);
   });
 
-  it("C11 records that current item contracts are not yet qualitative-world contracts", () => {
-    const item = startWorld("fog-harbor", "1.0.0").view.items[0];
+  it("C11 enforces numeric policy at the world boundary instead of globally requiring item levels", () => {
+    const state = startWorld("fog-harbor", "1.0.0"); const item = state.view.items[0];
     expect(worldItemSchema.safeParse(item).success).toBe(true);
     const qualitative = { ...item, level: undefined };
-    expect(worldItemSchema.safeParse(qualitative).success).toBe(false);
-    // This is a current-format audit, NOT acceptance of the future P09 contract.
+    expect(worldItemSchema.safeParse(qualitative).success).toBe(true);
+    state.view.items[0] = qualitative;
+    expect(explorationStateSchema.safeParse(state).success).toBe(false); // The existing light world still requires a level.
+    // Full generated-item acceptance P09 remains R10.4 work; R10.3 tests qualitative world progress separately.
   });
 
   it.each(["perceptionScope", "creationDraft", "numericPolicy"])("C12 does not silently accept unimplemented/client-authoritative field %s", (field) => {

@@ -1,6 +1,7 @@
 import type { GameSessionDetail } from "@/lib/repositories/gameSessionRepository";
 import { gameTurnPath } from "../turnTree";
 import { getWorldTemplate } from "./catalog";
+import type { WorldTemplateResolver } from "./templateRegistry";
 import { ExplorationError, type ExplorationAction, type ExplorationState } from "./contracts";
 import type { PerceptionRecord, SemanticInput } from "./semanticContracts";
 
@@ -34,11 +35,11 @@ export function visiblePerceptions(state: ExplorationState, scope: PerceptionSco
   });
 }
 
-export function actorContext(state: ExplorationState, targetId: string, scope: PerceptionScope) {
+export function actorContext(state: ExplorationState, targetId: string, scope: PerceptionScope, resolve: WorldTemplateResolver = getWorldTemplate) {
   const actor = state.characters[targetId];
   if (!actor || actor.locationId !== state.locationId || actor.controller === "user")
     throw new ExplorationError("人物不存在、不在场或不由AI控制；不能回退到主持上下文。");
-  const template = getWorldTemplate(state.templateId, state.templateVersion);
+  const template = resolve(state.templateId, state.templateVersion);
   const definition = template.characters.find((person) => person.card.id === targetId);
   if (!definition) throw new ExplorationError("人物定义不存在。");
   const location = template.locations.find((place) => place.id === state.locationId)!;
@@ -51,12 +52,12 @@ export function actorContext(state: ExplorationState, targetId: string, scope: P
     character: { name: actor.name, identity: actor.identity, personality: actor.personality, speech: actor.speech,
       goals: actor.goals, values: actor.values, abilities: actor.abilities, boundaries: actor.boundaries,
       relationship: actor.relationship, backstory: actor.backstory },
-    knowledge, observations: visiblePerceptions(state, scope, targetId).slice(-20),
+    rules: template.publicRules ?? [], knowledge, observations: visiblePerceptions(state, scope, targetId).slice(-20),
   };
 }
 
 export function recordPerceptions(state: ExplorationState, scope: PerceptionScope, requestId: string,
-  input: SemanticInput | undefined, action?: ExplorationAction) {
+  input: SemanticInput | undefined, action?: ExplorationAction, resolve: WorldTemplateResolver = getWorldTemplate) {
   const previous = state.cognition;
   const records = previous && previous.sessionId === scope.sessionId && previous.worldId === state.templateId
     && previous.worldVersion === state.templateVersion ? previous.records.filter((entry) => {
@@ -79,7 +80,7 @@ export function recordPerceptions(state: ExplorationState, scope: PerceptionScop
     appendPerception(state, { sourceRequestId: requestId, tick: state.tick, locationId: state.locationId,
       kind: "host_result", speakerId: "host", audience: ["player", action.targetId], evidence: "statement", text: state.lastResult });
     if (action.action === "ask") {
-      const template = getWorldTemplate(state.templateId, state.templateVersion);
+      const template = resolve(state.templateId, state.templateVersion);
       const topic = template.characters.find((person) => person.card.id === action.targetId)?.topics.find((entry) => entry.id === action.topicId);
       for (const id of topic?.effect?.reveal ?? []) {
         const lore = template.lore.find((entry) => entry.id === id);
