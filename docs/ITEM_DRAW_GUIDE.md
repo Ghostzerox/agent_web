@@ -66,6 +66,8 @@ API均为 `no-store`：`GET /api/v1/game-draws?sessionId=…&parentTurnId=…`�
 
 `web/e2e/item-draw.spec.ts` 以真实共享页面、API与SQL验证配置→发布新局→固定 / 关键词抽取→刷新恢复→确认入库，使用合成模型，不向真实模型发送私人数据。原80例Prompt请求 / 夹具哈希未改变，新增辅助调用单独登记 / 专项测试，不冒称原80例覆盖新路径。
 
+R10.6真实探针发现模型可能多加 `type:"json_object"` 或漏写空数组 / false；当前 `r10/draw-item-design-v2` 明确按current完整字段返回，不增加包装键，严格校验继续保留。最后一次合成生成 / 入库 / 材料数量检查通过，真实费用包含失败请求，见 [集成报告](reports/R10_6_REPORT.md)；不是所有世界生成质量或真机签收。
+
 真实模型的创作质量、长期体验与费用收益未签收。本轮不做APK / 真机，手机测试合并至 [统一D10待办](DEVICE_ACCEPTANCE_BACKLOG.md)。后续排序以 [产品主线](PRODUCT_MAINLINE_GUIDE.md) 为准。
 
 ### 本轮交付记录

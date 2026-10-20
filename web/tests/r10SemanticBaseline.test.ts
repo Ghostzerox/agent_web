@@ -95,7 +95,9 @@ describe("current exploration service boundary regression", () => {
     const { service, requests } = harness();
     await service.create(sessionId, dialogue());
     expect(requests).toHaveLength(1);
-    expect(requests[0]).toMatchObject({ business: "game", promptVersion: "r10/exploration-v2" });
+    expect(requests[0]).toMatchObject({ business: "game", promptVersion: "r10/exploration-v3" });
+    expect(requests[0].messages[0].content).toContain("不得新编记录、单据、目击、经历");
+    expect(requests[0].messages[0].content).toContain("自己的旧台词也不是新证据");
     const serialized = JSON.stringify(requests[0].messages);
     expect(serialized).not.toContain(markers.own); // Unsourced legacy text is no longer actor knowledge.
     expect(serialized).toContain("合成边界：不替玩家决定内心");

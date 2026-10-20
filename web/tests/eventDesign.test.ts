@@ -164,6 +164,21 @@ describe("R10.5 event contracts and real SQL branch execution", () => {
     expect(invalid.content).toEqual(row.content); expect(invalid.generation.error).toBeTruthy();
   });
 
+  it("requires complete nested field replacements and rejects the real-model partial-stage failure without erasing costs/refusal", async () => {
+    const { session } = await setup(); const row = await runtime(session);
+    let checked = false;
+    const incomplete = { stages: row.content.stages.map(({ id, description, choices }) => ({ id, description,
+      choices: choices.map(({ id, label, cost, next, result }) => ({ id, label, cost, next, result })) })) };
+    const result = await createEventGenerationService(plans, { generate: async (messages) => {
+      const system = messages[0].content as string;
+      expect(system).toContain("每个请求字段会整体替换，不是递归合并补丁");
+      expect(system).toContain("terminal、choices"); expect(system).toContain("effect、result、refusal、knowledge"); checked = true;
+      return { content: JSON.stringify(incomplete), model: "synthetic-recorded-failure" };
+    } }).generate(row.id, { expectedVersion: row.version, requestId: crypto.randomUUID(), fields: ["stages"] });
+    expect(checked).toBe(true); expect(result.content).toEqual(row.content); expect(result.generation.error).toBeTruthy();
+    expect(result.generation.active).toBeNull(); expect(result.generation.attempts).toHaveLength(1);
+  });
+
   it("requires confirmation and owner/source authorization; used plans fence lossy migration rollback", async () => {
     const { session } = await setup(); const row = await runtime(session); const api = createGameEventDesignApi(plans);
     expect((await api(new Request("http://local/api", { method: "POST", body: JSON.stringify({ expectedVersion: row.version, expectedSourceVersion: session.version }) }), [row.id, "confirm"])).status).toBe(400);

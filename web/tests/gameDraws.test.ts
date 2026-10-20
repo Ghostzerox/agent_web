@@ -145,6 +145,18 @@ describe("R10.4.1 real SQL pending draws, branch snapshots and shared inventory"
     expect(moved.turns.at(-1)!.stateSnapshot.exploration!.view.items[0].name).toBe("合成铆钉");
   });
 
+  it("rejects the real-model wrapper/omitted-empty-keys failure, retaining its sample without inventory writes", async () => {
+    const { session } = await setup(); const row = await prepare(session, "keyword");
+    const { abilities, consumable, ...partial } = row.data.item!; void abilities; void consumable;
+    const result = await createDrawGenerationService(draws, { generate: async (messages) => {
+      expect(messages[0].content).toContain('不要输出"type":"json_object"');
+      expect(messages[0].content).toContain("空数组abilities:[]、consumable:false");
+      return { content: JSON.stringify({ ...partial, type: "json_object" }), model: "synthetic-recorded-failure" };
+    } }).generate(row.id, { attemptId: crypto.randomUUID(), confirmed: true });
+    expect(result.status).toBe("failed"); expect(result.data.sample).toEqual(row.data.sample); expect(result.data.item).toEqual(row.data.item);
+    expect((await sessions.get(session.id))!.turns).toHaveLength(1);
+  });
+
   it("P12 persists claims across service instances/restarts and explicit retry IDs never bill twice or resample", async () => {
     const { session } = await setup(); const row = await prepare(session, "keyword"); const attemptId = crypto.randomUUID();
     let release!: () => void; const pause = new Promise<void>((resolve) => { release = resolve; });

@@ -41,6 +41,8 @@ npm run mobile:client:build
 
 `npm test -- releasePersistence.test.ts` 可单独复现 R9.5 的跨模块持久化冷重启检查：仅用合成 PGlite 快照，不读取真实库、不调用模型、不替代生产灾备或真机验收。整体封版范围见 [R9报告](reports/R9_5_REPORT.md)。
 
+R10首期回归：`npm test -- r10CreationJourney.test.ts r10CreationQuality.test.ts` 检查合成创作 / 抽卡 / 事件 / 人物请求与冷重启；`creation-journey.spec.ts` 是共享完整点击旅程，React预览时加 `CREATION_JOURNEY_MOBILE_BUNDLE=true`。`npx tsx scripts/r10-quality-live.ts` 默认只离线演练；真实模式需重新核对共享余额、当日价格并显式开启，操作与历史失败费用见 `web/evals/r10/README.md` 和 [R10.6报告](reports/R10_6_REPORT.md)。不得把该真实模式接入 `check`、CI或普通启动脚本。
+
 ## 构建边界与依赖取舍
 
 - Docker builder 安装构建依赖；runner 只安装 `npm ci --omit=dev`、复制 Web 产物、业务源文件、SQL 和三个运行脚本。构建缓存、Android、测试与评测不进入发布镜像。
