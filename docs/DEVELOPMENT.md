@@ -53,7 +53,7 @@ R10首期回归：`npm test -- r10CreationJourney.test.ts r10CreationQuality.tes
 
 ## 手机相关
 
-日常功能继续共享 Web / React 业务。APK 构建与安装只有 [Android手册](MOBILE_ANDROID.md) 一套正式流程；真机统一 [暂缓待办](DEVICE_ACCEPTANCE_BACKLOG.md)。R9.4 不重打 APK、不要求现在安装测试。
+日常功能继续共享 Web / React 业务。APK 构建与安装只有 [Android手册](MOBILE_ANDROID.md) 一套正式流程。**2026-10-20用户明确：每个大阶段完成后都重新生成Debug APK，只暂缓安装与真机测试，不暂缓打包。**阶段收尾包括共享客户端构建、Capacitor同步、Gradle打包、包内配置 / 资源检查、记录源提交 / 文件路径 / SHA-256，并在交付时给出安装包链接；仅构建React Bundle不算完成APK交付。小任务按影响做定向检查，不要求每个文案修改都打包；大阶段不以“仅服务端修改”或“真机暂缓”为由跳过。真机统一 [暂缓待办](DEVICE_ACCEPTANCE_BACKLOG.md)，构建成功不替代设备验收。
 
 ## 文档维护
 
