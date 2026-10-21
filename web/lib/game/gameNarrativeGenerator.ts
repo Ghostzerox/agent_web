@@ -8,6 +8,7 @@ import {
 import { createMeasuredProvider } from "@/lib/ai/server/measuredProvider";
 import { resolveModelProviderConfig } from "@/lib/ai/server/modelCredentialService";
 import { ModelConfigError, type ModelProviderConfig } from "@/lib/ai/server/modelConfig";
+import type { WorldGenerationOutputProfile } from "@/lib/ai/server/tokenBudget";
 
 const MAX_GAME_RESULT_LENGTH = 100_000;
 
@@ -17,7 +18,7 @@ export interface GameNarrativeGeneratorPort {
   generate(
     messages: ChatCompletionMessage[],
     signal?: AbortSignal,
-    options?: { promptVersion: string },
+    options?: { promptVersion: string; outputProfile?: WorldGenerationOutputProfile },
   ): Promise<GameNarrativeResult>;
 }
 
@@ -71,7 +72,7 @@ export function createGameNarrativeGenerator(
       try {
         for await (const event of dependencies
           .createProvider(config)
-          .stream({ messages, business: "game", promptVersion: options?.promptVersion ?? (typeof messages[0]?.content === "string" && messages[0].content.startsWith("你是叙事型探索世界") ? EXPLORATION_PROMPT_VERSION : GAME_PROMPT_VERSION) }, providerSignal)) {
+          .stream({ messages, business: "game", ...(options?.outputProfile ? { outputProfile: options.outputProfile } : {}), promptVersion: options?.promptVersion ?? (typeof messages[0]?.content === "string" && messages[0].content.startsWith("你是叙事型探索世界") ? EXPLORATION_PROMPT_VERSION : GAME_PROMPT_VERSION) }, providerSignal)) {
           if (event.type !== "delta") continue;
           content += event.text;
           if (content.length > MAX_GAME_RESULT_LENGTH) {

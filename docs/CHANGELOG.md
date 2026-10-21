@@ -2,6 +2,14 @@
 
 当前收敛阶段摘要。完整旧日志见 [R9.4前冻结版本](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/CHANGELOG.md)，各阶段索引见 [历史](HISTORY.md)。当前排序只看 [产品主线](PRODUCT_MAINLINE_GUIDE.md)。
 
+## 修正 — 世界生成截断与创作操作指引（2026-10-21）
+
+**Commit**: `same delivery commit`
+
+- 用量元数据确认原6144输出中6143用于思考；世界整稿 / 单部分分别采用独立16384 / 8192默认预算，尊重显式配置，仅DeepSeek官方世界生成关闭思考。普通聊天 / 人物 / 游戏与兼容Provider契约不变，仍拒绝截断JSON、不自动重试或覆盖原稿。
+- 世界工作台增加折叠操作指引、明确范围的生成前确认、禁用原因和发布 / 开玩下一步；高级JSON区分应用 / 保存 / 放弃，未应用时不能生成或假保存，重读需确认放弃本地内容。
+- 追加Provider参数 / 截断保留测试和360 / 1440px共享UI回归；80例Prompt原请求不变，仅核准3份修改源码指纹。无生产依赖 / schema / localStorage变化，无本轮真实模型调用；部署 / 移动验证见[世界创作指南](WORLD_CREATION_GUIDE.md)。
+
 ## R11 — 模块级开源调研与复用决策（2026-10-21）
 
 **Commit**: `same delivery commit`

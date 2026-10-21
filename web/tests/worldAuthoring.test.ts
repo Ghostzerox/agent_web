@@ -7,7 +7,7 @@ import { createPgliteMigrationDatabase } from "./helpers/pglite";
 import { createGameWorldRepository } from "@/lib/repositories/gameWorldRepository";
 import { createGameSessionRepository } from "@/lib/repositories/gameSessionRepository";
 import { createGameTurnService } from "@/lib/game/gameTurnService";
-import { createGameNarrativeGenerator } from "@/lib/game/gameNarrativeGenerator";
+import { createGameNarrativeGenerator, GameNarrativeGenerationError, type GameNarrativeGeneratorPort } from "@/lib/game/gameNarrativeGenerator";
 import { createWorldGenerationService, WORLD_CREATION_PROMPT_VERSION } from "@/lib/game/worlds/generation";
 import { blankWorldBlueprint } from "@/lib/game/worlds/blueprint";
 import { compileWorld, worldDraftIssues } from "@/lib/game/worlds/compile";
@@ -153,6 +153,7 @@ describe("R10.3 persisted world creation and playable revisions", () => {
     const service = createWorldGenerationService(repo, generator); const input = { expectedVersion: locked.version, requestId: crypto.randomUUID(), sections: ["opening", "overview"] };
     const [first, duplicate] = await Promise.all([service.generate(row.id, input), service.generate(row.id, input)]);
     expect(first).toEqual(duplicate); expect(requests).toHaveLength(1); expect(requests[0].promptVersion).toBe(WORLD_CREATION_PROMPT_VERSION);
+    expect(requests[0].outputProfile).toBe("world-section");
     expect(first.content?.overview).toEqual(locked.content?.overview); expect(first.content?.opening.text).toBe("合成新开场");
     expect(first.origins.opening).toBe("ai"); expect(first.origins.overview).toBe("user");
     expect(JSON.parse(requests[0].messages.at(-1)!.content as string).requestedSections).toEqual(["opening"]);
@@ -165,11 +166,12 @@ describe("R10.3 persisted world creation and playable revisions", () => {
 
   it("initially generates all sections, but malformed, canceled, stale and racing outputs never overwrite prior edits", async () => {
     const row = await repo.create(brief); const generation = { expectedVersion: row.version, requestId: crypto.randomUUID(), sections: [...WORLD_SECTIONS] };
-    const generate = vi.fn(async () => ({ content: JSON.stringify(blueprint()), model: "synthetic" }));
+    const generate = vi.fn<GameNarrativeGeneratorPort["generate"]>(async () => ({ content: JSON.stringify(blueprint()), model: "synthetic" }));
     const service = createWorldGenerationService(repo, { generate });
     await expect(service.generate(row.id, { ...generation, sections: ["opening"] })).rejects.toMatchObject({ code: "WORLD_INVALID" });
     expect(generate).not.toHaveBeenCalled();
     const complete = await service.generate(row.id, generation); expect(complete.content?.region.locations).toHaveLength(2);
+    expect(generate.mock.calls[0][2]).toMatchObject({ outputProfile: "world-authoring" });
     await expect(service.generate(row.id, { ...generation, requestId: crypto.randomUUID() })).rejects.toMatchObject({ code: "WORLD_VERSION_CONFLICT" });
     expect(generate).toHaveBeenCalledOnce();
     const partial = { expectedVersion: complete.version, requestId: crypto.randomUUID(), sections: ["opening"] };
@@ -185,6 +187,20 @@ describe("R10.3 persisted world creation and playable revisions", () => {
     } });
     await expect(racing.generate(row.id, { ...partial, requestId: crypto.randomUUID() })).rejects.toMatchObject({ code: "WORLD_VERSION_CONFLICT" });
     expect((await repo.get(row.id)).lockedSections).toEqual(["opening"]);
+  });
+
+  it("reports truncated world output with actionable recovery, preserving drafts without a retry", async () => {
+    const row = await repo.create(brief);
+    const generate = vi.fn<GameNarrativeGeneratorPort["generate"]>().mockRejectedValue(new GameNarrativeGenerationError("PROVIDER_OUTPUT_TRUNCATED", "length", false));
+    const api = createGameWorldApi(repo, createWorldGenerationService(repo, { generate }));
+    const response = await api(new Request(`http://test.invalid/api/v1/game-worlds/${row.id}/generate`, { method: "POST",
+      body: JSON.stringify({ expectedVersion: row.version, requestId: crypto.randomUUID(), sections: [...WORLD_SECTIONS] }) }), [row.id, "generate"]);
+    expect(response.status).toBe(502);
+    const failure = await response.json();
+    expect(failure.error).toMatchObject({ code: "PROVIDER_OUTPUT_TRUNCATED", retryable: false });
+    expect(failure.error.message).toContain("手动起始表单"); expect(failure.error.message).toContain("没有自动重试");
+    expect(generate).toHaveBeenCalledOnce(); expect(await repo.get(row.id)).toEqual(row);
+    expect(await repo.revisions(row.id)).toEqual([]);
   });
 
   it("fences a newer authoring downgrade without deleting existing game sessions", async () => {

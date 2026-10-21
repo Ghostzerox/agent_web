@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { stableJson } from "@/lib/ai/stableJson";
-import { createGameNarrativeGenerator, type GameNarrativeGeneratorPort } from "../gameNarrativeGenerator";
+import { createGameNarrativeGenerator, GameNarrativeGenerationError, type GameNarrativeGeneratorPort } from "../gameNarrativeGenerator";
 import type { GameWorldRepository } from "@/lib/repositories/gameWorldRepository";
 import { blankWorldBlueprint } from "./blueprint";
 import { generateWorldSchema, worldBlueprintSchema, WorldDesignError, type WorldSection } from "./contracts";
@@ -43,7 +43,14 @@ export function createWorldGenerationService(repository: GameWorldRepository, ge
           { role: "user" as const, content: stableJson({ input: draft.input, requestedSections: sections,
             lockedSections: draft.lockedSections, current: draft.content, example: blankWorldBlueprint(draft.input) }) },
         ];
-        const result = await generator.generate(messages, signal, { promptVersion: WORLD_CREATION_PROMPT_VERSION });
+        const result = await generator.generate(messages, signal, { promptVersion: WORLD_CREATION_PROMPT_VERSION,
+          outputProfile: sections.length === 1 ? "world-section" : "world-authoring" }).catch((error: unknown) => {
+          if (error instanceof GameNarrativeGenerationError && error.code === "PROVIDER_OUTPUT_TRUNCATED") {
+            throw new GameNarrativeGenerationError(error.code,
+              "世界草稿生成被模型截断，不完整结果未保存，原草稿保留。可先载入并保存手动起始表单，再进入各部分分别补全；或调整服务端 world-authoring / world-section 输出预算。已用API费用可能产生，系统没有自动重试。", false);
+          }
+          throw error;
+        });
         if (signal?.aborted) throw new WorldDesignError("WORLD_GENERATION_FAILED", "生成已取消，原草稿保留；实际API费用可能已经产生。");
         let patch: Record<string, unknown>;
         try {

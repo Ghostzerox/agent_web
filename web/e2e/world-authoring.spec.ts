@@ -11,6 +11,7 @@ import { createGameSessionApi } from "../lib/api/gameSessionApi";
 import { createGamePlayApi } from "../lib/api/gamePlayApi";
 import { createGameTurnService } from "../lib/game/gameTurnService";
 import { createWorldGenerationService } from "../lib/game/worlds/generation";
+import { GameNarrativeGenerationError } from "../lib/game/gameNarrativeGenerator";
 
 const mobile = process.env.WORLD_CREATION_MOBILE_BUNDLE === "true";
 for (const width of [360, 1440]) test(`world authoring publishes a playable pinned revision at ${width}px`, async ({ page }) => {
@@ -19,9 +20,11 @@ for (const width of [360, 1440]) test(`world authoring publishes a playable pinn
   try {
     await migrateDatabase(createPgliteMigrationDatabase(pglite), await loadMigrations());
     const db = drizzle(pglite, { schema }); const worlds = createGameWorldRepository(db); const sessions = createGameSessionRepository(db);
-    let calls = 0;
+    let calls = 0; let truncateNext = true;
     const worldApi = createGameWorldApi(worlds, createWorldGenerationService(worlds, { generate: async () => {
-      calls++; return { content: JSON.stringify({ opening: { text: "合成开场：你踏入铜湾。", playerRole: "来访者" } }), model: "synthetic" };
+      calls++;
+      if (truncateNext) { truncateNext = false; throw new GameNarrativeGenerationError("PROVIDER_OUTPUT_TRUNCATED", "length", false); }
+      return { content: JSON.stringify({ opening: { text: "合成开场：你踏入铜湾。", playerRole: "来访者" } }), model: "synthetic" };
     } }));
     const sessionApi = createGameSessionApi(sessions);
     const playApi = createGamePlayApi(sessions, createGameTurnService(sessions, { generate: async () => {
@@ -45,18 +48,40 @@ for (const width of [360, 1440]) test(`world authoring publishes a playable pinn
     await page.getByLabel("粗略世界描述", { exact: true }).fill("一座没有魔法的蒸汽港城，侧重交流与探索。");
     await page.getByRole("button", { name: "保存创作起点（不调用AI）", exact: true }).click();
     await page.getByRole("link", { name: "进入已保存草稿 →", exact: true }).click();
+    const aiConfirm = page.getByRole("region", { name: "确认AI世界生成" });
+    await page.getByRole("button", { name: "AI生成完整草稿（需确认费用）", exact: true }).click();
+    await expect(aiConfirm).toContainText("世界概览"); expect(calls).toBe(0);
+    await aiConfirm.getByRole("button", { name: "暂不生成（不收费）", exact: true }).click(); expect(calls).toBe(0);
+    await expect(aiConfirm).toHaveCount(0);
+    await page.getByRole("button", { name: "AI生成完整草稿（需确认费用）", exact: true }).click();
+    await aiConfirm.getByRole("button", { name: "确认调用AI并保存结果", exact: true }).click();
+    await expect(page.getByRole("main", { name: "世界创作工作台", exact: true }).getByRole("alert")).toContainText("不完整结果未保存"); expect(calls).toBe(1);
+    const preserved = (await worlds.list())[0]; expect((await worlds.get(preserved.id)).content).toBeNull();
     await page.getByRole("button", { name: "填写手动起始表单（不调用AI）", exact: true }).click();
+    await expect(page.getByRole("status")).toContainText("尚未保存");
     await page.getByRole("button", { name: "保存草稿", exact: true }).click();
     const nav = page.getByRole("navigation", { name: "世界创作局部导航" });
     await nav.getByRole("link", { name: "世界概览", exact: true }).click();
     await page.getByRole("textbox", { name: "名称", exact: true }).fill("合成铜湾");
+    await page.getByText("高级结构编辑（增删地点、人物、史料及字典）", { exact: true }).click();
+    const json = page.getByRole("textbox", { name: "当前部分JSON", exact: true });
+    const originalJson = await json.inputValue();
+    await json.fill(originalJson.replace("合成铜湾", "未应用名称"));
+    await expect(page.getByRole("button", { name: "保存草稿", exact: true })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "AI重生成当前部分（需确认费用）", exact: true })).toBeDisabled();
+    await page.getByRole("button", { name: "放弃未应用的JSON编辑", exact: true }).click();
+    await json.fill(originalJson.replace("探索与交流", "谨慎探索"));
+    await page.getByRole("button", { name: "应用到表单（尚未保存）", exact: true }).click();
+    await expect(page.getByRole("status").filter({ hasText: "结构已应用" })).toContainText("尚未保存到服务端");
     await page.getByLabel("锁定此部分，AI不得重生成（仍可手动编辑）").check();
     await page.getByRole("button", { name: "保存草稿", exact: true }).click();
-    await page.getByRole("button", { name: "AI重生成当前部分（可能费用）", exact: true }).click();
-    await expect(page.getByRole("alert").filter({ hasText: "所选部分" })).toContainText("已全部锁定"); expect(calls).toBe(0);
+    await expect(page.getByRole("button", { name: "AI重生成当前部分（需确认费用）", exact: true })).toBeDisabled();
+    await expect(page.locator("#world-generation-help")).toContainText("当前部分已锁定"); expect(calls).toBe(1);
     await nav.getByRole("link", { name: "开场与玩家定位", exact: true }).click();
-    await page.getByRole("button", { name: "AI重生成当前部分（可能费用）", exact: true }).click();
-    await expect(page.getByRole("textbox", { name: "内容", exact: true })).toHaveValue("合成开场：你踏入铜湾。"); expect(calls).toBe(1);
+    await page.getByRole("button", { name: "AI重生成当前部分（需确认费用）", exact: true }).click();
+    await expect(aiConfirm).toContainText("将生成并保存：开场与玩家定位");
+    await aiConfirm.getByRole("button", { name: "确认调用AI并保存结果", exact: true }).click();
+    await expect(page.getByRole("textbox", { name: "内容", exact: true })).toHaveValue("合成开场：你踏入铜湾。"); expect(calls).toBe(2);
     await nav.getByRole("link", { name: "预览与发布", exact: true }).click();
     if (width === 360 && !mobile) await page.getByRole("main", { name: "世界创作工作台", exact: true }).screenshot({ path: "test-results/world-creator-360.png" });
     await expect(page.getByRole("button", { name: "确认发布当前草稿", exact: true })).toBeDisabled();
@@ -69,7 +94,7 @@ for (const width of [360, 1440]) test(`world authoring publishes a playable pinn
     const workspace = page.getByRole("region", { name: "大世界探索工作区" });
     await expect(workspace).toContainText("合成铜湾"); await expect(workspace).toContainText("定性世界");
     await workspace.getByRole("button", { name: "前往交会处", exact: true }).click();
-    await expect(workspace.getByRole("status")).toContainText("交会处"); expect(calls).toBe(1);
+    await expect(workspace.getByRole("status")).toContainText("交会处"); expect(calls).toBe(2);
     expect(await sessions.list()).toHaveLength(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     if (width === 360 && !mobile) await page.screenshot({ path: "test-results/world-creation-360.png", fullPage: false });

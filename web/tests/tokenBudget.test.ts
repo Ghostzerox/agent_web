@@ -19,6 +19,33 @@ describe("generation budgets", () => {
   it("counts text characters honestly without pretending an image's base64 is input tokens", () => {
     expect(inputTextCharacters([{ content: [{ type: "text", text: "你好" }, { type: "image_url", image_url: { url: "data:image/jpeg;base64,AAAA" } }] }])).toBe(2);
   });
+  it("scopes world output budgets without raising ordinary game/chat or ignoring explicit ceilings", () => {
+    expect(resolveGenerationBudget(config, "game", "", {}, "world-authoring").maxOutputTokens).toBe(16384);
+    expect(resolveGenerationBudget(config, "game", "", {}, "world-section").maxOutputTokens).toBe(8192);
+    expect(resolveGenerationBudget(config, "game", "", {}).maxOutputTokens).toBe(6144);
+    expect(resolveGenerationBudget(config, "chat", "", {}, "world-authoring").maxOutputTokens).toBe(8192);
+    expect(resolveGenerationBudget(config, "game", "", { AI_OUTPUT_TOKEN_BUDGETS_JSON: '{"game":4096,"world-authoring":24000}' }, "world-authoring").maxOutputTokens).toBe(24000);
+    expect(resolveGenerationBudget(config, "game", "", { AI_OUTPUT_TOKEN_BUDGETS_JSON: '{"game":4096,"world-authoring":-1}' }, "world-authoring").maxOutputTokens).toBe(4096);
+    expect(resolveGenerationBudget(config, "game", "", { AI_OUTPUT_TOKEN_PARAMETER: "off" }, "world-authoring").maxOutputTokens).toBeNull();
+    expect(resolveGenerationBudget({ baseUrl: "https://custom.example/v1" }, "game", "", {}, "world-authoring").maxOutputTokens).toBeNull();
+  });
+  it("disables thinking only for official structured world calls and preserves other provider contracts", async () => {
+    const fetcher = vi.fn(async () => Response.json({ choices: [{ message: { content: "{}" }, finish_reason: "stop" }] }));
+    vi.stubGlobal("fetch", fetcher);
+    for (const [baseUrl, business, outputProfile] of [
+      [config.baseUrl, "game", "world-authoring"], [config.baseUrl, "game", "world-section"],
+      [config.baseUrl, "game", undefined], [config.baseUrl, "chat", undefined],
+      ["https://custom.example/v1", "game", "world-authoring"],
+    ] as const) {
+      for await (const event of new OpenAICompatibleProvider({ ...config, baseUrl }).stream({ business, outputProfile, messages: [{ role: "user", content: "synthetic" }] })) void event;
+    }
+    const bodies = fetcher.mock.calls.map((call) => JSON.parse((call as unknown as [string, RequestInit])[1].body as string));
+    expect(bodies[0]).toMatchObject({ max_tokens: 16384, thinking: { type: "disabled" }, response_format: { type: "json_object" } });
+    expect(bodies[1]).toMatchObject({ max_tokens: 8192, thinking: { type: "disabled" } });
+    expect(bodies[2]).toMatchObject({ max_tokens: 6144 });
+    for (const index of [2, 3, 4]) expect(bodies[index]).not.toHaveProperty("thinking");
+    expect(bodies[4]).not.toHaveProperty("max_tokens"); expect(bodies[4]).not.toHaveProperty("response_format");
+  });
   it("rejects excessive input before a billable request and keeps the original content", async () => {
     vi.stubEnv("AI_MAX_INPUT_CHARACTERS", "1000");
     const fetcher = vi.fn(); vi.stubGlobal("fetch", fetcher);

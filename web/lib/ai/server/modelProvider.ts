@@ -2,12 +2,13 @@ import type { ChatCompletionMessage } from "@/lib/ai/messages";
 import type { ModelProviderConfig } from "./modelConfig";
 import { fetchWithTransientDnsRetry } from "./providerFetch";
 import { estimateTokenCost, parseTokenUsage, readTokenPrices, type ModelBusiness, type ModelCallTelemetry, type TokenUsage } from "@/lib/ai/modelUsage";
-import { inputTextCharacters, latestRequestText, resolveGenerationBudget, type GenerationBudget } from "./tokenBudget";
+import { inputTextCharacters, latestRequestText, resolveGenerationBudget, type GenerationBudget, type WorldGenerationOutputProfile } from "./tokenBudget";
 
 export type ModelStreamRequest = {
   business?: ModelBusiness;
   promptVersion?: string;
   generationBudget?: GenerationBudget;
+  outputProfile?: WorldGenerationOutputProfile;
   messages: Array<
     | ChatCompletionMessage
     | {
@@ -120,7 +121,7 @@ export class OpenAICompatibleProvider implements ModelProvider {
     signal?: AbortSignal,
   ): AsyncIterable<ModelStreamEvent> {
     const started = Date.now();
-    const generationBudget = request.generationBudget ?? resolveGenerationBudget(this.config, request.business ?? "chat", latestRequestText(request.messages));
+    const generationBudget = request.generationBudget ?? resolveGenerationBudget(this.config, request.business ?? "chat", latestRequestText(request.messages), process.env, request.outputProfile);
     const state: { attempts: number; usage: TokenUsage | null; finishReason: string | null } = { attempts: 0, usage: null, finishReason: null };
     let firstTokenMs: number | null = null;
     let status: ModelCallTelemetry["status"] = "cancelled";
@@ -196,8 +197,11 @@ export class OpenAICompatibleProvider implements ModelProvider {
             ...(new URL(this.config.baseUrl).hostname === "api.deepseek.com" &&
               ["reflection", "memorization", "problem-solving", "review-card", "game", "context-summary"].includes(request.business ?? "")
               ? { response_format: { type: "json_object" } } : {}),
-            // Compact summaries are extraction, not open-ended reasoning. Official API only.
-            ...(new URL(this.config.baseUrl).hostname === "api.deepseek.com" && request.business === "context-summary" ? { thinking: { type: "disabled" } } : {}),
+            // Structured world drafts need complete JSON, not an unseen reasoning-only response.
+            // Keep ordinary game/actor/chat requests and custom providers unchanged.
+            ...(new URL(this.config.baseUrl).hostname === "api.deepseek.com" && (request.business === "context-summary" ||
+              (request.business === "game" && (request.outputProfile === "world-authoring" || request.outputProfile === "world-section")))
+              ? { thinking: { type: "disabled" } } : {}),
             ...(generationBudget.tokenParameter && generationBudget.maxOutputTokens ? { [generationBudget.tokenParameter]: generationBudget.maxOutputTokens } : {}),
             // Only the verified official endpoint is opted in automatically.
             ...(new URL(this.config.baseUrl).hostname === "api.deepseek.com" ? { stream_options: { include_usage: true } } : {}),
