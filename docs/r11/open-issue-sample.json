@@ -1,0 +1,52 @@
+[
+  {
+    "repo": "QwenAudio/CosyVoice",
+    "queriedAt": "2026-10-21T03:47:58.3730696Z",
+    "sample": [
+      {
+        "number": 1892,
+        "title": "CosyVoice3推理加速优化方案：ONNX图优化、TensorRT推理调整、分桶策略与CUDA Graph",
+        "updated": "2026-10-20T01:34:00Z",
+        "url": "https://github.com/QwenAudio/CosyVoice/issues/1892"
+      },
+      {
+        "number": 1959,
+        "title": "Faster CosyVoice: a GPU deployment solution for CosyVoice3 (72.8 ms TTFP, 15× RTFx on a single GPU)",
+        "updated": "2026-10-19T01:03:50Z",
+        "url": "https://github.com/QwenAudio/CosyVoice/issues/1959"
+      },
+      {
+        "number": 1171,
+        "title": "三秒复刻，生成音频为空的音频文件",
+        "updated": "2026-10-18T01:45:33Z",
+        "url": "https://github.com/QwenAudio/CosyVoice/issues/1171"
+      }
+    ],
+    "scope": "Up to 3 open issues among first 10 updated issue/PR entries; not a complete issue audit"
+  },
+  {
+    "repo": "jkbrzt/rrule",
+    "queriedAt": "2026-10-21T03:48:00.6386935Z",
+    "sample": [
+      {
+        "number": 674,
+        "title": "Incorrect seconds with FREQ=SECONDLY;INTERVAL=7;BYMINUTE=0",
+        "updated": "2026-10-16T10:35:59Z",
+        "url": "https://github.com/jkbrzt/rrule/issues/674"
+      },
+      {
+        "number": 671,
+        "title": "Repeated BYSECOND values consume COUNT before deduplication in an RRuleSet",
+        "updated": "2026-09-28T09:57:20Z",
+        "url": "https://github.com/jkbrzt/rrule/issues/671"
+      },
+      {
+        "number": 647,
+        "title": "discrepancies between rruleSet and RRule result when used with ByHour and ByMinutes",
+        "updated": "2026-07-18T21:31:47Z",
+        "url": "https://github.com/jkbrzt/rrule/issues/647"
+      }
+    ],
+    "scope": "Up to 3 open issues among first 10 updated issue/PR entries; not a complete issue audit"
+  }
+]

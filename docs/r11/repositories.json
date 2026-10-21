@@ -1,0 +1,418 @@
+{
+  "schemaVersion": 1,
+  "queriedAt": "2026-10-21T03:26:50.710Z",
+  "repos": [
+    {
+      "name": "Mai-with-u/MaiBot",
+      "stars": 6343,
+      "license": "GPL-3.0",
+      "branch": "main",
+      "pushed": "2026-10-20T20:04:08Z",
+      "archived": false,
+      "url": "https://github.com/Mai-with-u/MaiBot"
+    },
+    {
+      "name": "euphoriaaaaaa1/hds-interlude",
+      "stars": 14,
+      "license": "AGPL-3.0",
+      "branch": "master",
+      "pushed": "2026-09-03T05:38:31Z",
+      "archived": false,
+      "url": "https://github.com/euphoriaaaaaa1/hds-interlude"
+    },
+    {
+      "name": "Dacangshu987/dsh-hds-interlude",
+      "stars": 2,
+      "license": "AGPL-3.0",
+      "branch": "main",
+      "pushed": "2026-10-15T12:57:45Z",
+      "archived": false,
+      "url": "https://github.com/Dacangshu987/dsh-hds-interlude"
+    },
+    {
+      "name": "QwenAudio/CosyVoice",
+      "stars": 24080,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "pushed": "2026-05-25T18:15:40Z",
+      "archived": false,
+      "url": "https://github.com/QwenAudio/CosyVoice"
+    },
+    {
+      "name": "RVC-Boss/GPT-SoVITS",
+      "stars": 63301,
+      "license": "MIT",
+      "branch": "main",
+      "pushed": "2026-10-19T10:05:29Z",
+      "archived": false,
+      "url": "https://github.com/RVC-Boss/GPT-SoVITS"
+    },
+    {
+      "name": "open-spaced-repetition/ts-fsrs",
+      "stars": 828,
+      "license": "MIT",
+      "branch": "main",
+      "pushed": "2026-10-20T17:37:31Z",
+      "archived": false,
+      "url": "https://github.com/open-spaced-repetition/ts-fsrs"
+    },
+    {
+      "name": "jkbrzt/rrule",
+      "stars": 3746,
+      "license": "NOASSERTION",
+      "branch": "master",
+      "pushed": "2024-06-27T17:52:15Z",
+      "archived": false,
+      "url": "https://github.com/jkbrzt/rrule"
+    },
+    {
+      "name": "SillyTavern/SillyTavern",
+      "stars": 34744,
+      "license": "AGPL-3.0",
+      "branch": "release",
+      "pushed": "2026-10-02T22:05:54Z",
+      "archived": false,
+      "url": "https://github.com/SillyTavern/SillyTavern"
+    },
+    {
+      "name": "mem0ai/mem0",
+      "stars": 67545,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "pushed": "2026-10-21T01:16:37Z",
+      "archived": false,
+      "url": "https://github.com/mem0ai/mem0"
+    },
+    {
+      "name": "deepset-ai/haystack",
+      "stars": 26796,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "pushed": "2026-10-21T02:17:13Z",
+      "archived": false,
+      "url": "https://github.com/deepset-ai/haystack"
+    },
+    {
+      "name": "pgvector/pgvector",
+      "stars": 23424,
+      "license": "NOASSERTION",
+      "branch": "master",
+      "pushed": "2026-10-18T12:20:41Z",
+      "archived": false,
+      "url": "https://github.com/pgvector/pgvector"
+    },
+    {
+      "name": "temporalio/sdk-typescript",
+      "stars": 939,
+      "license": "MIT",
+      "branch": "main",
+      "pushed": "2026-10-20T23:54:57Z",
+      "archived": false,
+      "url": "https://github.com/temporalio/sdk-typescript"
+    },
+    {
+      "name": "binwiederhier/ntfy",
+      "stars": 34951,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "pushed": "2026-10-20T21:43:47Z",
+      "archived": false,
+      "url": "https://github.com/binwiederhier/ntfy"
+    },
+    {
+      "name": "DIYgod/RSSHub",
+      "stars": 46598,
+      "license": "AGPL-3.0",
+      "branch": "master",
+      "pushed": "2026-10-20T18:23:25Z",
+      "archived": false,
+      "url": "https://github.com/DIYgod/RSSHub"
+    },
+    {
+      "name": "rbren/rss-parser",
+      "stars": 1530,
+      "license": "MIT",
+      "branch": "master",
+      "pushed": "2026-08-25T14:50:41Z",
+      "archived": false,
+      "url": "https://github.com/rbren/rss-parser"
+    },
+    {
+      "name": "mozilla/readability",
+      "stars": 11510,
+      "license": "Apache-2.0",
+      "branch": "main",
+      "pushed": "2026-08-04T00:16:05Z",
+      "archived": false,
+      "url": "https://github.com/mozilla/readability"
+    },
+    {
+      "name": "internetarchive/openlibrary",
+      "stars": 6769,
+      "license": "AGPL-3.0",
+      "branch": "master",
+      "pushed": "2026-10-21T02:38:11Z",
+      "archived": false,
+      "url": "https://github.com/internetarchive/openlibrary"
+    },
+    {
+      "name": "langchain-ai/langchainjs",
+      "stars": 18284,
+      "license": "MIT",
+      "branch": "main",
+      "pushed": "2026-10-20T22:03:22Z",
+      "archived": false,
+      "url": "https://github.com/langchain-ai/langchainjs"
+    },
+    {
+      "name": "KaTeX/KaTeX",
+      "stars": 20463,
+      "license": "MIT",
+      "branch": "main",
+      "pushed": "2026-10-20T22:12:42Z",
+      "archived": false,
+      "url": "https://github.com/KaTeX/KaTeX"
+    },
+    {
+      "name": "radix-ui/primitives",
+      "stars": 19415,
+      "license": "MIT",
+      "branch": "main",
+      "pushed": "2026-10-14T21:52:47Z",
+      "archived": false,
+      "url": "https://github.com/radix-ui/primitives"
+    },
+    {
+      "name": "clauderic/dnd-kit",
+      "stars": 17734,
+      "license": "MIT",
+      "branch": "main",
+      "pushed": "2026-10-15T12:09:13Z",
+      "archived": false,
+      "url": "https://github.com/clauderic/dnd-kit"
+    },
+    {
+      "name": "AstrBotDevs/AstrBot",
+      "stars": 42467,
+      "license": "AGPL-3.0",
+      "branch": "master",
+      "pushed": "2026-10-20T06:49:41Z",
+      "archived": false,
+      "url": "https://github.com/AstrBotDevs/AstrBot"
+    },
+    {
+      "name": "deepseek-ai/deepseek-harness",
+      "stars": 256027,
+      "license": "MIT",
+      "branch": "master",
+      "pushed": "2026-10-17T08:16:09Z",
+      "archived": false,
+      "url": "https://github.com/deepseek-ai/deepseek-harness"
+    },
+    {
+      "name": "ionic-team/capacitor",
+      "stars": 16914,
+      "license": "MIT",
+      "branch": "main",
+      "pushed": "2026-10-20T11:50:15Z",
+      "archived": false,
+      "url": "https://github.com/ionic-team/capacitor"
+    }
+  ],
+  "focused": [
+    {
+      "repo": "Mai-with-u/MaiBot",
+      "sha": "5c7637e6913c84d1c3d5e742fa9e95a7e70d3501",
+      "committed": "2026-10-20T19:56:15Z",
+      "release": {
+        "tag": "v1.3.12",
+        "date": "2026-10-20T20:04:09Z"
+      },
+      "testLikePaths": 446,
+      "workflowFiles": [
+        ".github/workflows/a-memorix-tests.yml",
+        ".github/workflows/check-webui.yml",
+        ".github/workflows/cnb-mirror.yml",
+        ".github/workflows/crowdin-bootstrap.yml",
+        ".github/workflows/crowdin-sync.yml",
+        ".github/workflows/docker-image-dev.yml",
+        ".github/workflows/docker-image-main.yml",
+        ".github/workflows/i18n-validate.yml",
+        ".github/workflows/issue-template-guard.yml",
+        ".github/workflows/precheck.yml",
+        ".github/workflows/prepare-main-release.yml",
+        ".github/workflows/publish-maibot.yml",
+        ".github/workflows/publish-webui-dist.yml",
+        ".github/workflows/ruff-pr.yml",
+        ".github/workflows/ruff.yml",
+        ".github/workflows/update-dashboard-dependency.yml"
+      ]
+    },
+    {
+      "repo": "euphoriaaaaaa1/hds-interlude",
+      "sha": "ab043c4d4ff5827a815ba1520a3e15b8ca159e78",
+      "committed": "2026-08-31T22:56:10Z",
+      "release": {
+        "tag": null,
+        "date": null
+      },
+      "testLikePaths": 23,
+      "workflowFiles": []
+    },
+    {
+      "repo": "Dacangshu987/dsh-hds-interlude",
+      "sha": "ff8a33ea9a0735fb19ce1487e1068cf779627fca",
+      "committed": "2026-10-15T12:57:40Z",
+      "release": {
+        "tag": null,
+        "date": null
+      },
+      "testLikePaths": 132,
+      "workflowFiles": []
+    },
+    {
+      "repo": "QwenAudio/CosyVoice",
+      "sha": "074ca6dc9e80a2f424f1f74b48bdd7d3fea531cc",
+      "committed": "2026-05-25T18:15:40Z",
+      "release": {
+        "tag": null,
+        "date": null
+      },
+      "testLikePaths": 1,
+      "workflowFiles": [
+        ".github/workflows/lint.yml",
+        ".github/workflows/stale-issues.yml"
+      ]
+    },
+    {
+      "repo": "open-spaced-repetition/ts-fsrs",
+      "sha": "8800fefd61bd95e55b9a9c20228ff686d0b159ad",
+      "committed": "2026-10-20T09:09:39Z",
+      "release": {
+        "tag": "v5.4.2",
+        "date": "2026-09-01T02:23:29Z"
+      },
+      "testLikePaths": 35,
+      "workflowFiles": [
+        ".github/workflows/build-napi.yml",
+        ".github/workflows/check.yml",
+        ".github/workflows/ci.yml",
+        ".github/workflows/docs-deploy.yml",
+        ".github/workflows/docs-preview-delivery.yml",
+        ".github/workflows/docs-preview.yml",
+        ".github/workflows/preview-package.yml",
+        ".github/workflows/promote-preflight.yml",
+        ".github/workflows/release.yml",
+        ".github/workflows/test.yml"
+      ]
+    },
+    {
+      "repo": "jkbrzt/rrule",
+      "sha": "9f2061febeeb363d03352efe33d30c33073a0242",
+      "committed": "2023-11-10T20:05:10Z",
+      "release": {
+        "tag": "v2.7.1",
+        "date": "2022-07-14T18:16:39Z"
+      },
+      "testLikePaths": 13,
+      "workflowFiles": [
+        ".github/workflows/nodejs.yml"
+      ]
+    }
+  ],
+  "reviewedSourceFiles": [
+    {
+      "file": "Dacangshu987_dsh-hds-interlude__MIGRATION.md",
+      "sha256": "ee67bffa94dda886531df6c46ab9bb501e24183013ae9163713166dbfdc9f65a"
+    },
+    {
+      "file": "euphoriaaaaaa1_hds-interlude__docs_ARCHITECTURE.md",
+      "sha256": "4c930edbec90abb762316b9d69383189d715415d7973a5a1cb521d2e8c38c0db"
+    },
+    {
+      "file": "euphoriaaaaaa1_hds-interlude__package.json",
+      "sha256": "11350eb0e92e76a1be3ac61066fe937076aa1b8b7f36a3171de75a397c3a794b"
+    },
+    {
+      "file": "euphoriaaaaaa1_hds-interlude__src_agency.ts",
+      "sha256": "97b28233f3caa4b8a0a1602d889e0db701293becf6f9469057ea8b8b0bcf6000"
+    },
+    {
+      "file": "euphoriaaaaaa1_hds-interlude__src_schedule-preplan.ts",
+      "sha256": "615606490fa1b43c2acb28fc5bd15b9d9dcf399d12d89b1544048b1768ba81f7"
+    },
+    {
+      "file": "Mai-with-u_MaiBot__EULA.md",
+      "sha256": "67e2ed8fd0f6e424f231757f2da2e4963c7e11cacf7ce419d40abf2a33b6ed37"
+    },
+    {
+      "file": "Mai-with-u_MaiBot__pyproject.toml",
+      "sha256": "ed23906428bd88f4844544ac7c32ad3c5b5b5391fcfb5707acada49898e80f13"
+    },
+    {
+      "file": "Mai-with-u_MaiBot__src_maisaka_context_planner_messages.py",
+      "sha256": "e7e985377094a574440e7fd648469ae0edb891492c44612300a0e6cb19a12ad1"
+    },
+    {
+      "file": "Mai-with-u_MaiBot__src_maisaka_memory_heuristic_injector.py",
+      "sha256": "4fc5c83850f41ddaabe8cb225ce2e01d2afe8bc6b77e349eeafd65a9152f981f"
+    },
+    {
+      "file": "QwenAudio_CosyVoice__cosyvoice_cli_cosyvoice.py",
+      "sha256": "4b2a605f129d172cd031286a14a591396c2e8ed0bf53258acc7445525fdaa65b"
+    },
+    {
+      "file": "QwenAudio_CosyVoice__LICENSE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+    },
+    {
+      "file": "QwenAudio_CosyVoice__requirements.txt",
+      "sha256": "6619a7f7f95e6c7c23dc82471294ee168a4fc0e901ab4e123881fff71f38d94c"
+    },
+    {
+      "file": "QwenAudio_CosyVoice__runtime_python_fastapi_server.py",
+      "sha256": "e87cd59ac552357dcabbe54711ddc25c35131d974e0b95e247c195c407b8f35f"
+    }
+  ],
+  "probedPackages": [
+    {
+      "name": "ts-fsrs",
+      "version": "5.4.2",
+      "license": "MIT",
+      "node": ">=20.0.0",
+      "tarball": "https://registry.npmjs.org/ts-fsrs/-/ts-fsrs-5.4.2.tgz",
+      "integrity": "sha512-z4qop4pzTcyTzuJ566d9EaX/4bZZzhYfeaPImfVr+xcYT65c5oBgFDijUhCE/D+C78eaolHIhKRZ04/RwF+v2g==",
+      "bundleSha256": "ad4a4b3b7e259fcbf02764454c8f9db4ea3bf5aae2f473198129ecb7728f1a19",
+      "dependencies": {}
+    },
+    {
+      "name": "rrule",
+      "version": "2.8.1",
+      "license": "BSD-3-Clause including python-dateutil notices",
+      "node": null,
+      "tarball": "https://registry.npmjs.org/rrule/-/rrule-2.8.1.tgz",
+      "integrity": "sha512-hM3dHSBMeaJ0Ktp7W38BJZ7O1zOgaFEsn41PDk+yHoEtfLV+PoJt9E9xAlZiWgf/iqEqionN0ebHFZIDAp+iGw==",
+      "bundleSha256": "653c3065b3fa57aa510852ea943f4a359ebdfb3d962340f648a37f744f237204",
+      "dependencies": {
+        "tslib": "^2.4.0"
+      }
+    }
+  ],
+  "runtimeSmoke": {
+    "runtime": "v22.23.3",
+    "image": "agent-web-web:latest",
+    "imageId": "e1c11acc0ad9",
+    "network": "none",
+    "filesystem": "read-only",
+    "assertions": [
+      "FSRS four deterministic rating previews",
+      "rrule three monthly recurrence dates"
+    ],
+    "limitations": "Smoke only, not the full host-side probe or upstream suite"
+  },
+  "limitations": [
+    "GitHub license SPDX is a discovery hint, not a per-file or model-weight license audit.",
+    "Tree-path counts indicate presence of tests/workflows, not execution or passing status.",
+    "Stars and maintenance are timestamped observations, not quality scores."
+  ]
+}

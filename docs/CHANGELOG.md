@@ -2,6 +2,15 @@
 
 当前收敛阶段摘要。完整旧日志见 [R9.4前冻结版本](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/CHANGELOG.md)，各阶段索引见 [历史](HISTORY.md)。当前排序只看 [产品主线](PRODUCT_MAINLINE_GUIDE.md)。
 
+## R11 — 模块级开源调研与复用决策（2026-10-21）
+
+**Commit**: `same delivery commit`
+
+- 完成11模块 / 24仓库候选地图和采用决定，核对相关版本 / 许可 / 依赖；重点阅读MaiBot、幕间系统 / DSH迁移、CosyVoice及FSRS / rrule发布包，区分元数据、源码评估与真实运行证据。
+- 增加自编、离线、显式执行的两个复用探针：FSRS合成复习与rrule 192次规则对照；固定包与bundle指纹，实验缓存不入Git / 生产依赖 / APK，无收费模型调用。
+- 形成F01–F05后续实施提案，更新规划 / 主线 / 目录；不迁入另一套Agent、记忆事实库或游戏宿主，不自动安装候选。静态检查、回归与重包证据见[R11报告](reports/R11_REPORT.md)。
+- localStorage键值无变化；不改schema、Prompt、业务行为、凭据或原数据；APK重新构建，真机继续统一暂缓。
+
 ## R10.5 — 事件创作与生成（2026-10-20）
 
 - 娱乐内增加世界事件设计 / 存档分支建议子页，粗描述、分字段编辑 / 锁定 / 局部补全、预览、来源变化明确适配；规则确认不等于已经领奖或所有NPC知情。
