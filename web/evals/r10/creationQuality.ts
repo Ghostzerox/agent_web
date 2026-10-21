@@ -12,6 +12,8 @@ import { createGameEventDesignRepository } from "../../lib/repositories/gameEven
 import { createGameSessionRepository } from "../../lib/repositories/gameSessionRepository";
 import { createGameDrawRepository } from "../../lib/repositories/gameDrawRepository";
 import { blankWorldBlueprint } from "../../lib/game/worlds/blueprint";
+import { worldDraftIssues } from "../../lib/game/worlds/compile";
+import { WORLD_SECTIONS, type WorldBrief } from "../../lib/game/worlds/contracts";
 import { createWorldGenerationService } from "../../lib/game/worlds/generation";
 import { createAssetGenerationService } from "../../lib/game/worlds/assetGeneration";
 import { createEventGenerationService } from "../../lib/game/events/generation";
@@ -23,9 +25,13 @@ import type { ModelStreamRequest } from "../../lib/ai/server/modelProvider";
 
 export function syntheticQualityReply(request: ModelStreamRequest): string {
   if (request.promptVersion === "r10/exploration-v3") return JSON.stringify({ narrative: "我还没核对港口告示，不如一起看看？", statePatch: {} });
-  const payload = JSON.parse(request.messages[1].content as string);
+  const payload = JSON.parse(request.messages.findLast((message) => message.role === "user")!.content as string);
   switch (request.promptVersion) {
-    case "r10/world-authoring-v2": return JSON.stringify({ overview: { ...payload.current.overview, name: "铜湾港", era: "蒸汽时代", technology: "铜铆与蒸汽工艺" } });
+    case "r10/world-authoring-v3": {
+      const current = payload.current ?? blankWorldBlueprint(payload.input);
+      return JSON.stringify(Object.fromEntries(payload.requestedSections.map((key: string) => [key, key === "overview"
+        ? { ...current.overview, name: "铜湾港", era: "蒸汽时代", technology: "铜铆与蒸汽工艺" } : current[key]])));
+    }
     case "r10/item-character-design-v1": return JSON.stringify(Object.fromEntries(payload.requestedFields.map((field: string) => [field, field === "details"
       ? { ...payload.current.details, source: "港口工坊", background: "修船边料再制", usage: "手工修补档案箱", restrictions: "不能修复大型船体" }
       : { ...payload.current.profile, values: ["先核实再归档"], needs: ["修补档案箱"], longTermGoal: "修复港口文书记录" }])));
@@ -33,6 +39,28 @@ export function syntheticQualityReply(request: ModelStreamRequest): string {
     case "r10/draw-item-design-v2": return JSON.stringify({ ...payload.current, name: "铜制铆钉", description: "本地铜片加工的普通紧固材料。" });
     default: return JSON.stringify({ narrative: "我还没核对港口告示，不如一起看看？", statePatch: {} });
   }
+}
+
+/** Two scoped synthetic calls: full creation plus one replacement, never a user's draft. */
+export async function runWorldFullQuality(call: (id: string, request: ModelStreamRequest) => Promise<string>) {
+  const pg = new PGlite(); let caseId = "world-full"; let calls = 0;
+  const generator = createGameNarrativeGenerator({ getConfig: () => ({ apiKey: "synthetic-bridge-only", baseUrl: "https://provider.invalid", model: "evaluation-bridge" }),
+    createProvider: () => ({ stream: async function* (request) { calls++; yield { type: "delta", text: await call(caseId, request) }; } }) });
+  try {
+    await migrateDatabase(createPgliteMigrationDatabase(pg), await loadMigrations());
+    const worlds = createGameWorldRepository(drizzle(pg, { schema }));
+    const input: WorldBrief = { brief: "合成测试：无魔法蒸汽小港，仅抵达处和档案室两个互通地点、一名普通档案员；没有道具、秘密或额外事件，描述简洁但字段齐全。玩家可拒绝听一段旧港故事。", constraints: ["不替玩家决定思想", "人物不能读心"], magic: "forbidden", numericPolicy: "qualitative" };
+    const service = createWorldGenerationService(worlds, generator);
+    let world = await worlds.create(input);
+    world = await service.generate(world.id, { expectedVersion: world.version, requestId: crypto.randomUUID(), sections: [...WORLD_SECTIONS] });
+    assert.deepEqual(worldDraftIssues(input, world.content), []);
+    const original = structuredClone(world.content); caseId = "world-opening";
+    world = await service.generate(world.id, { expectedVersion: world.version, requestId: crypto.randomUUID(), sections: ["opening"] });
+    assert.deepEqual(world.content!.region, original!.region); assert.deepEqual(world.content!.characters, original!.characters);
+    assert.deepEqual(worldDraftIssues(input, world.content), []);
+    const revision = await worlds.publish(world.id, world.version);
+    return { scope: "synthetic-full-world-and-opening", calls, publishedRevision: revision.revision, locations: world.content!.region.locations.length, characters: world.content!.characters.length };
+  } finally { await pg.close(); }
 }
 
 export async function runCreationQuality(call: (id: string, request: ModelStreamRequest) => Promise<string>) {

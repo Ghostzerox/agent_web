@@ -5,6 +5,7 @@ export type JsonApiFailure = {
   code: string;
   status: number;
   retryable: boolean;
+  details?: unknown;
 };
 
 type RequestOptions = {
@@ -31,6 +32,7 @@ export async function requestJson<T>(
       code: typeof body?.error?.code === "string" ? body.error.code : options.fallbackCode ?? "UNKNOWN_ERROR",
       status: response.status,
       retryable: body?.error?.retryable === true,
+      ...(body?.error?.details !== undefined ? { details: body.error.details } : {}),
     };
     throw options.error ? options.error(failure) : new Error(failure.message);
   }

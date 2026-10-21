@@ -3,7 +3,7 @@ import { getDatabase } from "@/lib/db/client";
 import { createGameWorldRepository, type GameWorldRepository } from "@/lib/repositories/gameWorldRepository";
 import { createWorldGenerationService } from "@/lib/game/worlds/generation";
 import { worldDraftIssues } from "@/lib/game/worlds/compile";
-import { createWorldSaveSchema, publishWorldSchema, WorldDesignError } from "@/lib/game/worlds/contracts";
+import { createWorldSaveSchema, publishWorldSchema, WorldDesignError, WorldGenerationValidationError } from "@/lib/game/worlds/contracts";
 import { GameNarrativeGenerationError } from "@/lib/game/gameNarrativeGenerator";
 import { ExplorationError } from "@/lib/game/exploration/contracts";
 
@@ -37,7 +37,8 @@ export function createGameWorldApi(repository: GameWorldRepository,
     } catch (error) {
       if (error instanceof ExplorationError) return response({ error: { code: "WORLD_INVALID", message: error.message, retryable: false } }, 422);
       if (error instanceof ZodError) return response({ error: { code: "INVALID_REQUEST", message: "草稿字段或确认信息无效。", details: error.issues, retryable: false } }, 400);
-      if (error instanceof WorldDesignError) return response({ error: { code: error.code, message: error.message, retryable: false } },
+      if (error instanceof WorldDesignError) return response({ error: { code: error.code, message: error.message, retryable: false,
+        ...(error instanceof WorldGenerationValidationError ? { details: error.diagnostics } : {}) } },
         error.code === "WORLD_NOT_FOUND" ? 404 : error.code === "WORLD_VERSION_CONFLICT" ? 409 : 422);
       if (error instanceof GameNarrativeGenerationError) return response({ error: { code: error.code, message: error.message, retryable: error.retryable } }, 502);
       console.error(`[world-api:${requestId}] Failed`, { name: error instanceof Error ? error.name : "UnknownError" });

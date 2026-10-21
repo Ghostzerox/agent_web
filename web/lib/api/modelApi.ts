@@ -14,7 +14,7 @@ import {
   type ModelProvider,
 } from "@/lib/ai/server/modelProvider";
 import { createMeasuredProvider } from "@/lib/ai/server/measuredProvider";
-import { inputTextCharacters, latestRequestText, resolveGenerationBudget, type GenerationBudget } from "@/lib/ai/server/tokenBudget";
+import { inputTextCharacters, resolveGenerationBudget, type GenerationBudget } from "@/lib/ai/server/tokenBudget";
 import { getDatabase } from "@/lib/db/client";
 import {
   createPromptRunRepository,
@@ -209,7 +209,7 @@ export function createModelApi(dependencies: ModelApiDependencies) {
           summaryUse = compacted.usage;
           summaryNote = compacted.note;
         }
-        generationBudget = resolveGenerationBudget(config, "chat", latestRequestText(requestPrompt));
+        generationBudget = resolveGenerationBudget(config, "chat");
         if (inputTextCharacters(requestPrompt) > generationBudget.inputCharacterLimit) {
           throw new ModelProviderError("PROVIDER_CONTEXT_TOO_LARGE", "上下文超过本机输入预算，尚未调用模型。请新建对话或调整预算；原历史仍保留。", false);
         }

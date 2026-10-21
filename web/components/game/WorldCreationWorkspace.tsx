@@ -3,12 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import { AppLink } from "@/components/platform/AppLink";
 import { useAppQuery } from "@/components/platform/useAppQuery";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
-import { WORLD_SECTIONS, type WorldBrief, type WorldSection } from "@/lib/game/worlds/contracts";
+import { WORLD_SECTIONS, type WorldBrief, type WorldSection, type WorldGenerationDiagnostics } from "@/lib/game/worlds/contracts";
 import { blankWorldBlueprint, WORLD_SECTION_LABELS } from "@/lib/game/worlds/blueprint";
 import { worldDraftIssues } from "@/lib/game/worlds/compile";
 import { createWorldDraft, getWorldDraft, listWorldDrafts, saveWorldDraft, generateWorldDraft, publishWorldDraft, createPublishedWorldSave,
-  type WorldDraft, type WorldDraftSummary, type WorldDraftDetail } from "@/lib/api/gameWorldClient";
+  WorldGenerationClientError, type WorldDraft, type WorldDraftSummary, type WorldDraftDetail } from "@/lib/api/gameWorldClient";
 import { WorldSectionEditor, worldButtonClass as button, worldFieldClass as field } from "./WorldSectionEditor";
+import { WorldGenerationRecovery } from "./WorldGenerationRecovery";
 
 const formState = (draft: WorldDraft) => JSON.stringify({ input: draft.input, content: draft.content, locked: draft.lockedSections });
 const creatorLink = (id?: string, section = "brief") => `/entertainment?view=creator${id ? `&world=${encodeURIComponent(id)}&section=${section}` : ""}`;
@@ -24,18 +25,19 @@ export function WorldCreationWorkspace() {
   const [reviewed, setReviewed] = useState(false);
   const [generationConfirmation, setGenerationConfirmation] = useState<string | null>(null);
   const [pendingStructure, setPendingStructure] = useState(false); const [editorEpoch, setEditorEpoch] = useState(0);
+  const [recovery, setRecovery] = useState<WorldGenerationDiagnostics | null>(null);
   const abort = useRef<AbortController | null>(null); const generationAttempt = useRef<{ key: string; id: string } | null>(null);
   const saveAttempt = useRef<{ revision: number; requestId: string } | null>(null);
   const dirty = pendingStructure || (draft ? formState(draft) !== baseline : !id && Boolean(input.brief.trim()) && !createdId);
   useNavigationGuard(busy || dirty, busy ? "世界操作尚未完成，离开可能中断生成；已产生API费用不会退还。" : "有未保存的世界草稿，离开创作页可能丢失编辑。");
-  const install = (next: WorldDraft) => { setDraft(next); setBaseline(formState(next)); setReviewed(false); setGenerationConfirmation(null); setPendingStructure(false); setEditorEpoch((value) => value + 1); };
+  const install = (next: WorldDraft) => { setDraft(next); setBaseline(formState(next)); setReviewed(false); setGenerationConfirmation(null); setPendingStructure(false); setEditorEpoch((value) => value + 1); setRecovery(null); };
   useEffect(() => {
     let active = true;
     void (id ? getWorldDraft(id).then((value) => { if (active) { install(value); setRevisions(value.revisions); } })
       : listWorldDrafts().then((value) => { if (active) setList(value); })).catch((reason: unknown) => { if (active) setError(reason instanceof Error ? reason.message : "读取失败"); });
     return () => { active = false; };
   }, [id]);
-  const operate = async (work: () => Promise<void>) => { setBusy(true); setError(""); setNotice(""); try { await work(); } catch (reason) { setError(reason instanceof Error ? reason.message : "操作失败，编辑已保留。"); } finally { setBusy(false); } };
+  const operate = async (work: () => Promise<void>) => { setBusy(true); setError(""); setNotice(""); try { await work(); } catch (reason) { setError(reason instanceof Error ? reason.message : "操作失败，编辑已保留。"); if (reason instanceof WorldGenerationClientError && reason.diagnostics) setRecovery(reason.diagnostics); } finally { setBusy(false); } };
   const edit = (next: WorldDraft) => { setDraft(next); setReviewed(false); };
   const issues = draft ? worldDraftIssues(draft.input, draft.content) : [];
   const selected = WORLD_SECTIONS.includes(section as WorldSection) ? section as WorldSection : null;
@@ -55,6 +57,7 @@ export function WorldCreationWorkspace() {
     </ol></details>
     {error && <p role="alert" className="whitespace-pre-wrap rounded-xl border border-red-300 p-3 text-sm text-red-600">{error}</p>}
     {notice && <p role="status" className="rounded-xl border border-violet-300 p-3 text-sm">{notice}</p>}
+    {recovery && draft && <WorldGenerationRecovery key={`${recovery.worldId}:${recovery.requestId}`} diagnostics={recovery} draft={draft} disabled={busy || dirty} onApply={(content) => { edit({ ...draft, content }); setRecovery(null); setError(""); setNotice("修正结果已通过结构检查并应用到表单，尚未保存。请先保存草稿，再到预览页检查引用与世界规则；没有调用AI。"); }} onDiscard={() => { setRecovery(null); setError(""); }} />}
     {!id && <div className="grid gap-5 lg:grid-cols-2">
       <form className="space-y-3 rounded-xl border border-[var(--workspace-border)] p-4" onSubmit={(event) => { event.preventDefault(); void operate(async () => { const created = await createWorldDraft(input); setCreatedId(created.id); setNotice("原始描述已存到服务端；尚未调用AI或创建游戏存档。"); }); }}>
         <h3 className="font-semibold">从一个想法开始</h3>
@@ -69,7 +72,7 @@ export function WorldCreationWorkspace() {
     {draft && <>
       <nav className="flex flex-wrap gap-2 text-xs" aria-label="世界创作局部导航">{[["brief", "原始描述"], ...WORLD_SECTIONS.map((key) => [key, WORLD_SECTION_LABELS[key]]), ["design-items", "道具设计"], ["design-characters", "人物设计"], ["draw-pools", "卡池配置"], ["design-events", "事件设计"], ["preview", "预览与发布"]].map(([key, title]) => <AppLink key={key} href={creatorLink(draft.id, key)} className={`rounded-lg border px-3 py-2 ${section === key ? "border-violet-500 text-violet-600" : "border-[var(--workspace-border)]"}`}>{title}</AppLink>)}</nav>
       <div className="flex flex-wrap gap-2 text-xs text-zinc-500"><span>草稿v{draft.version} · {dirty ? "有未保存更改" : "已保存"}</span><button className={button} disabled={busy || !dirty || pendingStructure} onClick={() => void operate(async () => { install(await saveWorldDraft(draft)); setNotice("草稿已保存；未改变任何游玩存档。"); })}>保存草稿</button>
-        <button className={button} disabled={busy} onClick={() => void operate(async () => { if (dirty && !window.confirm("将放弃本地未保存的表单编辑；需要保留的内容请先复制。确定从服务端重读？")) return; const fresh = await getWorldDraft(draft.id); install(fresh); setRevisions(fresh.revisions); setNotice("已从服务端重读。"); })}>从服务端重读</button>
+        <button className={button} disabled={busy} onClick={() => void operate(async () => { if ((dirty || recovery) && !window.confirm("将放弃本地未保存的表单编辑和失败生成结果；需要保留的内容请先复制。确定从服务端重读？")) return; const fresh = await getWorldDraft(draft.id); install(fresh); setRevisions(fresh.revisions); setNotice("已从服务端重读。"); })}>从服务端重读</button>
       </div>
       <p className="text-xs text-zinc-500">{pendingStructure ? "高级JSON尚未应用，请先应用到表单或放弃，再保存草稿。" : dirty ? "当前编辑还未同步到服务端，请点击“保存草稿”。" : "草稿已保存；没有新改动时无需再次保存。"} 保存不收费、不发布。重读只更新当前表单，有未保存编辑时会先询问是否放弃。</p>
       <section className="space-y-4 rounded-xl border border-[var(--workspace-border)] p-4" aria-label="当前创作部分">

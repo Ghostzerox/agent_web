@@ -65,7 +65,7 @@ describe("R3 task → real generators → measured transport → durable result 
     expect(calls.every((call) => call.promptVersion === taskPromptProfile(call.business).version)).toBe(true);
     expect(h.payloads[0]).not.toHaveProperty("response_format");
     expect(h.payloads[1]).toHaveProperty("response_format", { type: "json_object" });
-    expect(h.payloads.map((body) => body.max_tokens)).toEqual([3072, 2048]);
+    for (const body of h.payloads) { expect(body).not.toHaveProperty("max_tokens"); expect(body).not.toHaveProperty("max_completion_tokens"); }
     expect(JSON.stringify(calls)).not.toMatch(/server-only-test-key|三次听力练习/u);
     expect(await h.batch()).toMatchObject({ claimed: 0 });
     expect(await h.inbox.list()).toHaveLength(1);

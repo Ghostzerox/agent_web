@@ -5,7 +5,6 @@ import { resolve, sep } from "node:path";
 import { execFileSync } from "node:child_process";
 import type { ModelProvider, ModelStreamRequest } from "../lib/ai/server/modelProvider";
 import type { ModelCallTelemetry } from "../lib/ai/modelUsage";
-import { DEFAULT_OUTPUT_BUDGETS } from "../lib/ai/server/tokenBudget";
 import { EvaluationBudget, measuredUpperCost, reserveCallCny, REVIEWED_PRICE } from "../evals/r3/qualityCost";
 import { qualityWorkflows, loadReferenceModules, QUALITY_REFERENCE_COMMIT, QUALITY_CANDIDATE_COMMIT, QUALITY_EVALUATION_SETTINGS } from "../evals/r3/qualityWorkflows";
 import { QUALITY_DIMENSIONS, PROMPT_SOURCE_FILES } from "../evals/r3/promptInventory";
@@ -90,7 +89,8 @@ async function main() {
       let observedError: string | null = null;
       const started = Date.now();
       const provider: ModelProvider = { async *stream(request) {
-        const maxOutputTokens = Math.min(4096, DEFAULT_OUTPUT_BUDGETS[request.business ?? "chat"]);
+        // Explicit paid-evaluation reservation only; never an application default.
+        const maxOutputTokens = 4096;
         const reservation = reserveCallCny(request.messages, maxOutputTokens);
         if (!budget.claim(reservation)) throw new Error("EVALUATION_BUDGET_STOP");
         let result: BridgeResult;

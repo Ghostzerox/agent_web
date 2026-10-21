@@ -31,7 +31,7 @@ export function runTokenCostEval() {
       name: pair.name, beforeInputCharacters: inputTextCharacters(pair.before[0]), afterInputCharacters: inputTextCharacters(pair.after[0]),
       beforeSharedJsonPrefixCharacters: commonPrefix(JSON.stringify(pair.before[0]), JSON.stringify(pair.before[1])),
       afterSharedJsonPrefixCharacters: commonPrefix(JSON.stringify(pair.after[0]), JSON.stringify(pair.after[1])),
-      configuredOutputCeiling: resolveGenerationBudget({ baseUrl: "https://api.deepseek.com" }, pair.business, "", {}).maxOutputTokens,
+      configuredOutputCeiling: resolveGenerationBudget({ baseUrl: "https://api.deepseek.com" }, pair.business, {}).maxOutputTokens,
       actualInputTokens: null, actualCachedTokens: null, actualCost: null,
     })),
   };

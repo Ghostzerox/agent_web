@@ -45,9 +45,22 @@ export const updateWorldDraftSchema = z.object({
 }).strict();
 export const generateWorldSchema = z.object({ expectedVersion: z.number().int().positive(), requestId: z.uuid(),
   sections: z.array(worldSectionSchema).min(1).max(WORLD_SECTIONS.length) }).strict();
+export const worldGenerationDiagnosticsSchema = z.object({
+  worldId: z.uuid(), expectedVersion: z.number().int().positive(), requestId: z.uuid(),
+  sections: z.array(worldSectionSchema).min(1).max(WORLD_SECTIONS.length),
+  stage: z.enum(["json", "sections", "schema", "size"]),
+  issues: z.array(z.object({ path: z.string().max(200), message: z.string().max(400) }).strict()).min(1).max(24),
+  rawOutput: z.string().max(100000), rawComplete: z.boolean(),
+}).strict();
+export type WorldGenerationDiagnostics = z.infer<typeof worldGenerationDiagnosticsSchema>;
 export const publishWorldSchema = z.object({ expectedVersion: z.number().int().positive(),
   confirmed: z.literal(true), constraintReviewConfirmed: z.literal(true) }).strict();
 export const createWorldSaveSchema = z.object({ revision: z.number().int().positive(), requestId: z.uuid() }).strict();
 export class WorldDesignError extends Error {
   constructor(readonly code: "WORLD_NOT_FOUND" | "WORLD_VERSION_CONFLICT" | "WORLD_INVALID" | "WORLD_GENERATION_FAILED", message: string) { super(message); this.name = "WorldDesignError"; }
+}
+export class WorldGenerationValidationError extends WorldDesignError {
+  constructor(readonly diagnostics: WorldGenerationDiagnostics) {
+    super("WORLD_GENERATION_FAILED", `生成结果未通过${diagnostics.stage === "json" ? "JSON格式" : "世界结构"}检查：${diagnostics.issues.map((issue) => `${issue.path}：${issue.message}`).join("；")}。原草稿未改动；可检查并手动修正本次结果，无需再次调用AI。`);
+  }
 }

@@ -3,6 +3,7 @@ import { requestJson } from "@/lib/api/jsonRequest";
 import { configureApiBaseUrl } from "@/lib/api/clientRuntime";
 import { createTask, TaskClientError } from "@/lib/api/taskClient";
 import { saveModelCredential, ModelCredentialClientError } from "@/lib/api/modelCredentialClient";
+import { generateWorldDraft, WorldGenerationClientError } from "@/lib/api/gameWorldClient";
 
 afterEach(() => { vi.unstubAllGlobals(); configureApiBaseUrl(""); });
 
@@ -49,5 +50,14 @@ describe("shared JSON transport", () => {
   it("does not turn malformed successful JSON into a fabricated success", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("invalid", { status: 200 })));
     await expect(requestJson("/api/v1/test")).rejects.toBeInstanceOf(SyntaxError);
+  });
+  it("carries validated world failure details without automatic retry or accepting arbitrary diagnostics", async () => {
+    const details = { worldId: crypto.randomUUID(), requestId: crypto.randomUUID(), expectedVersion: 1, sections: ["opening"], stage: "schema", issues: [{ path: "opening.text", message: "需要字符串" }], rawOutput: '{"opening":{"text":null}}', rawComplete: true };
+    const fetcher = vi.fn().mockResolvedValue(Response.json({ error: { code: "WORLD_GENERATION_FAILED", message: "结构不符", details } }, { status: 422 }));
+    vi.stubGlobal("fetch", fetcher);
+    await expect(generateWorldDraft(details.worldId, 1, ["opening"], details.requestId)).rejects.toMatchObject({ diagnostics: details });
+    fetcher.mockResolvedValueOnce(Response.json({ error: { message: "bad", details: { arbitrary: true } } }, { status: 422 }));
+    const error = await generateWorldDraft(details.worldId, 1, ["opening"], details.requestId).catch((reason) => reason);
+    expect(error).toBeInstanceOf(WorldGenerationClientError); expect(error.diagnostics).toBeNull(); expect(fetcher).toHaveBeenCalledTimes(2);
   });
 });

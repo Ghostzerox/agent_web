@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 import type { ModelCallTelemetry } from "../lib/ai/modelUsage";
 import type { ModelStreamRequest } from "../lib/ai/server/modelProvider";
 import { EvaluationBudget, measuredUpperCost, reserveCallCny, REVIEWED_PRICE } from "../evals/r3/qualityCost";
-import { runCreationQuality, syntheticQualityReply } from "../evals/r10/creationQuality";
+import { runCreationQuality, runWorldFullQuality, syntheticQualityReply } from "../evals/r10/creationQuality";
 
 const argument = (flag: string) => { const index = process.argv.indexOf(flag); return index < 0 ? undefined : process.argv[index + 1]; };
 type Result = { content: string; errorCode: string | null; actualModel: string | null; telemetry: ModelCallTelemetry | null; network?: { acceptedResponses: number; dnsFailures: number } };
@@ -20,8 +20,9 @@ function bridge(request: ModelStreamRequest, maxOutputTokens: number): Promise<R
   });
 }
 async function main() {
+  const run = process.argv.includes("--world-full") ? runWorldFullQuality : runCreationQuality;
   if (!process.argv.includes("--execute")) {
-    console.log(JSON.stringify({ mode: "offline", ...(await runCreationQuality(async (_id, request) => syntheticQualityReply(request))), realModelCalls: 0 })); return;
+    console.log(JSON.stringify({ mode: "offline", ...(await run(async (_id, request) => syntheticQualityReply(request))), realModelCalls: 0 })); return;
   }
   const limit = Number(argument("--budget-cny")); if (!(limit > 0 && limit <= 0.50)) throw new Error("This batch is capped at CNY 0.50 from the shared remaining budget");
   const reviewedOn = argument("--pricing-reviewed-on");
@@ -35,14 +36,15 @@ async function main() {
       automaticBatchRetries: false, transportRetries: "existing-provider-policy; recorded in telemetry.attempts" } });
   let failure: string | null = null; let journey: unknown = null;
   try {
-    journey = await runCreationQuality(async (id, request) => {
+    journey = await run(async (id, request) => {
       const serialized = JSON.stringify(request);
       if (id.startsWith("actor-")) {
         if (/SYNTH_HOST_ONLY|SYNTH_CHARACTER_HOST_ONLY|SYNTH_PRIVATE_THOUGHT|SYNTH_OOC/u.test(serialized)) throw new Error("ACTOR_REQUEST_SCOPE_FAILED");
         if (id === "actor-before-knowledge" && serialized.includes("SYNTH_PORT_RUMOR")) throw new Error("FUTURE_KNOWLEDGE_LEAK");
         if (id === "actor-after-sourced-rumor" && (!serialized.includes("SYNTH_PORT_RUMOR") || !serialized.includes("rumor"))) throw new Error("MISSING_SOURCED_RUMOR");
       }
-      const maxOutputTokens = 3072; const reservation = reserveCallCny(request.messages, maxOutputTokens);
+      // A paid test reservation, not a production output default.
+      const maxOutputTokens = process.argv.includes("--world-full") ? 4096 : 3072; const reservation = reserveCallCny(request.messages, maxOutputTokens);
       if (!budget.claim(reservation)) throw new Error("BUDGET_STOP");
       emit({ event: "reserved", id, reservationCny: reservation, requestSha256: createHash("sha256").update(serialized).digest("hex") });
       let result: Result = { content: "", errorCode: "BRIDGE_FAILED", actualModel: null, telemetry: null };

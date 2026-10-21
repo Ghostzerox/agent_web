@@ -198,9 +198,33 @@ describe("R10.3 persisted world creation and playable revisions", () => {
     expect(response.status).toBe(502);
     const failure = await response.json();
     expect(failure.error).toMatchObject({ code: "PROVIDER_OUTPUT_TRUNCATED", retryable: false });
-    expect(failure.error.message).toContain("手动起始表单"); expect(failure.error.message).toContain("没有自动重试");
+    expect(failure.error.message).toContain("起始表单"); expect(failure.error.message).toContain("没有自动重试");
+    expect(failure.error.message).toContain("默认未设置应用输出Token配额");
     expect(generate).toHaveBeenCalledOnce(); expect(await repo.get(row.id)).toEqual(row);
     expect(await repo.revisions(row.id)).toEqual([]);
+  });
+
+  it("returns bounded field diagnostics and the failed result only to its author, without saving it", async () => {
+    const row = await repo.create(brief); const broken = JSON.parse(JSON.stringify(blueprint()));
+    delete broken.characters[0].profile.privateBackground;
+    const rawOutput = JSON.stringify(broken);
+    const generate = vi.fn<GameNarrativeGeneratorPort["generate"]>().mockResolvedValue({ content: rawOutput, model: "synthetic" });
+    const api = createGameWorldApi(repo, createWorldGenerationService(repo, { generate }));
+    const requestId = crypto.randomUUID();
+    const response = await api(new Request(`http://test.invalid/api/v1/game-worlds/${row.id}/generate`, { method: "POST",
+      body: JSON.stringify({ expectedVersion: row.version, requestId, sections: [...WORLD_SECTIONS] }) }), [row.id, "generate"]);
+    expect(response.status).toBe(422); const failure = await response.json();
+    expect(failure.error.details).toMatchObject({ worldId: row.id, expectedVersion: row.version, requestId, rawOutput, rawComplete: true,
+      issues: expect.arrayContaining([expect.objectContaining({ path: "characters.0.profile.privateBackground" })]) });
+    expect(await repo.get(row.id)).toEqual(row); expect(generate).toHaveBeenCalledOnce();
+    const messages = generate.mock.calls[0][0]; expect(messages[1].role).toBe("system");
+    expect(messages[1].content).toContain("privateBackground");
+    expect(messages[0].content).toContain("profile.faction");
+    expect(messages[0].content).toContain("不能写空串");
+    expect(messages[0].content).toContain("itemRules.slots数组只放英文ID");
+    expect(messages[0].content).toContain("普通创作补全、篇幅选择与生成过程说明不属于冲突");
+    expect(JSON.parse(messages.at(-1)!.content as string)).not.toHaveProperty("example");
+    expect(messages[0].content).not.toContain(brief.brief); expect(messages[1].content).not.toContain(brief.brief);
   });
 
   it("fences a newer authoring downgrade without deleting existing game sessions", async () => {

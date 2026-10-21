@@ -12,6 +12,7 @@ import { createGamePlayApi } from "../lib/api/gamePlayApi";
 import { createGameTurnService } from "../lib/game/gameTurnService";
 import { createWorldGenerationService } from "../lib/game/worlds/generation";
 import { GameNarrativeGenerationError } from "../lib/game/gameNarrativeGenerator";
+import { blankWorldBlueprint } from "../lib/game/worlds/blueprint";
 
 const mobile = process.env.WORLD_CREATION_MOBILE_BUNDLE === "true";
 for (const width of [360, 1440]) test(`world authoring publishes a playable pinned revision at ${width}px`, async ({ page }) => {
@@ -21,9 +22,14 @@ for (const width of [360, 1440]) test(`world authoring publishes a playable pinn
     await migrateDatabase(createPgliteMigrationDatabase(pglite), await loadMigrations());
     const db = drizzle(pglite, { schema }); const worlds = createGameWorldRepository(db); const sessions = createGameSessionRepository(db);
     let calls = 0; let truncateNext = true;
-    const worldApi = createGameWorldApi(worlds, createWorldGenerationService(worlds, { generate: async () => {
+    const worldApi = createGameWorldApi(worlds, createWorldGenerationService(worlds, { generate: async (messages) => {
       calls++;
       if (truncateNext) { truncateNext = false; throw new GameNarrativeGenerationError("PROVIDER_OUTPUT_TRUNCATED", "length", false); }
+      if (calls === 2) {
+        const payload = JSON.parse(messages.at(-1)!.content as string);
+        const broken = JSON.parse(JSON.stringify(blankWorldBlueprint(payload.input))); delete broken.characters[0].profile.privateBackground;
+        return { content: JSON.stringify(broken), model: "synthetic" };
+      }
       return { content: JSON.stringify({ opening: { text: "合成开场：你踏入铜湾。", playerRole: "来访者" } }), model: "synthetic" };
     } }));
     const sessionApi = createGameSessionApi(sessions);
@@ -57,7 +63,21 @@ for (const width of [360, 1440]) test(`world authoring publishes a playable pinn
     await aiConfirm.getByRole("button", { name: "确认调用AI并保存结果", exact: true }).click();
     await expect(page.getByRole("main", { name: "世界创作工作台", exact: true }).getByRole("alert")).toContainText("不完整结果未保存"); expect(calls).toBe(1);
     const preserved = (await worlds.list())[0]; expect((await worlds.get(preserved.id)).content).toBeNull();
-    await page.getByRole("button", { name: "填写手动起始表单（不调用AI）", exact: true }).click();
+    await page.getByRole("button", { name: "AI生成完整草稿（需确认费用）", exact: true }).click();
+    await aiConfirm.getByRole("button", { name: "确认调用AI并保存结果", exact: true }).click();
+    const recovery = page.getByRole("region", { name: "检查与修正生成结果" });
+    await expect(recovery).toContainText("characters.0.profile.privateBackground"); expect(calls).toBe(2);
+    expect((await worlds.get(preserved.id)).content).toBeNull();
+    await recovery.getByText("展开本次原始结果并手动修正", { exact: true }).click();
+    if (width === 360) await recovery.screenshot({ path: `test-results/world-recovery-${mobile ? "react" : "web"}-360.png` });
+    const failedJson = recovery.getByRole("textbox", { name: "本次生成结果JSON", exact: true });
+    const corrected = JSON.parse(await failedJson.inputValue()); corrected.characters[0].profile.privateBackground = "合成修正：曾在港口整理旧档案。";
+    await recovery.getByRole("button", { name: "本地检查并应用到草稿（不调用AI）", exact: true }).click();
+    await expect(recovery).toBeVisible(); expect(calls).toBe(2);
+    await failedJson.fill(JSON.stringify(corrected));
+    await recovery.getByRole("button", { name: "本地检查并应用到草稿（不调用AI）", exact: true }).click();
+    await expect(recovery).toHaveCount(0); expect(calls).toBe(2);
+    expect((await worlds.get(preserved.id)).content).toBeNull();
     await expect(page.getByRole("status")).toContainText("尚未保存");
     await page.getByRole("button", { name: "保存草稿", exact: true }).click();
     const nav = page.getByRole("navigation", { name: "世界创作局部导航" });
@@ -76,12 +96,12 @@ for (const width of [360, 1440]) test(`world authoring publishes a playable pinn
     await page.getByLabel("锁定此部分，AI不得重生成（仍可手动编辑）").check();
     await page.getByRole("button", { name: "保存草稿", exact: true }).click();
     await expect(page.getByRole("button", { name: "AI重生成当前部分（需确认费用）", exact: true })).toBeDisabled();
-    await expect(page.locator("#world-generation-help")).toContainText("当前部分已锁定"); expect(calls).toBe(1);
+    await expect(page.locator("#world-generation-help")).toContainText("当前部分已锁定"); expect(calls).toBe(2);
     await nav.getByRole("link", { name: "开场与玩家定位", exact: true }).click();
     await page.getByRole("button", { name: "AI重生成当前部分（需确认费用）", exact: true }).click();
     await expect(aiConfirm).toContainText("将生成并保存：开场与玩家定位");
     await aiConfirm.getByRole("button", { name: "确认调用AI并保存结果", exact: true }).click();
-    await expect(page.getByRole("textbox", { name: "内容", exact: true })).toHaveValue("合成开场：你踏入铜湾。"); expect(calls).toBe(2);
+    await expect(page.getByRole("textbox", { name: "内容", exact: true })).toHaveValue("合成开场：你踏入铜湾。"); expect(calls).toBe(3);
     await nav.getByRole("link", { name: "预览与发布", exact: true }).click();
     if (width === 360 && !mobile) await page.getByRole("main", { name: "世界创作工作台", exact: true }).screenshot({ path: "test-results/world-creator-360.png" });
     await expect(page.getByRole("button", { name: "确认发布当前草稿", exact: true })).toBeDisabled();
@@ -94,7 +114,7 @@ for (const width of [360, 1440]) test(`world authoring publishes a playable pinn
     const workspace = page.getByRole("region", { name: "大世界探索工作区" });
     await expect(workspace).toContainText("合成铜湾"); await expect(workspace).toContainText("定性世界");
     await workspace.getByRole("button", { name: "前往交会处", exact: true }).click();
-    await expect(workspace.getByRole("status")).toContainText("交会处"); expect(calls).toBe(2);
+    await expect(workspace.getByRole("status")).toContainText("交会处"); expect(calls).toBe(3);
     expect(await sessions.list()).toHaveLength(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     if (width === 360 && !mobile) await page.screenshot({ path: "test-results/world-creation-360.png", fullPage: false });

@@ -2,6 +2,8 @@
 
 当前命令在 `web/package.json`，本文只维护使用入口。运行目录默认 `web/`，Docker / PowerShell 运维脚本在仓库根目录执行。产品进度只看 [主线](PRODUCT_MAINLINE_GUIDE.md)。
 
+Token优化长期口径：缓存友好装配、相关上下文与提示词质量，不通过默认输出Token配额或降低模型能力来省费。生产默认不发输出配额；用户显式配额与授权付费评测保护另行说明。资源 / 数据结构护栏不归为Token优化，见[Token指南](TOKEN_COST_GUIDE.md)。
+
 ## 日常开发
 
 相关模块新增 / 深化能力前，按下述长期规则和 [R11规划](OPEN_SOURCE_REUSE_PLAN.md) 优先学习现有实现，不因发现同类仓库就整体重写，也不为每次小改重复完整选型。
