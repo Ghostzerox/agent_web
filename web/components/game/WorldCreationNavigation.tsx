@@ -16,7 +16,7 @@ const labels: Record<string, string> = { ...WORLD_SECTION_LABELS, brief: "创作
 export function WorldCreationNavigation({ id, section, onSelect }: { id: string; section: string; onSelect: (section: string) => void }) {
   return <nav aria-label="世界创作局部导航" className={styles.navigation}>
     <label className={styles.mobileIndex}>当前分区<select className="ui-field" value={section} onChange={(event) => onSelect(event.target.value)}>{groups.map((group) => <optgroup key={group.label} label={group.label}>{group.sections.map((key) => <option key={key} value={key}>{labels[key]}</option>)}</optgroup>)}</select></label>
-    <div className={styles.desktopIndex}>{groups.map((group) => <details key={group.label} open={group.sections.includes(section)}><summary>{group.label}</summary><div>{group.sections.map((key) => <AppLink key={key} href={creatorLink(id, key)} aria-current={section === key ? "page" : undefined} onClick={(event) => {
+    <div className={styles.desktopIndex}><p className={styles.indexLabel}>创作目录</p>{groups.map((group, index) => <details name="world-creation-directory" key={group.label} open={group.sections.includes(section)}><summary><span aria-hidden="true">0{index + 1}</span>{group.label}</summary><div>{group.sections.map((key) => <AppLink key={key} href={creatorLink(id, key)} aria-current={section === key ? "page" : undefined} onClick={(event) => {
       if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
       event.preventDefault(); onSelect(key);
     }}>{labels[key]}</AppLink>)}</div></details>)}</div>

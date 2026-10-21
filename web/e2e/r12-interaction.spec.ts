@@ -72,6 +72,7 @@ for (const width of [360, 1440]) test(`R12 daily actions, reading and settings f
   await page.getByRole("button", { name: "添加待办", exact: true }).click(); await expect(page.getByRole("heading", { name: "读一章书", exact: true })).toBeVisible();
   const todo = page.getByRole("article").filter({ hasText: "读一章书" }); await todo.getByText("更多操作", { exact: true }).click(); await todo.getByRole("button", { name: "归档", exact: true }).click();
   await page.getByRole("dialog", { name: "归档此行动？" }).getByRole("button", { name: "取消", exact: true }).click(); expect(writes).toBe(1);
+  await expect(todo.getByRole("button", { name: "归档", exact: true })).toBeFocused();
   await page.goto(path("/content")); await expect(page.getByRole("heading", { name: news.title, exact: true })).toBeVisible();
   await page.getByText("阅读正文", { exact: true }).click(); await expect(page.getByText(news.body, { exact: true })).toBeVisible(); expect(writes).toBe(1);
   await page.goto(path("/settings")); await page.getByRole("link", { name: /模型服务/ }).click();

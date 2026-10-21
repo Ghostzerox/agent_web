@@ -2,6 +2,15 @@
 
 当前收敛阶段摘要。完整旧日志见 [R9.4前冻结版本](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/CHANGELOG.md)，各阶段索引见 [历史](HISTORY.md)。当前排序只看 [产品主线](PRODUCT_MAINLINE_GUIDE.md)。
 
+## R12反馈修正 — 上级返回、收纳与模式视觉（2026-10-22）
+
+**Commit**: `same delivery commit`
+
+- 子页标题下新增常驻“返回××”，基于模块 / 世界 / 设计目录 / 存档结构确定上级，不依赖浏览器历史；Web / Hash共用且保留弃稿保护。
+- 页头改为“本页导航”，右侧分组抽屉固定关闭入口；世界目录一次展开一组，小菜单外点 / Escape收起并恢复键盘焦点。折叠内容加明确边界，不销毁草稿。
+- 娱乐工坊、学习笔记、暖色行动板、纸色阅读版式与设置分类列表区分；统一的是按钮语义、可访问性和平台边界，而非强行所有页面同一种绿卡片。无新增依赖、API / 数据库 / localStorage键变化，不删数据。
+- 本轮不使用付费模型，作者视觉偏好及真机仍待签收；验证与包信息见[当前UI规范](UI_NAVIGATION_GUIDE.md)。
+
 ## R12 — 全模式交互重构（2026-10-21）
 
 **Commit**: `same delivery commit`

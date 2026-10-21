@@ -1,22 +1,39 @@
 .workspace { max-width: 1120px; margin-inline: auto; display: grid; gap: 20px; }
-.heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.heading { position: relative; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 28px 32px; border-radius: 20px; background: #302541; color: #f4effc; }
+.heading > div { position: relative; z-index: 1; }
+.heading > details { z-index: 2; }
+.heading > details > summary { color: #f4effc; border-color: #74637f; }
 .heading h2 { font-size: clamp(24px, 3vw, 30px); font-weight: 650; letter-spacing: -.03em; }
-.heading p { color: var(--workspace-muted); font-size: .875rem; margin-top: 6px; }
+.heading > div p { color: #d8cce7; font-size: .875rem; margin-top: 8px; }
+.heading .eyebrow { font-size: .65rem; letter-spacing: .12em; color: #c5addc; margin-block: 0 10px; }
+.compass { position: absolute; right: 90px; bottom: 8px; font-size: 100px; line-height: 1.2; color: #c5addc26; pointer-events: none; }
 .body { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 28px; align-items: start; }
 .navigation { min-width: 0; }
-.desktopIndex { display: grid; gap: 6px; position: sticky; top: 96px; }
-.desktopIndex summary { padding: 12px 8px; font-size: .85rem; font-weight: 600; cursor: pointer; }
-.desktopIndex details > div { display: grid; gap: 2px; padding-bottom: 8px; }
+.desktopIndex { display: grid; gap: 6px; position: sticky; top: 148px; }
+.indexLabel { padding: 8px; font-size: .7rem; letter-spacing: .06em; color: var(--workspace-muted); }
+.desktopIndex summary { display: flex; align-items: center; gap: 10px; padding: 12px 8px; font-size: .85rem; font-weight: 600; cursor: pointer; list-style: none; }
+.desktopIndex summary::-webkit-details-marker { display: none; }
+.desktopIndex summary > span { color: var(--workspace-muted); font-size: .65rem; font-weight: 400; }
+.desktopIndex summary::after { content: "+"; margin-left: auto; color: var(--workspace-muted); }
+.desktopIndex details[open] summary::after { content: "−"; }
+.desktopIndex details > div { display: grid; gap: 2px; margin-left: 15px; padding: 0 0 8px 12px; border-left: 1px solid var(--workspace-border); }
 .desktopIndex a { display: flex; align-items: center; min-height: 44px; padding: 8px 12px; border-radius: 9px; font-size: .8rem; color: var(--workspace-muted); }
 .desktopIndex a[aria-current="page"] { color: var(--workspace-accent); background: var(--workspace-active); font-weight: 600; }
 .mobileIndex { display: none; }
 .editor { min-width: 0; display: grid; gap: 20px; }
-.steps { display: flex; gap: 14px; font-size: .75rem; color: var(--workspace-muted); }
-.steps [aria-current="step"] { color: var(--workspace-accent); font-weight: 650; }
+.editor details { border: 1px solid var(--workspace-border); border-radius: 10px; padding: 4px 12px; background: var(--workspace-bg); }
+.editor summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; list-style: none; font-size: .8rem; }
+.editor summary::-webkit-details-marker { display: none; }
+.editor summary::after { content: "+"; color: var(--workspace-accent); font-size: 18px; }
+.editor details[open] > summary::after { content: "−"; }
+.editor details[open] > summary { margin-bottom: 12px; border-bottom: 1px solid var(--workspace-border); }
+.steps { display: flex; gap: 8px; flex-wrap: wrap; font-size: .75rem; color: var(--workspace-muted); }
+.steps > span { padding: 9px 12px; border-radius: 8px; }
+.steps [aria-current="step"] { color: var(--workspace-accent); background: var(--workspace-active); font-weight: 650; }
 .panel { min-width: 0; padding: clamp(18px, 3vw, 28px); background: var(--workspace-surface); border: 1px solid var(--workspace-border); border-radius: 16px; }
 .panel h3 { font-size: 1.1rem; font-weight: 650; }
 .panel label { line-height: 1.7; }
-.generation { display: grid; gap: 12px; padding-top: 20px; border-top: 1px solid var(--workspace-border); }
+.generation { display: grid; gap: 12px; padding: 20px; border: 1px solid var(--workspace-border); border-radius: 12px; background: var(--workspace-bg); }
 .generation > div { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .generation select { width: auto; max-width: 100%; }
 .metadata { color: var(--workspace-muted); font-size: .75rem; }
@@ -27,4 +44,6 @@
   .mobileIndex { display: block; font-size: .75rem; color: var(--workspace-muted); margin-bottom: 16px; }
   .mobileIndex select { margin-top: 4px; }
   .steps { gap: 8px; font-size: .7rem; }
+  .steps > span { padding-inline: 8px; }
+  .heading { padding: 24px; }
 }

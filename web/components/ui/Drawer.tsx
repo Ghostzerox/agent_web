@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 
-export function Drawer({ label, id, onClose, children, variant = "side" }: { label: string; id: string; onClose: () => void; children: ReactNode; variant?: "side" | "sheet" }) {
+export function Drawer({ label, id, onClose, children, variant = "side" }: { label: string; id: string; onClose: () => void; children: ReactNode; variant?: "side" | "sheet" | "panel" }) {
   const ref = useRef<HTMLDialogElement>(null);
   const close = useRef(onClose);
   useEffect(() => { close.current = onClose; }, [onClose]);
@@ -21,7 +21,7 @@ export function Drawer({ label, id, onClose, children, variant = "side" }: { lab
       if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
     };
   }, []);
-  return <dialog ref={ref} id={id} aria-label={label} className={`workspace-drawer ${variant === "sheet" ? "workspace-sheet" : ""}`} onKeyDown={(event) => {
+  return <dialog ref={ref} id={id} aria-label={label} className={`workspace-drawer ${variant === "sheet" ? "workspace-sheet" : variant === "panel" ? "workspace-panel" : ""}`} onKeyDown={(event) => {
     if (event.key !== "Tab") return;
     const targets = [...event.currentTarget.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]')].filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0);
     if (!targets.length) { event.preventDefault(); return; }

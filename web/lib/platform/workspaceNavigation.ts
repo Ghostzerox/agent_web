@@ -35,6 +35,50 @@ export function isWorkspaceRouteActive(current: string, target: string): boolean
   return workspaceOwner(current) === target.slice(1);
 }
 
+/** Structural parent, not history.back(): a deep link must still have a way out. */
+export function workspaceLocation(route: string, params: URLSearchParams, title: string): { label: string; parent?: ModuleLink } {
+  const owner = workspaceOwner(route);
+  if (!owner) return { label: title };
+  const links = MODULE_LINKS[owner];
+  const home = links[0];
+  const here = `${route}${params.size ? `?${params}` : ""}`;
+  const without = (...keys: string[]) => {
+    const next = new URLSearchParams(params);
+    keys.forEach((key) => next.delete(key));
+    return `${route}${next.size ? `?${next}` : ""}`;
+  };
+  if (owner === "entertainment" && route === "/entertainment") {
+    const view = params.get("view"), section = params.get("section");
+    if (view === "creator" && params.has("world")) {
+      const world = `/entertainment?view=creator&world=${encodeURIComponent(params.get("world")!)}&section=overview`;
+      const design = section === "design-items" ? "道具设计" : section === "design-characters" ? "人物设计" : section === "design-events" ? "事件设计" : section === "draw-pools" ? "卡池配置" : null;
+      if (design) return { label: design, parent: { href: params.has("design") || params.has("event") ? without("design", "event", "part", "eventPart") : world, label: params.has("design") || params.has("event") ? `${design}目录` : "世界工作台" } };
+      return { label: "世界工作台", parent: links[2] };
+    }
+    if (params.has("session")) {
+      if (view === "events" || view === "draws") return { label: view === "draws" ? "抽卡与获取" : "事件设计", parent: { href: `/entertainment?session=${encodeURIComponent(params.get("session")!)}`, label: "当前旅程" } };
+      if (params.has("panel")) return { label: "旅程资料", parent: { href: without("panel"), label: "当前旅程" } };
+      return { label: "当前旅程", parent: links[1] };
+    }
+  }
+  if (route === "/tasks" && params.has("task")) return { label: "定时任务详情", parent: { href: "/tasks?section=scheduled", label: "定时任务" } };
+  if (route === "/memory" && params.size) return { label: "个人数据子页", parent: { href: "/memory", label: "个人数据" } };
+  const current = links.find((link) => {
+    const target = new URL(link.href, "https://local.invalid");
+    return target.pathname === route && [...target.searchParams].every(([key, value]) => params.get(key) === value) && (target.searchParams.size > 0 || params.size === 0);
+  });
+  // Prefer query-specific entries over the module root.
+  const exact = links.find((link) => link.href === here) ?? current;
+  return { label: exact?.label ?? title, parent: here === home.href ? undefined : home };
+}
+
+export function moduleLinkGroups(owner: WorkspaceOwner): { label: string; links: readonly ModuleLink[] }[] {
+  const links = MODULE_LINKS[owner].slice(1);
+  if (owner === "tasks") return [{ label: "行动与成长", links: links.slice(0, 4) }, { label: "提醒与工具", links: links.slice(4) }];
+  if (owner === "settings") return [{ label: "模型与设备", links: links.filter((link) => ["/api-key", "/notifications"].includes(link.href)) }, { label: "记忆与陪伴", links: links.filter((link) => ["/memory", "/persona", "/proactivity", "/voice"].includes(link.href)) }, { label: "扩展", links: links.filter((link) => ["/plugins", "/tools"].includes(link.href)) }];
+  return [{ label: "前往", links }];
+}
+
 // Ownership is not authorization; executor and plugin contracts remain unchanged.
 export const MODULE_TOOL_IDS = {
   chat: ["professional.calculate", "professional.locate-evidence"], tasks: ["reflection.action-draft", "tasks.preview"],

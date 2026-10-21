@@ -81,7 +81,7 @@ export function WorldCreationWorkspace() {
   });
   return <main className={styles.workspace} aria-label="世界创作工作台">
     {confirmation}
-    <header className={styles.heading}><div><AppLink href={draft ? "/entertainment?view=creator" : "/entertainment"} className="ui-kicker">娱乐 / 我的世界</AppLink><h2>{draft?.content?.overview.name ?? "世界创作工作台"}</h2><p>把想法变成可自由探索的世界。</p></div>
+    <header className={styles.heading}><div><p className={styles.eyebrow}>WORLD ATELIER / 世界创作</p><h2>{draft?.content?.overview.name ?? "世界创作工作台"}</h2><p>把想法变成可自由探索的世界。</p></div><span className={styles.compass} aria-hidden="true">✧</span>
       {draft && <details className="ui-more"><summary className="ui-button ui-button-quiet">更多</summary><div><Button variant="quiet" disabled={busy} onClick={() => void operate(async () => {
         if ((dirty || recovery) && !await confirm({ title: "放弃本地修改并重新加载？", danger: true, confirmLabel: "放弃并加载", description: "未保存编辑和本次失败生成结果将被丢弃，服务端草稿不受影响。" })) return;
         const fresh = await getWorldDraft(draft.id); install(fresh); setRevisions(fresh.revisions); setNotice("已重新加载。");
