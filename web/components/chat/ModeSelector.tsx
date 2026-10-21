@@ -19,7 +19,7 @@ export function ModeSelector({
 
   return (
     <label className="inline-flex items-center gap-1.5" title={activeMode.purpose}>
-      <span className="sr-only">对话模式</span>
+      <span className="hidden text-xs text-[var(--workspace-muted)] sm:inline">模式</span>
       <select
         aria-label="对话模式"
         value={mode}

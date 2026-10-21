@@ -10,7 +10,7 @@ import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import { requestNavigationPermission } from "@/lib/platform/navigationGuard";
 
 type Run = (action: ExplorationAction, content?: string, narrate?: boolean, semanticInput?: SemanticInput) => Promise<boolean>;
-const button = "rounded-lg border border-[var(--workspace-border)] px-3 py-2 text-xs font-medium hover:bg-[var(--workspace-bg)] disabled:opacity-40 disabled:cursor-not-allowed";
+import { buttonClass as button, useConfirmAction } from "@/components/ui/Actions";
 const card = "rounded-xl border border-[var(--workspace-border)] bg-[var(--workspace-surface)] p-4 space-y-3";
 const tabs = [["map", "地图"], ["items", "背包与装备"], ["people", "人物"], ["events", "事件与史诗"], ["history", "历史与传记"]] as const;
 type Tab = typeof tabs[number][0];
@@ -19,6 +19,7 @@ const kinds = { fact: "事实", rumor: "传闻", legend: "传说", opinion: "观
 
 function ItemCard({ item, definition, state, disabled, run }: { item: ExplorationState["instances"][number]; definition: WorldItem;
   state: ExplorationState; disabled: boolean; run: Run }) {
+  const { confirm, confirmation } = useConfirmAction();
   const [quantity, setQuantity] = useState(1); const [target, setTarget] = useState("");
   const present = Object.values(state.characters).filter((person) => person.locationId === state.locationId && person.controller !== "user");
   const selected = present.find((person) => person.id === target) ?? present[0];
@@ -26,7 +27,7 @@ function ItemCard({ item, definition, state, disabled, run }: { item: Exploratio
   const stock = present.find((person) => person.id === item.owner && person.interactions.includes("trade"));
   const invalid = disabled || !Number.isInteger(quantity) || quantity < 1 || quantity > Math.min(item.quantity, 99);
   const rankName = (field: "quality" | "tier" | "rating", id: string) => state.view.ranks[field].find((entry) => entry.id === id)?.name ?? id;
-  return <article className={card}>
+  return <article className={card}>{confirmation}
     <div className="flex flex-wrap justify-between gap-2"><h5 className="font-semibold">{definition.name} × {item.quantity}</h5><span className="text-xs text-zinc-500">{owned ? "你的背包" : state.characters[item.owner]?.name ?? "地点物品"}{item.equippedSlot ? ` · 已装备 ${item.equippedSlot}` : ""}</span></div>
     <p className="text-sm text-zinc-500">{definition.description}</p>
     {definition.details && <details><summary className="cursor-pointer text-xs">道具背景与规则</summary><div className="mt-2 space-y-1 text-xs"><p>{definition.details.appearance}</p><p>{definition.details.source} · {definition.details.background}</p><p>用途：{definition.details.usage}；限制：{definition.details.restrictions}；代价：{definition.details.cost}</p><p>{Object.entries(definition.details.attributes).map(([id, value]) => { const rule = state.view.attributeRules?.find((entry) => entry.id === id); return `${rule?.name ?? id} ${value}${rule?.unit ?? ""}`; }).join(" / ") || "无数值属性"}</p><p>叙事效果不自动代替结构化动作。</p></div></details>}
@@ -40,8 +41,8 @@ function ItemCard({ item, definition, state, disabled, run }: { item: Exploratio
     {((owned && present.length > 0) || stock) && <div className="flex flex-wrap items-end gap-2 border-t border-[var(--workspace-border)] pt-3">
       <label className="text-xs">数量<input aria-label={`${definition.name}数量`} type="number" min={1} max={Math.min(item.quantity, 99)} value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} className="ml-2 w-16 rounded border border-[var(--workspace-border)] bg-transparent p-2" /></label>
       {owned && <label className="text-xs">对象<select aria-label={`${definition.name}交互对象`} value={selected?.id ?? ""} onChange={(event) => setTarget(event.target.value)} className="ml-2 rounded border border-[var(--workspace-border)] bg-[var(--workspace-surface)] p-2">{present.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>}
-      {owned && selected && <button className={button} disabled={invalid || Boolean(item.equippedSlot)} onClick={() => {
-        if (window.confirm(`赠出${definition.name} × ${quantity}？赠品不会自动返还，剧情道具可能影响后续选择。`)) void run({ action: "give", instanceId: item.id, targetId: selected.id, quantity });
+      {owned && selected && <button className={button} disabled={invalid || Boolean(item.equippedSlot)} onClick={async () => {
+        if (await confirm({ title: "确认赠送", description: `赠出${definition.name} × ${quantity}给${selected.name}，不会自动返还，可能影响后续选择。`, confirmLabel: "赠送物品" })) void run({ action: "give", instanceId: item.id, targetId: selected.id, quantity });
       }}>赠送</button>}
       {definition.price > 0 && (stock || (owned && selected?.interactions.includes("trade"))) && <button className={button} disabled={invalid || Boolean(item.equippedSlot)} onClick={() => void run({ action: "trade", instanceId: item.id, targetId: stock?.id ?? selected!.id, direction: owned ? "sell" : "buy", quantity })}>{owned ? "出售" : "购买"} · {definition.price * quantity} 钱币</button>}
     </div>}
@@ -49,11 +50,12 @@ function ItemCard({ item, definition, state, disabled, run }: { item: Exploratio
 }
 
 function CharacterCard({ person, here, disabled, run, perceptions }: { person: WorldCharacter; here: boolean; disabled: boolean; run: Run; perceptions: PerceptionRecord[] }) {
+  const { confirm, confirmation } = useConfirmAction();
   const [content, setContent] = useState("");
   const [thought, setThought] = useState("");
   const [channel, setChannel] = useState<"direct" | "public">("direct");
   useNavigationGuard(Boolean(content.trim() || thought.trim()), "人物对话还有未发送的草稿，切换工作区后需要重新输入。");
-  return <article className={card}>
+  return <article className={card}>{confirmation}
     <div><h5 className="font-semibold">{person.name} <span className="text-xs font-normal text-zinc-500">{person.category === "important" ? "重要角色" : person.category === "player" ? "玩家" : "NPC"} · {here ? "在场" : "其他地点"}</span></h5><p className="mt-1 text-sm text-zinc-500">{person.identity} · {person.faction}</p></div>
     <p className="text-sm">{person.personality}</p><p className="text-xs">近期目标：{person.goals.join("、")}</p>
     {person.category !== "player" && <p className="text-xs">关系：{relations[person.relationship]} · {person.relationshipReason}</p>}
@@ -70,8 +72,8 @@ function CharacterCard({ person, here, disabled, run, perceptions }: { person: W
     {here && person.controller !== "user" && <>
       <div className="flex flex-wrap gap-2"><button className={button} disabled={disabled} onClick={() => void run({ action: "talk", targetId: person.id })}>与{person.name}交谈</button>
         {person.topics.map((topic) => <button key={topic.id} className={button} disabled={disabled} onClick={() => void run({ action: "ask", targetId: person.id, topicId: topic.id })}>{topic.label}</button>)}
-        {person.interactions.filter((action) => action !== "trade").map((action) => <button key={action} className={button} disabled={disabled} onClick={() => {
-          if (action !== "promise" || window.confirm(`明确作出承诺：${person.offeredPromise ?? "当前角色提出的事项"}？这只记入本局故事，不创建现实提醒。`)) void run({ action, targetId: person.id });
+        {person.interactions.filter((action) => action !== "trade").map((action) => <button key={action} className={button} disabled={disabled} onClick={async () => {
+          if (action !== "promise" || await confirm({ title: "确认故事承诺", description: `${person.offeredPromise ?? "当前角色提出的事项"}。只记入本局故事，不创建现实提醒。`, confirmLabel: "作出承诺" })) void run({ action, targetId: person.id });
         }}>{action === "promise" ? "明确作出承诺" : action === "help" ? "提出协助" : "据理交涉"}</button>)}
       </div>
       <details><summary className="cursor-pointer text-xs text-violet-600">自由 AI 对话（点击发送才调用模型）</summary><div className="mt-3 space-y-2">
@@ -90,13 +92,14 @@ function CharacterCard({ person, here, disabled, run, perceptions }: { person: W
 }
 
 function EncounterPanel({ disabled, run }: { disabled: boolean; run: Run }) {
+  const { confirm, confirmation } = useConfirmAction();
   const [activity, setActivity] = useState("");
   useNavigationGuard(Boolean(activity.trim()), "相遇行动尚未发送，离开可能丢失草稿。");
-  return <details className={card}><summary className="cursor-pointer text-sm">行动中自然相遇（可选 AI）</summary>
+  return <details className={card}><summary className="cursor-pointer text-sm">行动中自然相遇（可选 AI）</summary>{confirmation}
     <p className="text-xs text-zinc-500">描述你在当前地点的活动，按当地环境遇见普通人物；也可能无人。不会自动移动、发奖励、改写重要人物或预定剧情。只在确认后调用AI，失败不写入本分支。</p>
     <label className="block text-xs">你正在做什么？<textarea aria-label="相遇行动" rows={3} maxLength={1000} value={activity} disabled={disabled} onChange={(event) => setActivity(event.target.value)} className="mt-1 w-full rounded border border-[var(--workspace-border)] bg-transparent p-2" /></label>
-    <button className={button} disabled={disabled || !activity.trim()} onClick={() => {
-      if (window.confirm("将调用一次AI生成当前地点的相遇，可能产生费用。通过检查后记录到当前分支，不改变世界模板或其他分支。是否继续？")) void run({ action: "encounter", activity: activity.trim(), confirmed: true }, activity.trim()).then((saved) => { if (saved) setActivity(""); });
+    <button className={button} disabled={disabled || !activity.trim()} onClick={async () => {
+      if (await confirm({ title: "生成行动相遇", modelCall: true, description: `行动：${activity.trim()}。将调用一次当前模型，可能产生费用。结果只记录到当前分支，不改变模板或其他分支；失败不自动重试。`, confirmLabel: "开始生成" })) void run({ action: "encounter", activity: activity.trim(), confirmed: true }, activity.trim()).then((saved) => { if (saved) setActivity(""); });
     }}>探索并记录相遇（调用AI）</button>
   </details>;
 }
@@ -123,6 +126,7 @@ function HistoryPanel({ state, sessionId, parentTurnId, onError }: { state: Expl
 
 export function ExplorationPanel({ state, sessionId, parentTurnId, disabled, run, onError }: { state: ExplorationState;
   sessionId: string; parentTurnId: string | null; disabled: boolean; run: Run; onError: (message: string | null) => void }) {
+  const { confirm, confirmation } = useConfirmAction();
   const query = useAppQuery();
   const requestedTab: Tab = query.get("panel") === "items" ? "items" : query.get("panel") === "events" ? "events" : "map";
   const [selection, setSelection] = useState<{ requested: Tab; tab: Tab } | null>(null);
@@ -131,7 +135,7 @@ export function ExplorationPanel({ state, sessionId, parentTurnId, disabled, run
   const setTab = (value: Tab) => setSelection({ requested: requestedTab, tab: value });
   const current = state.view.locations.find((location) => location.id === state.locationId)!;
   const present = Object.values(state.characters).filter((person) => person.locationId === state.locationId && person.controller !== "user");
-  return <section aria-label="大世界探索工作区" className="space-y-4 rounded-2xl bg-[var(--workspace-bg)] p-3 sm:p-5">
+  return <section aria-label="大世界探索工作区" className="space-y-4">{confirmation}
     <header className="space-y-2"><p className="text-xs font-semibold tracking-wider text-violet-600">{state.view.world} / {state.view.region}</p><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-xl font-semibold">{current.name}</h3><span className="text-xs text-zinc-500">第 {state.tick} 时刻 · {state.coins} 钱币</span></div><p className="text-sm leading-6 text-zinc-500">{current.description}</p>
       <p className="text-xs">评级 {state.view.ranks.rating.find((rank) => rank.id === state.progress.rating)?.name} · 等阶 {state.view.ranks.tier.find((rank) => rank.id === state.progress.tier)?.name}{state.progress.level !== undefined ? ` / ${state.progress.level} 级` : (state.view.numericPolicy === "specified" ? " · 指定属性世界" : " · 定性世界")} · {state.conditions.join("、") || "状态平稳"}</p>
       <p role="status" className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm text-violet-950 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-100">{state.lastResult}</p>
@@ -157,8 +161,8 @@ export function ExplorationPanel({ state, sessionId, parentTurnId, disabled, run
       {tab === "people" && <div className="grid gap-3 xl:grid-cols-2">{!present.length && <p className="text-sm text-zinc-500">当前地点尚未遇见人物。可以继续自己的活动，或使用“行动中自然相遇”；并非每个地方都一定有人。</p>}{Object.values(state.characters).map((person) => <CharacterCard key={person.id} person={person} here={person.locationId === current.id} disabled={disabled} run={run} perceptions={state.cognition?.records.filter((entry) => entry.audience.includes(person.id) && entry.audience.includes("player")) ?? []} />)}</div>}
       {tab === "events" && <>
         {state.view.events.length === 0 && <p className="text-sm text-zinc-500">尚未触发公开事件。可以自由探索，无需接受任何主线。</p>}
-        {state.view.events.map((event) => <article key={event.id} className={card}><h4 className="font-semibold">{event.name} <span className="text-xs font-normal text-zinc-500">{event.scope === "world" ? "世界" : event.scope === "character" ? "人物" : "地方"}事件 · {event.settled ? "已结束" : event.locationId === current.id ? "可在此处理" : "前往对应地点处理"}</span></h4><p className="text-sm text-zinc-500">{event.description}</p>{event.choices.map((choice) => <div key={choice.id} className="space-y-1"><button className={button} disabled={disabled || !choice.available || event.locationId !== current.id} onClick={() => {
-          if (window.confirm(`${choice.label}？${choice.cost}。将保存为当前分支的决定，可从旧节点另开分支。`)) void run({ action: "choose", eventId: event.id, choiceId: choice.id });
+        {state.view.events.map((event) => <article key={event.id} className={card}><h4 className="font-semibold">{event.name} <span className="text-xs font-normal text-zinc-500">{event.scope === "world" ? "世界" : event.scope === "character" ? "人物" : "地方"}事件 · {event.settled ? "已结束" : event.locationId === current.id ? "可在此处理" : "前往对应地点处理"}</span></h4><p className="text-sm text-zinc-500">{event.description}</p>{event.choices.map((choice) => <div key={choice.id} className="space-y-1"><button className={button} disabled={disabled || !choice.available || event.locationId !== current.id} onClick={async () => {
+          if (await confirm({ title: "确认事件选择", description: `${choice.label}：${choice.cost}。将记录为当前分支决定，可从旧节点另开分支。`, confirmLabel: "确认选择" })) void run({ action: "choose", eventId: event.id, choiceId: choice.id });
         }}>{choice.label}</button><p className="text-xs text-zinc-500">{choice.cost}{!choice.available ? " · 条件未满足" : ""}</p></div>)}</article>)}
         {state.view.epics.map((epic) => <article key={epic.id} className={card}><h4 className="font-semibold">故事弧 · {epic.name}</h4><p className="text-xs text-zinc-500">{epic.chapters.join(" → ")}</p><p className="text-sm">已达里程碑：{epic.milestones.join(" / ") || "尚无"}</p><p className="text-sm">{epic.ending ? `本分支结局：${epic.ending}` : "结局未定，也可以不参与。"}</p>{epic.consequences.map((line) => <p key={line} className="text-xs text-zinc-500">{line}</p>)}</article>)}
       </>}

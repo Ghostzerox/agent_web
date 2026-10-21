@@ -1,16 +1,17 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import { assetDesignContentSchema, type AssetDesignContent, type AssetField } from "@/lib/game/worlds/assetContracts";
 import type { WorldBlueprint } from "@/lib/game/worlds/contracts";
 import { ASSET_FIELD_LABELS } from "@/lib/game/worlds/assetBlueprint";
-import { worldButtonClass as button, worldFieldClass as field } from "./WorldSectionEditor";
+import { buttonClass as button, fieldClass as field } from "@/components/ui/Actions";
 
-export function AssetDesignEditor({ content, selected, fields, onSelect, world, onChange, onError }: { content: AssetDesignContent; selected: AssetField; fields: AssetField[]; onSelect: (field: AssetField) => void;
-  world: WorldBlueprint; onChange: (next: AssetDesignContent) => void; onError: (message: string) => void }) {
+export function AssetDesignEditor({ content, selected, fields, onSelect, world, onChange, onError, onPendingChange }: { content: AssetDesignContent; selected: AssetField; fields: AssetField[]; onSelect: (field: AssetField) => void;
+  world: WorldBlueprint; onChange: (next: AssetDesignContent) => void; onError: (message: string) => void; onPendingChange?: (pending: boolean) => void }) {
   const value = (content as unknown as Record<string, unknown>)[selected];
   const source = JSON.stringify(value, null, 2) ?? "null";
   const [buffer, setBuffer] = useState<{ source: string; raw: string } | null>(null); const raw = buffer?.source === source ? buffer.raw : source;
+  useEffect(() => { onPendingChange?.(raw !== source); return () => onPendingChange?.(false); }, [raw, source, onPendingChange]);
   useNavigationGuard(raw !== source, "高级字段JSON尚未应用，离开会丢失这部分编辑。");
   const patch = (next: unknown) => onChange({ ...content, [selected]: next } as AssetDesignContent);
   const text = (label: string, current: string, change: (next: string) => void, maxLength = 600) => <label key={label} className="block text-xs">{label}<textarea aria-label={label} className={field} rows={3} maxLength={maxLength} value={current} onChange={(event) => change(event.target.value)} /></label>;
@@ -18,7 +19,7 @@ export function AssetDesignEditor({ content, selected, fields, onSelect, world, 
   const select = (label: string, current: string, choices: { id: string; name: string }[], change: (next: string) => void) => <label className="block text-xs">{label}<select aria-label={label} className={field} value={current} onChange={(event) => change(event.target.value)}>{choices.map((choice) => <option key={choice.id} value={choice.id}>{choice.name}</option>)}</select></label>;
   return <div className="space-y-4">
     <label className="block text-xs">当前设计字段<select aria-label="当前设计字段" className={field} value={selected} onChange={(event) => { if (raw === source || window.confirm("高级字段JSON尚未应用，放弃这部分修改并切换字段？")) onSelect(event.target.value as AssetField); }}>{fields.map((key) => <option key={key} value={key}>{ASSET_FIELD_LABELS[key]}</option>)}</select></label>
-    {content.kind === "item" && selected === "details" ? <>
+    <fieldset disabled={raw !== source} className="space-y-4">{content.kind === "item" && selected === "details" ? <>
       {select("道具类别", content.details.category, [{ id: "tool", name: "叙事工具" }, { id: "equipment", name: "装备" }, { id: "consumable", name: "消耗品" }, { id: "material", name: "材料（共用背包）" }], (category) => onChange({ ...content,
         details: { ...content.details, category: category as typeof content.details.category }, slot: category === "equipment" ? world.itemRules.slots[0] ?? null : null,
         consumable: category === "consumable", useEffect: category === "consumable" ? content.useEffect ?? { locationId: null, requiresCondition: null, addCondition: null, removeCondition: null } : null }))}
@@ -61,7 +62,7 @@ export function AssetDesignEditor({ content, selected, fields, onSelect, world, 
       : typeof value === "number" ? <label className="block text-xs">{ASSET_FIELD_LABELS[selected]}<input aria-label={ASSET_FIELD_LABELS[selected]} type="number" className={field} value={value} onChange={(event) => patch(Number(event.target.value))} /></label>
       : Array.isArray(value) ? lines(`${ASSET_FIELD_LABELS[selected]}（每行一项，最多3项、每项120字）`, value as string[], patch)
       : typeof value === "string" ? text(ASSET_FIELD_LABELS[selected], value, patch, selected === "name" ? 120 : 600) : <p className="text-xs">当前字段为空，需按所属类别配置。</p>}
-    <details className="rounded-lg border border-[var(--workspace-border)] p-3"><summary className="cursor-pointer text-xs">高级：当前字段JSON</summary><textarea aria-label="当前设计字段JSON" className={`${field} font-mono`} rows={10} value={raw} onChange={(event) => setBuffer({ source, raw: event.target.value })} />
-      <button className={button} onClick={() => { try { onChange(assetDesignContentSchema.parse({ ...content, [selected]: JSON.parse(raw) })); } catch (error) { onError(error instanceof Error ? error.message : "结构无效"); } }}>应用字段JSON</button></details>
+    </fieldset><details className="rounded-lg border border-[var(--workspace-border)] p-3"><summary className="cursor-pointer text-xs">高级：当前字段JSON</summary><textarea aria-label="当前设计字段JSON" className={`${field} font-mono`} rows={10} value={raw} onChange={(event) => setBuffer({ source, raw: event.target.value })} />
+      <button className={button} onClick={() => { try { onChange(assetDesignContentSchema.parse({ ...content, [selected]: JSON.parse(raw) })); setBuffer(null); onError(""); } catch (error) { onError(error instanceof Error ? error.message : "结构无效"); } }}>应用字段JSON</button><button type="button" className={button} disabled={raw === source} onClick={() => setBuffer(null)}>放弃JSON编辑</button></details>
   </div>;
 }

@@ -57,8 +57,8 @@ test("an existing memory edit retains its unsaved body when another device has c
     reads++; return route.fulfill({ json: { data: [record(), { ...record(), id: uuid(5), candidateId: uuid(6), content: "过期合成记忆", validUntil: "2020-01-01T00:00:00Z" }] } });
   });
   await page.goto(process.env.MEMORY_DATA_MOBILE_BUNDLE === "true" ? "/#/memory" : "/memory"); const region = page.getByRole("region", { name: "已确认的长期记忆" });
-  await region.getByRole("textbox", { name: "编辑记忆：数学目标" }).fill("手机未保存的草稿"); content = "电脑已经保存的新版"; version++;
-  await region.getByRole("button", { name: "保存修改", exact: true }).click(); await expect(region.getByRole("alert")).toContainText("另一端"); await expect(region.getByRole("textbox", { name: "编辑记忆：数学目标" })).toHaveValue("手机未保存的草稿"); expect(reads).toBe(1);
+  await region.getByRole("textbox", { name: "编辑记忆：数学目标" }).fill("手机未保存的草稿"); const initialReads = reads; content = "电脑已经保存的新版"; version++;
+  await region.getByRole("button", { name: "保存修改", exact: true }).click(); await expect(region.getByRole("alert")).toContainText("另一端"); await expect(region.getByRole("textbox", { name: "编辑记忆：数学目标" })).toHaveValue("手机未保存的草稿"); expect(reads).toBe(initialReads);
   page.once("dialog", (dialog) => dialog.dismiss()); await region.getByRole("button", { name: "刷新已确认记忆" }).click(); await expect(region.getByRole("textbox", { name: "编辑记忆：数学目标" })).toHaveValue("手机未保存的草稿");
   page.once("dialog", (dialog) => dialog.accept()); await region.getByRole("button", { name: "刷新已确认记忆" }).click(); await expect(region.getByRole("textbox", { name: "编辑记忆：电脑已经保存的新版" })).toHaveValue(content);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= 360)).toBe(true);

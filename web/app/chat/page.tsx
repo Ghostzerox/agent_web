@@ -64,7 +64,7 @@ function ChatWorkspace() {
     Record<string, PromptEnvelope>
   >({});
 
-  const { sessions, activeSession, resolvedActiveSessionId, setActiveSessionId, input, setInput, messages, loading,
+  const { deleteConfirmation, sessions, activeSession, resolvedActiveSessionId, setActiveSessionId, input, setInput, messages, loading,
     updatingModeSessionId, replaceSession, handleNewSession: createSession, handleDeleteSession, handleSwitchVersion, handleModeChange, hasDrafts } =
     useChatSessions(runningSessionIds, cancelRun, setError);
   const handleNewSession = async () => { if (await createSession()) setSidebarOpen(false); };
@@ -216,17 +216,11 @@ function ChatWorkspace() {
               }
               onChange={handleModeChange}
             />
-            <PromptExportControl
-              envelope={
-                resolvedActiveSessionId
-                  ? promptEnvelopes[resolvedActiveSessionId] ?? null
-                  : null
-              }
-            />
+
           </div>
         }
       />}>
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">{deleteConfirmation}
 
       {requestedMode && requestedMode !== (activeSession?.mode ?? "auto") && <div className="flex flex-wrap items-center justify-center gap-2 border-b border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
         <span>你选择了{coreModeRegistry.get(requestedMode).label}入口。切换只改变当前会话后续回答，不会自动生成。</span>
@@ -288,6 +282,7 @@ function ChatWorkspace() {
           </div>
 
           {resolvedActiveSessionId && <div className="max-h-[35vh] shrink-0 overflow-y-auto"><Disclosure title="本次对话的资料与上下文">
+            <div className="mb-3 px-3"><PromptExportControl envelope={promptEnvelopes[resolvedActiveSessionId] ?? null} /></div>
             <KnowledgeSelector key={resolvedActiveSessionId} mode={activeSession?.mode ?? "auto"} selected={knowledgeSelections[resolvedActiveSessionId] ?? []} disabled={loading} onChange={(ids) => setKnowledgeSelections((current) => ({ ...current, [resolvedActiveSessionId]: ids }))} />
             <ConversationSummaryControl key={`${resolvedActiveSessionId}:${activeSession?.activeLeafId ?? ""}`} conversationId={resolvedActiveSessionId} leafId={activeSession?.activeLeafId ?? null} enabled={summarySelections[resolvedActiveSessionId] ?? false} onChange={(value) => setSummarySelections((current) => ({ ...current, [resolvedActiveSessionId]: value }))} disabled={loading} envelope={promptEnvelopes[resolvedActiveSessionId]} />
           </Disclosure></div>}

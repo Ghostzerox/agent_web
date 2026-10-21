@@ -12,7 +12,7 @@
 | API与模型配置 | [会话API](SERVER_DATA_API.md)、[Provider](SERVER_MODEL_PROVIDER.md) |
 | 任务 / 打卡 / 通知 | [定时任务](TASKS.md)、[行动闭环](TASK_ACTIONS_GUIDE.md)、[Push](WEB_PUSH.md) |
 | 模式与模块入口 | [导航规范](UI_NAVIGATION_GUIDE.md)、[模块层级](R8_MODULE_UI_GUIDE.md) |
-| UI按钮、指引与使用机制重构（待实施） | [R12交互重构规划](R12_UI_INTERACTION_REFACTOR_PLAN.md) |
+| UI按钮、指引与使用机制重构 | [R12规划](R12_UI_INTERACTION_REFACTOR_PLAN.md)、[交付 / 原型 / 验收报告](reports/R12_REPORT.md) |
 | 工具与学习插件 | [工具](TOOLS_GUIDE.md)、[插件系统](PLUGIN_SYSTEM.md)、[插件API](PLUGIN_API_V1.md) |
 | 娱乐 / 探索 / 规则包 | [游戏会话](GAME_SESSIONS.md)、[探索](R7_EXPLORATION_GUIDE.md)、[规则包](GAME_RULE_PACKS.md) |
 | 娱乐创作与人物认知 | [R10规划](ENTERTAINMENT_CREATION_AND_CHARACTER_PLAN.md)、[R10.6集成报告](reports/R10_6_REPORT.md)、[R10.1基线](R10_SEMANTIC_BOUNDARY_BASELINE.md)、[人物隔离](R10_ACTOR_ISOLATION_GUIDE.md)、[世界创作工作台](WORLD_CREATION_GUIDE.md)、[道具与人物设计](ITEM_CHARACTER_DESIGN_GUIDE.md)、[抽卡与材料获取](ITEM_DRAW_GUIDE.md)、[事件创作](EVENT_CREATION_GUIDE.md) |

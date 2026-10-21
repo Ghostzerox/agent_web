@@ -1,20 +1,21 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import type { EventDesignDraft } from "@/lib/api/gameEventDesignClient";
 import { EVENT_FIELDS, eventDefinitionSchema, type EventDefinition, type EventField } from "@/lib/game/events/contracts";
-import { worldButtonClass as button, worldFieldClass as field } from "./WorldSectionEditor";
+import { buttonClass as button, fieldClass as field } from "@/components/ui/Actions";
 
 export const EVENT_FIELD_LABELS: Record<EventField, string> = { name: "事件名称", scope: "作用范围", locationId: "事件地点", actorIds: "参与者", trigger: "触发条件", details: "起因、可见范围与知识", stages: "行动、成本与后果" };
-export function EventDesignEditor({ row, selected, onSelect, onChange, onError }: { row: EventDesignDraft; selected: EventField; onSelect: (field: EventField) => void; onChange: (content: EventDefinition) => void; onError: (error: string) => void }) {
+export function EventDesignEditor({ row, selected, onSelect, onChange, onError, onPendingChange }: { row: EventDesignDraft; selected: EventField; onSelect: (field: EventField) => void; onChange: (content: EventDefinition) => void; onError: (error: string) => void; onPendingChange?: (pending: boolean) => void }) {
   const content = row.content; const source = JSON.stringify(content[selected], null, 2); const [buffer, setBuffer] = useState<{ source: string; value: string } | null>(null);
   const raw = buffer?.source === source ? buffer.value : source; useNavigationGuard(raw !== source, "事件高级JSON尚未应用。");
+  useEffect(() => { onPendingChange?.(raw !== source); return () => onPendingChange?.(false); }, [raw, source, onPendingChange]);
   const patch = (value: unknown) => onChange({ ...content, [selected]: value });
   const text = (label: string, value: string, update: (value: string) => void) => <label key={label} className="block text-xs">{label}<textarea aria-label={label} maxLength={600} rows={3} className={field} value={value} onChange={(event) => update(event.target.value)} /></label>;
   const select = (label: string, value: string, options: { id: string; name: string }[], update: (value: string) => void) => <label className="block text-xs">{label}<select aria-label={label} className={field} value={value} onChange={(event) => update(event.target.value)}>{options.map((option) => <option key={option.id} value={option.id}>{option.name}</option>)}</select></label>;
   return <div className="space-y-3">
     <label className="block text-xs">当前事件字段<select aria-label="当前事件字段" className={field} value={selected} onChange={(event) => { if (raw === source || window.confirm("当前事件字段JSON尚未应用，确定放弃后切换字段？")) { setBuffer(null); onSelect(event.target.value as EventField); } }}>{EVENT_FIELDS.map((key) => <option key={key} value={key}>{EVENT_FIELD_LABELS[key]}</option>)}</select></label>
-    {selected === "name" && text("事件名称", content.name, patch)}
+    <fieldset disabled={raw !== source} className="space-y-3">{selected === "name" && text("事件名称", content.name, patch)}
     {selected === "scope" && select("作用范围", content.scope, [{ id: "local", name: "当地事件" }, { id: "character", name: "跟随首位NPC的人物事件" }, { id: "world", name: "世界变化（不自动全世界知情）" }], patch)}
     {selected === "locationId" && select("事件地点", content.locationId, row.references.locations, patch)}
     {selected === "actorIds" && <div className="flex flex-wrap gap-3">{row.references.characters.map((person) => <label className="text-sm" key={person.id}><input type="checkbox" checked={content.actorIds.includes(person.id)} onChange={(event) => patch(event.target.checked ? [...content.actorIds, person.id] : content.actorIds.filter((id) => id !== person.id))} /> {person.name}</label>)}</div>}
@@ -49,6 +50,6 @@ export function EventDesignEditor({ row, selected, onSelect, onChange, onError }
         })}
       </div></details>;
     })}
-    <details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm">高级：当前事件字段JSON</summary><textarea aria-label="当前事件字段JSON" className={`${field} font-mono`} rows={12} value={raw} onChange={(event) => setBuffer({ source, value: event.target.value })} /><button className={button} onClick={() => { try { onChange(eventDefinitionSchema.parse({ ...content, [selected]: JSON.parse(raw) })); setBuffer(null); } catch { onError("事件字段JSON不符合结构，未应用。"); } }}>应用事件字段JSON</button></details>
+    </fieldset><details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm">高级：当前事件字段JSON</summary><textarea aria-label="当前事件字段JSON" className={`${field} font-mono`} rows={12} value={raw} onChange={(event) => setBuffer({ source, value: event.target.value })} /><button className={button} onClick={() => { try { onChange(eventDefinitionSchema.parse({ ...content, [selected]: JSON.parse(raw) })); setBuffer(null); } catch { onError("事件字段JSON不符合结构，未应用。"); } }}>应用事件字段JSON</button><button type="button" className={button} disabled={raw === source} onClick={() => setBuffer(null)}>放弃JSON编辑</button></details>
   </div>;
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
+import { useConfirmAction } from "@/components/ui/Actions";
 import { GamePlayPanel } from "@/components/game/GamePlayPanel";
 import { GameCheckpointPanel } from "@/components/game/GameCheckpointPanel";
 import { AppLink } from "@/components/platform/AppLink";
@@ -31,6 +32,7 @@ function friendlyError(error: unknown): string {
 }
 
 export function GameSessionManager() {
+  const { confirm, confirmation } = useConfirmAction();
   const [sessions, setSessions] = useState<GameSessionSummary[]>([]);
   const [detail, setDetail] = useState<GameSessionDetail | null>(null);
   const [world, setWorld] = useState<WorldForm>({ ...EMPTY_WORLD });
@@ -153,7 +155,7 @@ export function GameSessionManager() {
   };
 
   const removeSession = async () => {
-    if (!detail || !window.confirm("删除这个游戏会话及其角色卡？此操作不可撤销。")) return;
+    if (!detail || !await confirm({ title: "删除此旅程？", description: `将删除「${detail.title}」及其角色卡，此操作不可撤销。`, confirmLabel: "删除旅程", danger: true })) return;
     setBusy(true);
     setError(null);
     try {
@@ -195,9 +197,9 @@ export function GameSessionManager() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-5 lg:grid-cols-[17rem_minmax(0,1fr)]">
+    <div className="mx-auto grid w-full max-w-7xl gap-5 lg:grid-cols-[15rem_minmax(0,1fr)]">{confirmation}
       <aside className="h-fit rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-        <details open><summary className="mb-3 min-h-11 cursor-pointer py-2 text-sm font-semibold">世界列表与创建入口</summary>
+        <details><summary className="mb-2 min-h-11 cursor-pointer py-2 text-sm font-semibold">切换旅程与创建</summary>
         <AppLink href="/entertainment?view=creator" className="mb-2 block rounded-xl border border-violet-300 px-4 py-2.5 text-center text-sm text-violet-600">世界创作工作台</AppLink>
         <button type="button" disabled={busy} onClick={() => setExplorationDraft((open) => !open)} className="mb-2 w-full rounded-xl border border-violet-300 px-4 py-2.5 text-sm font-medium text-violet-700 dark:text-violet-300">大世界探索 · 选择模板</button>
         <button type="button" onClick={startNew} className="w-full rounded-xl bg-violet-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-violet-600">+ 新建游戏会话</button>
@@ -225,23 +227,23 @@ export function GameSessionManager() {
       </aside>
 
       <main className="min-w-0 space-y-5">
-        <section className="rounded-2xl border border-violet-200 bg-gradient-to-br from-violet-50 to-white p-5 dark:border-violet-900 dark:from-violet-950/40 dark:to-zinc-950">
+        <section className="space-y-2">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300">Entertainment</p>
-              <h2 className="mt-1 text-2xl font-semibold text-zinc-950 dark:text-zinc-50">可探索、可分支的叙事世界</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">世界、角色、剧情、规则检定和检查点属于独立 GameSession。历史分支不会被删除，也不会进入普通对话或长期记忆。</p>
+              <p className="ui-kicker">娱乐 / 我的旅程</p>
+              <h2 className="mt-1 text-2xl font-semibold text-zinc-950 dark:text-zinc-50">{detail?.title ?? "从一次自由探索开始"}</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-zinc-600 dark:text-zinc-300">继续当前旅程，或选择其他世界；虚构内容不会进入普通对话或长期记忆。</p>
             </div>
-            <span className="rounded-full border border-violet-300 bg-white/80 px-3 py-1 text-xs font-medium text-violet-800 dark:border-violet-800 dark:bg-violet-950 dark:text-violet-200">独立存储</span>
+
           </div>
         </section>
 
         {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">{error}</div>}
         {notice && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">{notice}</p>}
 
-        {explorationDraft && <ExplorationTemplatePicker busy={busy} onCancel={() => setExplorationDraft(false)} onCreate={(template) => {
+        {explorationDraft && <ExplorationTemplatePicker busy={busy} onCancel={() => setExplorationDraft(false)} onCreate={async (template) => {
           if (!requestNavigationPermission()) return;
-          if (!window.confirm(`确认创建「${template.title}」的独立存档？不会改动已有故事或现实记忆。`)) return;
+          if (!await confirm({ title: "创建模板旅程？", description: `基于「${template.title}」创建独立存档，不改动已有故事或现实记忆，不调用AI。`, confirmLabel: "创建旅程" })) return;
           setBusy(true); setError(null);
           void createGameSession(explorationSessionInput(template)).then((next) => {
             installDetail(next); setExplorationDraft(false); setNotice("探索存档已创建，请点击“开启探索世界”。");
@@ -294,8 +296,8 @@ export function GameSessionManager() {
                     }),
                     `角色卡“${form.name.trim()}”已更新。`,
                   )}
-                  onDelete={() => {
-                    if (!window.confirm(`删除角色“${character.name}”？`)) return Promise.resolve();
+                  onDelete={async () => {
+                    if (!await confirm({ title: "删除角色卡？", description: `将删除「${character.name}」的角色卡，不追溯改写已有分支快照。`, confirmLabel: "删除角色", danger: true })) return;
                     return mutateCharacter(
                       () => deleteGameCharacter(
                         detail.id,

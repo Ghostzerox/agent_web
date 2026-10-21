@@ -1,0 +1,49 @@
+{
+  "source": "d853968",
+  "capturedAt": "2026-10-21T12:55:18.172Z",
+  "synthetic": true,
+  "observations": [
+    {
+      "name": "world",
+      "width": 360,
+      "buttons": 7,
+      "links": 30,
+      "overflow": false
+    },
+    {
+      "name": "tasks",
+      "width": 360,
+      "buttons": 2,
+      "links": 24,
+      "overflow": false
+    },
+    {
+      "name": "settings",
+      "width": 360,
+      "buttons": 2,
+      "links": 26,
+      "overflow": false
+    },
+    {
+      "name": "world",
+      "width": 1440,
+      "buttons": 7,
+      "links": 30,
+      "overflow": false
+    },
+    {
+      "name": "tasks",
+      "width": 1440,
+      "buttons": 2,
+      "links": 24,
+      "overflow": false
+    },
+    {
+      "name": "settings",
+      "width": 1440,
+      "buttons": 2,
+      "links": 26,
+      "overflow": false
+    }
+  ]
+}

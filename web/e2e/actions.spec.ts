@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { ActionEntry, ActionItem } from "../lib/tasks/actions";
 const path=process.env.ACTIONS_MOBILE_BUNDLE==="true"?"/#/tasks?section=actions":"/tasks?section=actions";
 async function section(page: import("@playwright/test").Page, name: string) {
-  await page.locator(".module-navigation > summary").click();
+  await page.getByRole("button", { name: "打开本模块功能", exact: true }).click();
   await page.getByRole("navigation", { name: "模块内导航" }).getByRole("link", { name, exact: true }).click();
 }
 for(const width of [360,1440]) test(`action, habit, goal and export journey at ${width}px`,async({page})=>{
@@ -30,7 +30,7 @@ for(const width of [360,1440]) test(`action, habit, goal and export journey at $
   await page.getByLabel("行动名称",{exact:true}).fill("R6测试待办");
   await page.getByRole("button",{name:"添加待办",exact:true}).click();
   const todo=page.getByRole("article").filter({has:page.getByRole("heading",{name:"R6测试待办",exact:true})});
-  await todo.getByRole("button",{name:"今日跳过",exact:true}).click();
+  await todo.getByText("更多操作", { exact: true }).click(); await todo.getByRole("button",{name:"今日跳过",exact:true}).click();
   await expect(page.getByRole("heading",{name:/今日跳过/})).toBeVisible();
   await todo.getByRole("button",{name:"标记完成",exact:true}).click();await expect(todo.getByRole("button",{name:"撤销完成"})).toBeVisible();
   await todo.getByRole("button",{name:"撤销完成"}).click();await expect(todo.getByRole("button",{name:"标记完成",exact:true})).toBeVisible();
@@ -58,7 +58,7 @@ test("action edit conflict preserves drafts and guards switching to scheduler",a
     if(route.request().method()==="POST")return route.fulfill({status:409,json:{error:{message:"另一端已更新，草稿保留"}}});
     return route.fulfill({json:{data:{today:"2030-01-02",items:[item],entries:[]}}});
   });
-  await page.goto(path);await page.getByRole("button",{name:"编辑行动",exact:true}).click();await page.getByLabel("行动名称",{exact:true}).fill("我的未保存草稿");
+  await page.goto(path);await page.getByText("更多操作", { exact: true }).click();await page.getByRole("button",{name:"编辑行动",exact:true}).click();await page.getByLabel("行动名称",{exact:true}).fill("我的未保存草稿");
   await page.getByRole("button",{name:"保存行动",exact:true}).click();await expect(page.getByRole("alert").filter({hasText:"另一端"})).toBeVisible();await expect(page.getByLabel("行动名称",{exact:true})).toHaveValue("我的未保存草稿");
-  await page.locator(".module-navigation > summary").click();page.once("dialog",d=>d.dismiss());await page.getByRole("navigation",{name:"模块内导航"}).getByRole("link",{name:"定时任务",exact:true}).click();await expect(page.getByLabel("行动名称",{exact:true})).toHaveValue("我的未保存草稿");
+  await page.getByRole("button", { name: "打开本模块功能", exact: true }).click();page.once("dialog",d=>d.dismiss());await page.getByRole("navigation",{name:"模块内导航"}).getByRole("link",{name:"定时任务",exact:true}).click();await expect(page.getByLabel("行动名称",{exact:true})).toHaveValue("我的未保存草稿");
 });

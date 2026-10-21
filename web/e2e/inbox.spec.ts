@@ -87,7 +87,7 @@ test("renders and manages Agent task results on mobile", async ({ page }) => {
   await page.goto("/inbox");
   await expect(page.getByRole("heading", { name: "复习今日错题" })).toBeVisible();
   await expect(page.getByText("AI 定时任务", { exact: true })).toBeVisible();
-  await page.getByRole("article").filter({ has: page.getByRole("heading", { name: "复习今日错题", exact: true }) }).getByText("展开投递正文", { exact: true }).click();
+  await page.getByRole("article").filter({ has: page.getByRole("heading", { name: "复习今日错题", exact: true }) }).getByText("阅读正文", { exact: true }).click();
   await expect(page.getByRole("heading", { name: "AI 复习建议" })).toBeVisible();
   await expect(page.getByText("先回顾三道典型题")).toBeVisible();
 
@@ -101,7 +101,7 @@ test("renders and manages Agent task results on mobile", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "复习今日错题" })).toBeVisible();
 
   page.once("dialog", (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "删除" }).click();
+  await page.getByRole("button", { name: "删除" }).click(); await page.getByRole("dialog", { name: "删除这条消息？" }).getByRole("button", { name: "删除消息", exact: true }).click();
   await expect(page.getByText("这里暂时没有提醒")).toBeVisible();
 
   items = [

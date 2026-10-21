@@ -14,7 +14,7 @@ export function AppLink({ href, children, onClick, ...props }: AppLinkProps) {
     <a href={appHref(href)} {...props} onClick={(event) => {
       onClick?.(event);
       if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || props.target === "_blank" || !href.startsWith("/")) return;
-      if (!requestNavigationPermission()) event.preventDefault();
+      if (!requestNavigationPermission(undefined, href)) event.preventDefault();
     }}>
       {children}
     </a>

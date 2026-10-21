@@ -55,15 +55,17 @@ export function MobileApp() {
     if (!window.location.hash) window.history.replaceState(null, "", "#/chat");
     let previousHash = window.location.hash;
     const updateRoute = () => {
-      if (!requestNavigationPermission()) {
+      if (!requestNavigationPermission(undefined, window.location.hash.slice(1), true)) {
         window.history.replaceState(null, "", previousHash);
         return;
       }
       previousHash = window.location.hash;
       setRoute(currentRoute());
     };
+    const replaced = () => { previousHash = window.location.hash; };
+    window.addEventListener("companion:replace-route", replaced);
     window.addEventListener("hashchange", updateRoute);
-    return () => window.removeEventListener("hashchange", updateRoute);
+    return () => { window.removeEventListener("companion:replace-route", replaced); window.removeEventListener("hashchange", updateRoute); };
   }, []);
 
   const Page = ROUTES[route as AppRoute];

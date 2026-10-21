@@ -26,7 +26,7 @@ test("previews material import, submits explicit spelling mode, and edits with a
     material = { ...material!, units: [{ ...material!.units[0], content: input.units[0].content }] }; version++;
     return route.fulfill({ json: { data: { material, storageVersion: version } } });
   });
-  await page.route("**/api/v1/model/**", () => { throw new Error("Unexpected model request"); });
+  await page.route("**/api/v1/model/**", (route) => { if (route.request().method() === "GET" && new URL(route.request().url()).pathname === "/api/v1/model/usage") return route.fulfill({ json: { data: { calls: [], truncated: false } } }); throw new Error("Unexpected model generation request"); });
   await page.goto("/study/memorization");
   await page.getByText("从导出 JSON 预览导入", { exact: true }).click();
   await page.getByLabel("导入材料 JSON").fill(JSON.stringify({ format: "agent-web/memorization-v1", title: "English", sourceText: "Hello world", units: [{ cue: "问好", content: "Hello world" }] }));

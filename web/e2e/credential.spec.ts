@@ -87,7 +87,7 @@ test("tests, saves and deletes a write-only model credential", async ({
     .toBe(false);
 
   page.once("dialog", (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "删除凭据" }).click();
+  await page.getByRole("button", { name: "删除凭据" }).click(); await page.getByRole("dialog", { name: "删除模型配置？" }).getByRole("button", { name: "删除配置", exact: true }).click();
   await expect(page.getByText("服务端凭据已删除。")).toBeVisible();
   await expect(page.getByText("未配置")).toBeVisible();
 });

@@ -49,14 +49,14 @@ async function mockWorld(page: Page) {
     return route.fulfill({ json: { data: detail } });
   });
   await page.goto(path);
-  await page.getByRole("button", { name: "大世界探索 · 选择模板", exact: true }).click();
+  await page.getByText("切换旅程与创建", { exact: true }).click(); await page.getByRole("button", { name: "大世界探索 · 选择模板", exact: true }).click();
   const picker = page.getByRole("region", { name: "探索模板选择" });
   await expect(picker.getByRole("article", { name: "所选模板简介" })).toContainText("世界背景");
   await expect(picker).toContainText("自由行旅者");
   await expect(picker).not.toContainText("守望者盟约：");
   await page.getByLabel("探索模板", { exact: true }).selectOption("fog-harbor@1.0.0");
   expect(exists).toBe(false); // Reading/selecting an introduction must not create a session.
-  await page.getByRole("button", { name: "确认创建探索存档", exact: true }).click();
+  await page.getByRole("button", { name: "确认创建探索存档", exact: true }).click(); await page.getByRole("dialog", { name: "创建模板旅程？" }).getByRole("button", { name: "创建旅程", exact: true }).click();
   await page.getByRole("button", { name: "开启探索世界", exact: true }).click();
   await expect(page.getByRole("region", { name: "大世界探索工作区" })).toBeVisible();
   return { detail, state, modelCalls: () => modelCalls, rejectAI: (value: boolean) => { rejectAI = value; } };
@@ -71,16 +71,16 @@ for (const width of [360, 1440]) test(`complete exploration region, ending, hist
     if (action.action === "move" || action.action === "investigate") {
       await page.getByRole("tab", { name: "地图", exact: true }).click();
       const name = action.action === "move" ? game.state()!.view.locations.find((location) => location.id === action.targetId)!.name : game.state()!.view.locations.find((location) => location.id === game.state()!.locationId)!.points.find((point) => point.id === action.targetId)!.name;
-      await workspace.getByRole("button", { name: `${action.action === "move" ? "前往" : "调查"}${name}`, exact: true }).click();
+      await workspace.getByRole("button", { name: `${action.action === "move" ? "前往" : "了解"}${name}`, exact: true }).click();
     } else if (action.action === "choose") {
       await page.getByRole("tab", { name: "事件与史诗", exact: true }).click();
       const choice = game.state()!.view.events.find((event) => event.id === action.eventId)!.choices.find((item) => item.id === action.choiceId)!;
-      await workspace.getByRole("button", { name: choice.label, exact: true }).click();
+      await workspace.getByRole("button", { name: choice.label, exact: true }).click(); await page.getByRole("dialog", { name: "确认事件选择" }).getByRole("button", { name: "确认选择", exact: true }).click();
     } else if (["ask", "help", "negotiate", "promise"].includes(action.action) && "targetId" in action) {
       await page.getByRole("tab", { name: "人物", exact: true }).click();
       const person = game.state()!.characters[action.targetId];
       const label = action.action === "ask" ? person.topics.find((topic) => topic.id === action.topicId)!.label : action.action === "help" ? "提出协助" : action.action === "negotiate" ? "据理交涉" : "明确作出承诺";
-      await workspace.getByRole("button", { name: label, exact: true }).click();
+      await workspace.getByRole("button", { name: label, exact: true }).click(); if (action.action === "promise") await page.getByRole("dialog", { name: "确认故事承诺" }).getByRole("button", { name: "作出承诺", exact: true }).click();
     }
     await expect.poll(() => game.detail.turns.length).toBe(before + 1);
     await expect(workspace.getByRole("status")).toHaveText(game.state()!.lastResult);

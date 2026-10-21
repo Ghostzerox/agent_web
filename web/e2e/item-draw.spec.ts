@@ -1,3 +1,4 @@
+import { selectWorldSection, confirmNewJourney } from "./helpers/r12Navigation";
 import { expect, test } from "@playwright/test";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
@@ -44,20 +45,20 @@ for (const width of [360, 1440]) test(`configures published pools, recovers a sa
     });
     await page.setViewportSize({ width, height: 900 }); page.on("dialog", (dialog) => dialog.accept());
     const path = `/entertainment?view=creator&world=${world.id}`; await page.goto(mobile ? `/#${path}` : path);
-    await page.getByRole("link", { name: "卡池配置", exact: true }).click();
+    await selectWorldSection(page, "卡池配置");
     for (const source of ["固定", "生成"]) {
       await page.getByRole("button", { name: "添加卡池", exact: true }).click();
       await page.getByRole("textbox", { name: "卡池名称", exact: true }).fill(`${source}物资池`);
       await page.getByRole("button", { name: `添加${source}条目`, exact: true }).click();
       await page.getByRole("spinbutton", { name: "数量上限", exact: true }).fill("2"); await page.getByRole("spinbutton", { name: "数量下限", exact: true }).fill("2");
-      await expect(page.getByRole("button", { name: "确认保存卡池规则", exact: true })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "保存卡池", exact: true })).toBeDisabled();
       await page.getByLabel("我已审阅卡池的概率、数量、次数、放回、来源与虚构成本，确认保存").check();
-      await page.getByRole("button", { name: "确认保存卡池规则", exact: true }).click();
+      await page.getByRole("button", { name: "保存卡池", exact: true }).click();
       await expect(page.getByRole("status").filter({ hasText: "卡池已保存" })).toBeVisible();
     }
     await page.getByRole("link", { name: "前往预览与发布 →", exact: true }).click();
-    await page.getByLabel("我已审阅当前草稿、硬约束与公开 / 隐藏设定，确认发布本版本").check(); await page.getByRole("button", { name: "确认发布当前草稿", exact: true }).click();
-    await page.getByRole("button", { name: "以r1创建存档", exact: true }).click(); await page.getByRole("link", { name: "打开新存档并开启探索 →", exact: true }).click();
+    await page.getByLabel("我已审阅当前草稿、硬约束与公开 / 隐藏设定，确认发布本版本").check(); await page.getByRole("button", { name: "发布版本", exact: true }).click();
+    await confirmNewJourney(page); await page.getByRole("link", { name: "打开新旅程 →", exact: true }).click();
     await page.getByRole("button", { name: "开启探索世界", exact: true }).click();
     for (const source of ["固定", "生成"]) {
       await page.getByRole("link", { name: "获取 / 抽卡 →", exact: true }).click();
@@ -65,17 +66,17 @@ for (const width of [360, 1440]) test(`configures published pools, recovers a sa
       await expect(page.getByRole("main", { name: "存档获取工作区" })).toContainText("100.00%");
       if (source === "生成") await page.getByRole("textbox", { name: "补充关键词", exact: false }).fill("铜制紧固材料");
       await page.getByLabel("我确认1次抽取、当前规则与虚构成本；抽样本身不调用模型、不扣费发奖").check();
-      await page.getByRole("button", { name: "确认宿主抽样（不调用模型）", exact: true }).click();
+      await page.getByRole("button", { name: "抽取一次", exact: true }).click();
       await expect(page.getByRole("region", { name: "当前抽取回执" })).toContainText("已抽定数量 2");
       expect(modelCalls).toBe(0);
       await page.getByRole("link", { name: "本次回执的固定链接（刷新后可恢复） →", exact: true }).click(); await page.reload();
       await expect(page.getByRole("region", { name: "当前抽取回执" })).toContainText("已抽定数量 2");
       if (source === "生成") {
-        await page.getByRole("button", { name: "AI补全已抽定物品（可能费用）", exact: true }).click();
+        await page.getByRole("button", { name: "生成物品描述", exact: true }).click(); await page.getByRole("dialog", { name: "补全已抽定物品" }).getByRole("button", { name: "开始生成", exact: true }).click();
         await expect(page.getByRole("textbox", { name: "物品名称", exact: true })).toHaveValue("合成铜铆钉"); expect(modelCalls).toBe(1);
         if (width === 360 && !mobile) await page.getByRole("main", { name: "存档获取工作区" }).screenshot({ path: "test-results/item-draw-360.png" });
       }
-      await page.getByLabel("我已审阅物品及世界约束，确认入库并扣除 0 枚虚构钱币").check(); await page.getByRole("button", { name: "确认入库（不自动装备）", exact: true }).click();
+      await page.getByLabel("我已审阅物品及世界约束，确认入库并扣除 0 枚虚构钱币").check(); await page.getByRole("button", { name: "确认获得", exact: true }).click();
       await expect(page.getByRole("heading", { name: "已入库", exact: true })).toBeVisible();
       await page.getByRole("link", { name: "查看背包与新回合 →", exact: true }).click();
       await page.getByRole("tab", { name: "背包与装备", exact: true }).click();

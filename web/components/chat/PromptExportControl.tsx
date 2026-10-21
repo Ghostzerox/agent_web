@@ -76,9 +76,10 @@ export function PromptExportControl({ envelope }: PromptExportControlProps) {
         aria-label="导出 Prompt"
         className="rounded-xl border border-[var(--workspace-border)] px-3 py-2 text-xs font-medium text-[var(--workspace-muted)] hover:bg-[var(--workspace-active)] disabled:cursor-not-allowed disabled:opacity-40"
       >
-        <span className="sm:hidden" aria-hidden="true">↧</span><span className="hidden sm:inline">导出 Prompt</span>
+        <span>导出</span>
       </button>
 
+      {!envelope && <p className="mt-1 text-xs text-[var(--workspace-muted)]">发送消息后可导出本次Prompt。</p>}
       {open && envelope && (
         <Drawer variant="sheet" id="prompt-export-dialog" label="导出最近一次 Prompt" onClose={() => { if (!exporting) setOpen(false); }}>
           <section

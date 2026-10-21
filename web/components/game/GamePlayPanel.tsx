@@ -217,7 +217,7 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
     if (!busy && requestNavigationPermission()) setBranchSelection({ sessionId: detail.id, parentTurnId });
   };
   const openWorld = async () => {
-    if (busy || turns.length || !templateReference || !window.confirm(`开启「${templateTitle}」？地图、装备和事件由宿主验证，普通动作不调用 AI。`)) return;
+    if (busy || turns.length || !templateReference) return;
     setBusy(true); onError(null);
     try {
       const active = detail.status === "setup" ? await updateGameSessionStatus(detail.id, "active", detail.version) : detail;
@@ -235,7 +235,7 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
       {selectedState.exploration && parentTurnId && <AppLink className="inline-block rounded-lg border border-[var(--workspace-border)] px-3 py-2 text-sm text-violet-600" href={`/entertainment?view=draws&session=${detail.id}&parent=${parentTurnId}`}>获取 / 抽卡 →</AppLink>}
       {selectedState.exploration && parentTurnId && <AppLink className="inline-block rounded-lg border border-[var(--workspace-border)] px-3 py-2 text-sm text-violet-600" href={`/entertainment?view=events&session=${detail.id}&parent=${parentTurnId}`}>事件建议 / 创作 →</AppLink>}
       {selectedState.exploration ? <ExplorationPanel key={detail.id} state={selectedState.exploration} sessionId={detail.id} parentTurnId={parentTurnId} disabled={busy || detail.status !== "active"} run={runExploration} onError={onError} /> : !explorationPreset && <GameToolkitPanel toolkit={selectedState.toolkit} busy={busy} enabled={detail.status === "active"} onRun={runTool} onError={onError} />}
-      {explorationPreset && turns.length === 0 && ["setup", "active"].includes(detail.status) && <div className="rounded-xl border border-violet-200 p-4"><p className="mb-3 text-sm text-zinc-500">这份新存档尚未开启探索；不会生成收费的 AI 开场。</p><button disabled={busy} onClick={() => void openWorld()} className="rounded-lg bg-violet-700 px-4 py-2 text-sm text-white disabled:opacity-50">开启探索世界</button></div>}
+      {explorationPreset && turns.length === 0 && ["setup", "active"].includes(detail.status) && <div className="rounded-xl border border-violet-200 p-4"><p className="mb-3 text-sm text-zinc-500">这份新存档尚未开启探索；不会生成收费的 AI 开场。</p><button disabled={busy} onClick={() => void openWorld()} className="ui-button ui-button-primary">开启探索世界</button></div>}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold">剧情回合</h3>

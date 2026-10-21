@@ -5,7 +5,7 @@ import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import { getWorldDraft, saveWorldDraft, type WorldDraft } from "@/lib/api/gameWorldClient";
 import { drawPoolsSchema, type DrawEntry, type DrawPool } from "@/lib/game/draws/contracts";
 import { drawPoolIssues } from "@/lib/game/draws/pools";
-import { worldButtonClass as button, worldFieldClass as field } from "./WorldSectionEditor";
+import { buttonClass as button, fieldClass as field } from "@/components/ui/Actions";
 
 export function DrawPoolWorkspace({ worldId }: { worldId: string }) {
   const [world, setWorld] = useState<WorldDraft | null>(null); const [pools, setPools] = useState<DrawPool[]>([]); const [baseline, setBaseline] = useState("[]");
@@ -56,7 +56,7 @@ export function DrawPoolWorkspace({ worldId }: { worldId: string }) {
       </section>}
       {issues.length > 0 && <div role="alert" className="text-sm text-red-600">{issues.map((issue) => <p key={issue}>{issue}</p>)}</div>}
       <label className="block text-sm"><input type="checkbox" checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} /> 我已审阅卡池的概率、数量、次数、放回、来源与虚构成本，确认保存</label>
-      <button className={button} disabled={!dirty || !reviewed || issues.length > 0} onClick={() => { setBusy(true); setError(""); void saveWorldDraft({ ...world, content: { ...content, drawPools: drawPoolsSchema.parse(pools) } }, true).then((row) => { setWorld(row); setBaseline(JSON.stringify(row.content?.drawPools ?? [])); setReviewed(false); setNotice("卡池已保存到世界草稿；请发布新修订并创建新存档，旧局不变。"); }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "保存失败")).finally(() => setBusy(false)); }}>确认保存卡池规则</button>
+      <button className={`${button} ui-button-primary`} disabled={!dirty || !reviewed || issues.length > 0} onClick={() => { setBusy(true); setError(""); void saveWorldDraft({ ...world, content: { ...content, drawPools: drawPoolsSchema.parse(pools) } }, true).then((row) => { setWorld(row); setBaseline(JSON.stringify(row.content?.drawPools ?? [])); setReviewed(false); setNotice("卡池已保存到世界草稿；请发布新修订并创建新存档，旧局不变。"); }).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : "保存失败")).finally(() => setBusy(false)); }}>保存卡池</button><p className="text-xs text-[var(--workspace-muted)]">{!reviewed ? "请先勾选规则审阅确认。" : issues.length ? "先修正上方检查问题。" : "保存到世界草稿；发布并开始新旅程后生效。"}</p>
       <AppLink className="block text-sm text-violet-600" href={`/entertainment?view=creator&world=${worldId}&section=preview`}>前往预览与发布 →</AppLink>
     </fieldset>}
   </main>;

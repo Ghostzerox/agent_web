@@ -129,7 +129,7 @@ test("manages an Agent task and creates a personal briefing on mobile", async ({
   await expect(page.getByText("已暂停", { exact: true }).first()).toBeVisible();
 
   page.once("dialog", (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "删除" }).click();
+  await page.getByRole("button", { name: "删除" }).click(); await page.getByRole("dialog", { name: "删除定时任务？" }).getByRole("button", { name: "删除任务", exact: true }).click();
   await expect(page.getByText("还没有任务")).toBeVisible();
 
   await page.getByLabel("任务类型").selectOption("personal_briefing");

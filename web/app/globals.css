@@ -1,12 +1,10 @@
 @import "tailwindcss";
 
 .module-directory { max-width: 64rem; margin-inline: auto; display: grid; gap: 1.5rem; }
-.module-intro { padding: clamp(1.25rem, 4vw, 2rem); border: 1px solid var(--workspace-border); border-radius: 1.25rem; background: var(--workspace-active); }
+.module-intro { padding-block: .5rem; }
 .module-card { display: block; min-width: 0; border: 1px solid var(--workspace-border); border-radius: 1rem; padding: 1.5rem; background: var(--workspace-surface); transition: border-color 150ms; }
 .module-card:hover { border-color: #059669; }
-.module-navigation { flex-shrink: 0; border-bottom: 1px solid var(--workspace-border); background: var(--workspace-surface); }
-.module-navigation > summary { padding: .65rem clamp(.75rem, 2vw, 1.5rem); }
-.module-navigation > summary, .module-disclosure > summary { min-height: 44px; cursor: pointer; font-size: .875rem; font-weight: 600; }
+.module-disclosure > summary { min-height: 44px; cursor: pointer; font-size: .875rem; font-weight: 600; }
 .module-local-link { display: inline-flex; align-items: center; min-height: 44px; border: 1px solid var(--workspace-border); border-radius: .75rem; padding: .5rem 1rem; font-size: .875rem; }
 .module-local-link:hover, .module-local-link[aria-current="page"] { background: var(--workspace-active); color: var(--workspace-accent); }
 .module-disclosure { border: 1px solid var(--workspace-border); border-radius: 1rem; padding: .5rem 1rem; background: var(--workspace-surface); }
@@ -52,6 +50,37 @@ body {
 .workspace :where(button, a) { touch-action: manipulation; }
 .workspace :where(button:not(:disabled), summary, select) { cursor: pointer; }
 .workspace :where(button:disabled) { cursor: not-allowed; }
+.ui-button { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 44px; padding: .6rem 1rem; border: 1px solid var(--workspace-border); border-radius: 10px; background: var(--workspace-surface); color: var(--workspace-ink); font-size: .875rem; font-weight: 550; line-height: 1.4; text-align: center; transition: background 140ms, border-color 140ms; }
+.ui-button:hover:not(:disabled) { background: var(--workspace-active); border-color: var(--workspace-accent); }
+.ui-button:disabled { opacity: .45; }
+.ui-button-primary { background: #276653; border-color: #276653; color: white; }
+.ui-button-primary:hover:not(:disabled) { background: #1e5142; color: white; }
+.ui-button-quiet { border-color: transparent; background: transparent; color: var(--workspace-muted); }
+.ui-button-danger { color: #b42332; border-color: #e6b8bd; }
+.ui-field { margin-top: .4rem; width: 100%; min-width: 0; border: 1px solid var(--workspace-border); border-radius: 10px; background: var(--workspace-surface); color: var(--workspace-ink); padding: .7rem .8rem; font-size: .9375rem; line-height: 1.6; }
+.ui-confirm { padding: 24px; }
+.ui-confirm h2 { font-size: 1.25rem; font-weight: 650; }
+.ui-confirm-description { margin-block: 16px 24px; font-size: .9rem; line-height: 1.8; overflow-wrap: anywhere; color: var(--workspace-muted); }
+.ui-confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.ui-feedback { padding: .85rem 1rem; border-radius: 10px; background: var(--workspace-active); font-size: .875rem; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ui-feedback-error { background: #fff1f0; color: #a51f2c; }
+@media (prefers-color-scheme: dark) { .ui-feedback-error { background: #402222; color: #ffb4b4; } .ui-button-danger { color: #ffb4b4; border-color: #86515a; } }
+.ui-actionbar { position: sticky; bottom: 0; z-index: 10; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0 max(12px, env(safe-area-inset-bottom)); border-top: 1px solid var(--workspace-border); background: var(--workspace-bg); }
+.ui-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.ui-tabs :where(a, button) { display: inline-flex; align-items: center; min-height: 44px; padding: .6rem .85rem; border-radius: 10px; font-size: .875rem; color: var(--workspace-muted); }
+.ui-tabs :where([aria-current="page"], [aria-pressed="true"]) { background: var(--workspace-active); color: var(--workspace-accent); font-weight: 600; }
+.ui-kicker { font-size: .75rem; color: var(--workspace-muted); letter-spacing: .06em; }
+.ui-panel { min-width: 0; border: 1px solid var(--workspace-border); border-radius: 16px; background: var(--workspace-surface); padding: clamp(16px, 3vw, 28px); }
+.ui-more { position: relative; }
+.ui-more > summary { list-style: none; }
+.ui-more[open] > div { position: absolute; right: 0; z-index: 25; min-width: 200px; padding: 8px; border: 1px solid var(--workspace-border); border-radius: 12px; background: var(--workspace-surface); box-shadow: 0 8px 30px #0001; }
+.ui-more[open] > div > :where(button,a) { display: flex; width: 100%; justify-content: flex-start; }
+.module-nav-panel { padding: 20px; }
+.module-nav-panel h2 { margin-bottom: 12px; font-size: 1.1rem; font-weight: 650; }
+.module-nav-panel a { display: block; padding: 12px; border-radius: 10px; }
+.module-nav-panel a[aria-current="page"] { background: var(--workspace-active); color: var(--workspace-accent); }
+.usage-compact { flex-shrink: 0; padding: 4px 24px; border-bottom: 1px solid var(--workspace-border); font-size: .75rem; }
+.usage-compact > button { text-align: left; color: var(--workspace-muted); }
 .workspace :where(input[type="checkbox"], input[type="radio"]) { width: 18px; height: 18px; flex-shrink: 0; }
 .workspace :where(label:has(input[type="checkbox"]), label:has(input[type="radio"])) { min-height: 44px; }
 .workspace-sidebar { display: none; }
@@ -107,12 +136,15 @@ body {
 @media (max-width: 639px) {
   .workspace-header { padding: 8px 12px; min-height: 68px; gap: 8px; }
   .workspace-heading h1 { font-size: 16px; }
-  .workspace-heading p { font-size: 11px; }
+  .workspace-heading p { display: none; }
   .workspace-page-content { padding: 20px 12px 32px; }
   .workspace-page-content :where(input, textarea, select) { font-size: 16px; }
   .workspace-chat .workspace-header { gap: 4px; padding-inline: 8px; }
   .workspace-chat .workspace-heading h1 { font-size: 13px; }
   .workspace-chat .workspace-actions { gap: 4px; }
+  .usage-compact { padding-inline: 12px; }
+  .ui-field { font-size: 16px; }
+  .ui-actionbar { gap: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .workspace * { scroll-behavior: auto !important; transition-duration: 0s !important; } }
 

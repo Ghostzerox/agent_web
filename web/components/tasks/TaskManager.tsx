@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useConfirmAction } from "@/components/ui/Actions";
 import { TaskEditor } from "./TaskEditor";
 import { TaskNotificationStatus, useTaskNotifications } from "./TaskLocalNotifications";
 import { EMPTY_FORM, formFromTask, inputFromForm, scheduleFromTask, friendlyError, taskKindLabel, scheduleLabel, nextRunLabel, type FormState } from "./taskForm";
@@ -16,6 +17,7 @@ import { currentAppSearchParams } from "@/lib/platform/appNavigation";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 
 export function TaskManager() {
+  const { confirm, confirmation } = useConfirmAction();
   const [tasks, setTasks] = useState<TaskRecord[]>([]);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -131,7 +133,7 @@ export function TaskManager() {
   };
 
   const removeTask = async (task: TaskRecord) => {
-    if (!window.confirm(`确定删除“${task.title}”吗？`)) return;
+    if (!await confirm({ title: "删除定时任务？", description: `将删除「${task.title}」，不再安排后续提醒；原投递与行动记录不因此标为完成。`, confirmLabel: "删除任务", danger: true })) return;
     setBusyId(task.id);
     setError(null);
     try {
@@ -146,7 +148,7 @@ export function TaskManager() {
   };
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
+    <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">{confirmation}
       <TaskEditor form={form} setForm={setForm} tasks={tasks} editingId={editingId} submitting={submitting} submit={submit} resetEditor={resetEditor}>
         <TaskNotificationStatus {...notificationControl} tasks={tasks} />
       </TaskEditor>

@@ -3,7 +3,7 @@ const mobile = process.env.R8_MOBILE_BUNDLE === "true";
 const path = (url: string) => mobile ? `/#${url}` : url;
 const id = "00000000-0000-4000-8000-000000000001";
 async function local(page: Page, label: string) {
-  await page.locator(".module-navigation > summary").click();
+  await page.getByRole("button", { name: "打开本模块功能", exact: true }).click();
   await page.getByRole("navigation", { name: "模块内导航" }).getByRole("link", { name: label, exact: true }).click();
 }
 
@@ -16,18 +16,20 @@ for (const width of [360, 1440]) test(`module directories and independent child 
   });
   for (const url of ["/settings", "/content", "/tasks", "/entertainment", "/study"]) {
     await page.goto(path(url)); await expect(page.locator("h1")).toBeVisible();
-    await expect(page.locator("input,textarea")).toHaveCount(0);
+    if (url !== "/tasks") await expect(page.locator("input,textarea")).toHaveCount(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     if (url === "/settings" || url === "/tasks") await page.screenshot({ path: `test-results-r8-visual/${mobile ? "react" : "web"}-${url.slice(1)}-${width}.png`, fullPage: true });
   }
-  expect(reads.filter((url) => !url.endsWith("/health"))).toEqual([]);
+  expect(reads.filter((url) => !["/api/v1/health", "/api/v1/actions", "/api/v1/inbox"].includes(url))).toEqual([]);
   await page.goto(path("/tasks")); await page.getByRole("link", { name: "行动与待办", exact: true }).click();
   await page.getByLabel("行动名称", { exact: true }).fill("不能丢失的草稿");
-  await page.locator(".module-navigation > summary").click(); page.once("dialog", (dialog) => dialog.dismiss());
+  await page.getByRole("button", { name: "打开本模块功能", exact: true }).click(); page.once("dialog", (dialog) => dialog.dismiss());
   await page.getByRole("navigation", { name: "模块内导航" }).getByRole("link", { name: "习惯打卡", exact: true }).click();
   await expect(page.getByLabel("行动名称", { exact: true })).toHaveValue("不能丢失的草稿");
-  page.once("dialog", (dialog) => dialog.accept()); await page.getByRole("navigation", { name: "模块内导航" }).getByRole("link", { name: "习惯打卡", exact: true }).click();
+  await page.getByRole("button", { name: "打开本模块功能", exact: true }).click(); page.once("dialog", (dialog) => dialog.accept()); await page.getByRole("navigation", { name: "模块内导航" }).getByRole("link", { name: "习惯打卡", exact: true }).click();
   await expect(page.getByLabel("行动名称", { exact: true })).toHaveCount(0);
+  await expect(page).toHaveURL(/section=habits$/);
+  await expect(page.getByRole("button", { name: "刷新行动记录", exact: true })).toBeVisible();
   await local(page, "任务首页"); await expect(page.getByRole("link", { name: "行动与待办", exact: true })).toBeVisible();
   await page.goto(path("/memory?view=knowledge&palace=learning")); await expect(page.getByRole("alert").filter({ hasText: "记忆链接参数" })).toContainText("参数无效或冲突");
   await expect(page.getByRole("region", { name: "知识资料库" })).toHaveCount(0);

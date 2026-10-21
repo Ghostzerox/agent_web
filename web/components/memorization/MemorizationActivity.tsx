@@ -249,7 +249,7 @@ export function MemorizationActivity() {
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <aside className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-        <details open><summary className="mb-3 min-h-11 cursor-pointer py-2 text-sm font-semibold">材料列表与导入</summary>
+        <details><summary className="mb-2 min-h-11 cursor-pointer py-2 text-sm font-semibold">切换材料与导入</summary>
         <AppLink href="/study/memory-palaces" className="block text-xs text-blue-600 underline">记忆宫殿：关联单元、位置联想与路线抽测</AppLink>
         <div className="flex items-center justify-between gap-3">
           <div><p className="text-xs text-zinc-500">已导入材料</p><h2 className="font-semibold">复习库</h2></div>
@@ -273,13 +273,13 @@ export function MemorizationActivity() {
 
         {!active ? (
           <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
-            <p className="text-xs font-medium uppercase tracking-wider text-blue-600">材料 → 校对 → 复述</p>
+            <p className="ui-kicker">1 导入材料 → 2 校对单元 → 3 复述与反馈</p>
             <h2 className="mt-2 text-xl font-semibold">{editingId ? "编辑背书材料" : "导入背书材料"}</h2>
             {!editingId && <details className="mt-3 text-sm"><summary className="cursor-pointer">从导出 JSON 预览导入</summary><textarea aria-label="导入材料 JSON" value={transferText} onChange={(event) => setTransferText(event.target.value)} maxLength={100000} rows={4} className="mt-2 w-full rounded-lg border bg-transparent p-2" /><button type="button" className="min-h-11 underline" onClick={() => { try { const imported = materialTransferSchema.parse(JSON.parse(transferText)); setTitle(imported.title); setSourceText(imported.sourceText); setDraftUnits(imported.units); setNotice(`已预览 ${imported.units.length} 个单元，确认后创建新材料，不覆盖原记录${materials.some((item) => item.title === imported.title) ? "；存在同名材料，请检查是否重复" : ""}。`); } catch { setError("导入格式或大小不符合材料契约，请检查导出的 JSON。"); } }}>校验并预览，不保存</button></details>}
             <p className="mt-1 text-sm leading-6 text-zinc-500">自动分段只提供草稿；保存前你可以修改提示和原文，避免模型或算法替你决定知识边界。</p>
             <label className="mt-5 block text-sm font-medium">材料标题<input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} className="mt-2 w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 outline-none focus:border-blue-500 dark:border-zinc-700" placeholder="例如：中国近代史第三章" /></label>
             <label className="mt-4 block text-sm font-medium">原始材料<textarea value={sourceText} onChange={(event) => setSourceText(event.target.value)} maxLength={6000} rows={9} className="mt-2 w-full resize-y rounded-xl border border-zinc-300 bg-transparent px-3 py-2.5 leading-6 outline-none focus:border-blue-500 dark:border-zinc-700" placeholder="粘贴需要背诵的内容；空行会优先作为单元边界。" /></label>
-            <button type="button" onClick={prepareUnits} className="mt-4 rounded-xl bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-950">生成可校对单元</button>
+            <p className="mt-2 text-xs text-[var(--workspace-muted)]">本地拆分不调用AI。语义评分会使用模型，逐字检查不调用模型。</p><button type="button" onClick={prepareUnits} className="ui-button mt-4">生成可校对单元</button>
             {draftUnits.length > 0 && (
               <div className="mt-6 space-y-3 border-t border-zinc-200 pt-5 dark:border-zinc-800">
                 <div><h3 className="font-semibold">保存前校对（{draftUnits.length} 个单元）</h3><p className="mt-1 text-xs text-zinc-500">提示只在复习时显示；目标原文会在提交复述后揭示。</p></div>
@@ -289,7 +289,7 @@ export function MemorizationActivity() {
                     <label className="mt-3 block text-xs font-medium text-zinc-500">目标原文<textarea value={unit.content} onChange={(event) => setDraftUnits((items) => items.map((item, itemIndex) => itemIndex === index ? { ...item, content: event.target.value } : item))} rows={3} className="mt-1 w-full rounded-lg border border-zinc-300 bg-transparent px-3 py-2 text-sm leading-6 dark:border-zinc-700" /></label>
                   </article>
                 ))}
-                <button type="button" disabled={busy || !title.trim()} onClick={() => void saveMaterial()} className="w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white disabled:opacity-45">{busy ? "保存中…" : "确认单元并开始复习"}</button>
+                <button type="button" disabled={busy || !title.trim()} onClick={() => void saveMaterial()} className="ui-button ui-button-primary w-full">{busy ? "保存中…" : "确认单元并开始复习"}</button>
               </div>
             )}
           </section>
@@ -304,7 +304,7 @@ export function MemorizationActivity() {
             {recallPlan.length > 0 && <p className="mt-2 text-xs text-zinc-500">本轮 {recallPlan.findIndex((item) => item.unitId === currentUnit.id) + 1}/{recallPlan.length}：{recallPlan.find((item) => item.unitId === currentUnit.id)?.reason}。开始时材料版本 {recallVersion}，seed={roundSeed}。</p>}
             <fieldset className="mt-4 space-y-2 text-sm" disabled={busy || Boolean(result)}><legend>评价方式</legend><select aria-label="评价方式" value={reviewMode} onChange={(event) => setReviewMode(event.target.value as "semantic" | "verbatim")} className="min-h-11 rounded-lg border bg-transparent px-2"><option value="semantic">语义复述（允许改写）</option><option value="verbatim">逐字默写（代码检查，不调用 AI）</option></select>{reviewMode === "verbatim" && <div className="flex flex-wrap gap-4">{[["忽略大小写", ignoreCase, setIgnoreCase], ["忽略标点", ignorePunctuation, setIgnorePunctuation], ["忽略空白", ignoreWhitespace, setIgnoreWhitespace]].map(([label, checked, setter]) => <label key={String(label)}><input type="checkbox" checked={Boolean(checked)} onChange={(event) => (setter as (value: boolean) => void)(event.target.checked)} /> {String(label)}</label>)}</div>}</fieldset>
             <label className="mt-5 block text-sm font-medium">请凭记忆复述<textarea value={recitation} onChange={(event) => setRecitation(event.target.value)} disabled={Boolean(result)} rows={7} maxLength={4000} className="mt-2 w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-3 leading-7 outline-none focus:border-blue-500 disabled:opacity-70 dark:border-zinc-700" placeholder="不必逐字一致，但请覆盖关键事实和逻辑关系。" /></label>
-            {!result && <button type="button" disabled={busy || !recitation.trim()} onClick={() => void submitReview()} className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white disabled:opacity-45">{busy ? "评分中…" : "提交复述并评分"}</button>}
+            {!result && <button type="button" disabled={busy || !recitation.trim()} onClick={() => void submitReview()} className="ui-button ui-button-primary mt-4 w-full">{busy ? "评分中…" : "提交复述并评分"}</button>}
 
             {result && (
               <div className="mt-5 space-y-4">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useConfirmAction } from "@/components/ui/Actions";
 import { ModelUsagePanel } from "./ModelUsagePanel";
 import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import {
@@ -16,6 +17,7 @@ function messageFrom(error: unknown): string {
 }
 
 export function ModelCredentialSettings() {
+  const { confirm, confirmation } = useConfirmAction();
   const [status, setStatus] = useState<ModelCredentialStatus | null>(null);
   const [provider, setProvider] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
@@ -116,7 +118,7 @@ export function ModelCredentialSettings() {
   }
 
   async function handleDelete() {
-    if (!window.confirm("删除服务端保存的模型凭据？此操作不会删除对话。")) {
+    if (!await confirm({ title: "删除模型配置？", description: "将移除保存的凭据，之后AI请求不可用，直到重新配置。已有对话不会删除。", confirmLabel: "删除配置", danger: true })) {
       return;
     }
     setOperation("delete");
@@ -148,16 +150,12 @@ export function ModelCredentialSettings() {
         : "border-red-200 bg-red-50 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-300";
 
   return (
-    <div className="w-full max-w-xl space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="mx-auto w-full max-w-2xl space-y-6 ui-panel">{confirmation}
       <div>
         <h2 className="text-base font-semibold text-zinc-950 dark:text-zinc-50">
-          模型凭据
+          模型连接
         </h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-          Key 仅在保存或测试时通过当前站点发送给服务端。保存后使用
-          AES-256-GCM 加密，不写入浏览器存储，也不会从服务端完整返回。
-          Provider、Base URL 和 Model 不加密，便于读取和修改。
-        </p>
+<p className="mt-2 text-sm text-[var(--workspace-muted)]">填写服务地址、模型和Key，保存后用于各模式。测试连接不会保存修改。</p><details className="mt-2 text-sm"><summary>凭据如何保存？</summary><p>Key在服务端加密，不写入浏览器存储，不完整返回。Provider、Base URL和Model按要求明文保存。</p></details>
       </div>
 
       <section className="space-y-3 rounded-lg border border-zinc-200 p-4 text-sm dark:border-zinc-800">
@@ -196,7 +194,7 @@ export function ModelCredentialSettings() {
           )}
       </section>
 
-      <form className="space-y-4" onSubmit={handleSave}>
+      <form className="space-y-4" onSubmit={handleSave}><fieldset disabled={loading || busy} className="space-y-4">
         <label className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">
           Provider
           <input
@@ -274,11 +272,12 @@ export function ModelCredentialSettings() {
         </label>
 
         {feedback && (
-          <p role="status" className={`rounded-lg border px-3 py-2 text-sm ${feedbackClass}`}>
+          <p role={feedback.kind === "error" ? "alert" : "status"} className={`rounded-lg border px-3 py-2 text-sm ${feedbackClass}`}>
             {feedback.message}
           </p>
         )}
 
+        {!canSubmit && <p className="text-xs text-[var(--workspace-muted)]">请填写Provider、有效Base URL、Model和至少8位Key，再保存或测试。</p>}
         <div className="flex flex-wrap gap-3">
           <button
             type="button"
@@ -291,7 +290,7 @@ export function ModelCredentialSettings() {
           <button
             type="submit"
             disabled={busy || !canSubmit}
-            className="rounded-lg bg-zinc-950 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-white"
+            className="ui-button ui-button-primary"
           >
             {operation === "save" ? "保存中…" : "保存配置"}
           </button>
@@ -306,7 +305,7 @@ export function ModelCredentialSettings() {
             </button>
           )}
         </div>
-      </form>
+      </fieldset></form>
 
       <ModelUsagePanel />
 

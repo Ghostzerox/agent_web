@@ -1,0 +1,30 @@
+.workspace { max-width: 1120px; margin-inline: auto; display: grid; gap: 20px; }
+.heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.heading h2 { font-size: clamp(24px, 3vw, 30px); font-weight: 650; letter-spacing: -.03em; }
+.heading p { color: var(--workspace-muted); font-size: .875rem; margin-top: 6px; }
+.body { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 28px; align-items: start; }
+.navigation { min-width: 0; }
+.desktopIndex { display: grid; gap: 6px; position: sticky; top: 96px; }
+.desktopIndex summary { padding: 12px 8px; font-size: .85rem; font-weight: 600; cursor: pointer; }
+.desktopIndex details > div { display: grid; gap: 2px; padding-bottom: 8px; }
+.desktopIndex a { display: flex; align-items: center; min-height: 44px; padding: 8px 12px; border-radius: 9px; font-size: .8rem; color: var(--workspace-muted); }
+.desktopIndex a[aria-current="page"] { color: var(--workspace-accent); background: var(--workspace-active); font-weight: 600; }
+.mobileIndex { display: none; }
+.editor { min-width: 0; display: grid; gap: 20px; }
+.steps { display: flex; gap: 14px; font-size: .75rem; color: var(--workspace-muted); }
+.steps [aria-current="step"] { color: var(--workspace-accent); font-weight: 650; }
+.panel { min-width: 0; padding: clamp(18px, 3vw, 28px); background: var(--workspace-surface); border: 1px solid var(--workspace-border); border-radius: 16px; }
+.panel h3 { font-size: 1.1rem; font-weight: 650; }
+.panel label { line-height: 1.7; }
+.generation { display: grid; gap: 12px; padding-top: 20px; border-top: 1px solid var(--workspace-border); }
+.generation > div { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.generation select { width: auto; max-width: 100%; }
+.metadata { color: var(--workspace-muted); font-size: .75rem; }
+@media (max-width: 767px) {
+  .workspace { gap: 16px; }
+  .body { display: block; }
+  .desktopIndex { display: none; }
+  .mobileIndex { display: block; font-size: .75rem; color: var(--workspace-muted); margin-bottom: 16px; }
+  .mobileIndex select { margin-top: 4px; }
+  .steps { gap: 8px; font-size: .7rem; }
+}

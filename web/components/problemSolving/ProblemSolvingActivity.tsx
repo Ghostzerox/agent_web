@@ -288,7 +288,7 @@ export function ProblemSolvingActivity() {
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-5 lg:grid-cols-[18rem_minmax(0,1fr)]">
       <aside className="space-y-3 rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
-        <details open><summary className="mb-3 min-h-11 cursor-pointer py-2 text-sm font-semibold">题目列表与录入</summary>
+        <details><summary className="mb-2 min-h-11 cursor-pointer py-2 text-sm font-semibold">切换题目与录入</summary>
         <div className="flex items-center justify-between gap-3">
           <div><p className="text-xs text-zinc-500">错题与练习</p><h2 className="font-semibold">题目记录</h2></div>
           <button type="button" onClick={resetForNew} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white">新题</button>
@@ -318,7 +318,7 @@ export function ProblemSolvingActivity() {
             <label className="mt-4 block text-sm font-medium">题目文字（有图片时可不填）<textarea value={problemText} onChange={(event) => setProblemText(event.target.value)} rows={8} maxLength={8000} className="mt-2 w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-3 leading-7 dark:border-zinc-700" placeholder="粘贴题干、选项和已知条件。" /></label>
             <label className="mt-4 block text-sm font-medium">题目图片<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void chooseImage(event.target.files?.[0])} className="mt-2 block w-full text-sm text-zinc-500 file:mr-3 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-3 file:py-2 dark:file:bg-zinc-900" /></label>
             {image && <p className="mt-2 text-xs text-zinc-500">已处理：{image.name} · {(image.byteSize / 1024).toFixed(0)} KB</p>}
-            <button type="button" disabled={busy || !title.trim() || (!problemText.trim() && !image)} onClick={() => void saveCase()} className="mt-5 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white disabled:opacity-45">{busy ? "处理中…" : "保存并选择解题方式"}</button>
+            <button type="button" disabled={busy || !title.trim() || (!problemText.trim() && !image)} onClick={() => void saveCase()} className="ui-button ui-button-primary mt-5 w-full">{busy ? "处理中…" : "保存并选择解题方式"}</button>
           </section>
         ) : (
           <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
@@ -329,8 +329,8 @@ export function ProblemSolvingActivity() {
             <div className="mt-4 rounded-xl bg-zinc-50 p-4 text-sm leading-7 dark:bg-zinc-900">{active.normalizedProblem || active.problemText || "题目来自图片，首次请求时需要重新选择原图片。"}</div>
             {active.image && !active.normalizedProblem && !image && <label className="mt-3 block rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">重新选择题目图片<input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => void chooseImage(event.target.files?.[0])} className="mt-2 block w-full text-xs" /></label>}
 
-            <div className="mt-5 grid gap-2 sm:grid-cols-2">
-              {STRATEGIES.map((item) => <button key={item.id} type="button" onClick={() => setStrategy(item.id)} className={`rounded-xl border p-3 text-left ${strategy === item.id ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-zinc-200 dark:border-zinc-800"}`}><span className="block text-sm font-medium">{item.label}</span><span className="mt-1 block text-xs text-zinc-500">{item.detail}</span></button>)}
+            <p className="mt-4 text-sm text-[var(--workspace-muted)]">先选你需要的帮助，再提交；选择策略本身不会调用AI。</p><div className="mt-3 grid gap-2 sm:grid-cols-2" role="group" aria-label="解题帮助方式">
+              {STRATEGIES.map((item) => <button key={item.id} type="button" aria-pressed={strategy === item.id} onClick={() => setStrategy(item.id)} className={`rounded-xl border p-3 text-left ${strategy === item.id ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-zinc-200 dark:border-zinc-800"}`}><span className="block text-sm font-medium">{item.label}</span><span className="mt-1 block text-xs text-zinc-500">{item.detail}</span></button>)}
             </div>
             <label className="mt-4 block text-sm font-medium">你的答案或当前思路{strategy === "check" ? "（必填）" : "（可选）"}<textarea value={userAnswer} onChange={(event) => setUserAnswer(event.target.value)} rows={5} maxLength={6000} className="mt-2 w-full rounded-xl border border-zinc-300 bg-transparent px-3 py-3 leading-7 dark:border-zinc-700" placeholder={strategy === "check" ? "写下答案和推理过程，再让 AI 检查。" : "写下你已经想到的部分，AI 会从这里继续。"} /></label>
             <button type="button" disabled={busy || (strategy === "check" && !userAnswer.trim()) || Boolean(active.image && !active.normalizedProblem && !image)} onClick={() => void runStrategy()} className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white disabled:opacity-45">{busy ? "正在分析…" : selectedStrategy.label}</button>

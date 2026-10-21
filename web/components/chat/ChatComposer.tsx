@@ -29,7 +29,7 @@ export function ChatComposer({
 
   return (
     <footer className="shrink-0 border-t border-[var(--workspace-border)] bg-[var(--workspace-surface)] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 sm:px-6 sm:pt-3">
-      <div className="mx-auto mb-2 flex max-w-2xl items-center gap-1" aria-label="联网搜索模式">
+      <div className="mx-auto mb-2 flex max-w-2xl items-center gap-1" aria-label="联网搜索模式"><span className="mr-2 text-xs text-[var(--workspace-muted)]">搜索</span>
         {([
           ["auto", "自动"],
           ["on", "联网"],
@@ -75,7 +75,7 @@ export function ChatComposer({
             type="button"
             onClick={onSend}
             disabled={!value.trim()}
-            className="self-end shrink-0 rounded-xl bg-emerald-700 px-4 py-3 text-sm font-medium text-white hover:bg-emerald-800 disabled:opacity-40 sm:px-5"
+            className="ui-button ui-button-primary self-end shrink-0"
           >
             发送
           </button>

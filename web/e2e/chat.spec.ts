@@ -244,7 +244,7 @@ test("chat session lifecycle survives reloads", async ({ page }) => {
   ).toBeHidden();
 
   page.once("dialog", (dialog) => dialog.accept());
-  await page.getByTitle("删除对话").click({ force: true });
+  await page.getByTitle("删除对话").click({ force: true }); await page.getByRole("dialog", { name: "删除这个对话？" }).getByRole("button", { name: "删除对话", exact: true }).click();
   await expect(page.getByText("暂无对话，点击上方按钮开始")).toBeVisible();
 
   await page.reload();
@@ -279,7 +279,7 @@ for (const action of ["stop", "delete"] as const) test(`a late reply cannot be s
     await expect(page.getByRole("button", { name: "发送", exact: true })).toBeVisible();
   } else {
     page.once("dialog", (dialog) => dialog.accept());
-    await page.getByTitle("删除对话").click({ force: true });
+    await page.getByTitle("删除对话").click({ force: true }); await page.getByRole("dialog", { name: "删除这个对话？" }).getByRole("button", { name: "删除对话", exact: true }).click();
     await expect(page.getByText("暂无对话，点击上方按钮开始")).toBeVisible();
   }
   await release();
@@ -451,6 +451,7 @@ test("exports the exact latest model Prompt as JSON", async ({ page }) => {
 
   await page.goto("/chat");
   await page.getByRole("button", { name: "+ 新建对话" }).click();
+  await page.getByText("本次对话的资料与上下文", { exact: true }).click();
   const exportButton = page.getByRole("button", { name: "导出 Prompt" });
   await expect(exportButton).toBeDisabled();
 

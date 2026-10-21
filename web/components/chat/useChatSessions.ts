@@ -1,4 +1,5 @@
 "use client";
+import { useConfirmAction } from "@/components/ui/Actions";
 import { useEffect, useState } from "react";
 import { currentAppSearchParams } from "@/lib/platform/appNavigation";
 import type { CoreModeId } from "@/lib/agent/modeRegistry";
@@ -7,6 +8,7 @@ import { getActiveMessages, switchAssistantVersion } from "@/lib/conversation/tr
 import type { ChatMessage } from "@/lib/ai/messages";
 
 export function useChatSessions(runningSessionIds: Set<string>, cancelRun: (id: string) => void, setError: (message: string | null) => void) {
+  const { confirm, confirmation: deleteConfirmation } = useConfirmAction();
   const [sessions, setSessions] = useState<ServerSession[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -67,7 +69,7 @@ export function useChatSessions(runningSessionIds: Set<string>, cancelRun: (id: 
   };
 
   const handleDeleteSession = async (id: string) => {
-    if (!window.confirm("确定要删除这个对话吗？已确认记忆独立保留，但来源证据副本会清除。若要连同关联记忆删除，可在记忆页的来源操作中执行。")) return;
+    if (!await confirm({ title: "删除这个对话？", description: "对话及其来源证据副本将清除，已确认记忆独立保留；若要一并删除关联记忆，请到个人数据的来源操作中执行。", confirmLabel: "删除对话", danger: true })) return;
     try {
       cancelRun(id);
       await deleteServerSession(id);
@@ -153,7 +155,7 @@ export function useChatSessions(runningSessionIds: Set<string>, cancelRun: (id: 
 
 
 
-  return { sessions, activeSession, resolvedActiveSessionId, setActiveSessionId, input, setInput, messages, loading,
+  return { deleteConfirmation, sessions, activeSession, resolvedActiveSessionId, setActiveSessionId, input, setInput, messages, loading,
     updatingModeSessionId, replaceSession, handleNewSession, handleDeleteSession, handleSwitchVersion, handleModeChange,
     hasDrafts: Object.values(drafts).some((draft) => draft.trim().length > 0) };
 }

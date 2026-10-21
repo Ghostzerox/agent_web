@@ -20,7 +20,8 @@ describe("workspace navigation", () => {
     expect(html.match(/<h1/g)).toHaveLength(1);
     expect(html).not.toContain('href="#/chat?mode=');
     expect(html).toContain('href="#/settings"');
-    expect(html).toContain('href="#/study/memory-palaces"');
+    expect(html).toContain('aria-label="打开本模块功能"');
+    expect(html).not.toContain("模块内导航"); // Only mounted when explicitly opened.
     expect(html).toMatch(/href="#\/study" aria-current="page"/);
     expect(html).toContain('aria-label="打开模式与导航"');
     expect(html).toContain("保留活动");
@@ -36,8 +37,11 @@ describe("workspace navigation", () => {
       expect(reject.mock.calls[0][0]).toContain("生成尚未完成");
       expect(navigationWarning()).toContain("未保存草稿");
       const accept = vi.fn().mockReturnValue(true);
-      expect(requestNavigationPermission(accept)).toBe(true);
-      expect(requestNavigationPermission(reject)).toBe(true);
+      expect(requestNavigationPermission(accept, "/tasks")).toBe(true);
+      expect(requestNavigationPermission(reject, "/tasks", true)).toBe(true);
+      expect(requestNavigationPermission(reject, "/study", true)).toBe(false);
+      expect(requestNavigationPermission(accept, "/tasks")).toBe(true);
+      expect(requestNavigationPermission(reject, "/tasks")).toBe(false); // Fresh action never inherits a previous approval.
       vi.advanceTimersByTime(501);
       expect(requestNavigationPermission(reject)).toBe(false);
     } finally { clearFirst(); clearSecond(); }

@@ -1,0 +1,49 @@
+{
+  "source": "R12 production Docker (parent d853968, same delivery)",
+  "capturedAt": "2026-10-21T14:11:50.084Z",
+  "synthetic": true,
+  "observations": [
+    {
+      "name": "world",
+      "width": 360,
+      "buttons": 8,
+      "links": 27,
+      "overflow": false
+    },
+    {
+      "name": "tasks",
+      "width": 360,
+      "buttons": 4,
+      "links": 15,
+      "overflow": false
+    },
+    {
+      "name": "settings",
+      "width": 360,
+      "buttons": 2,
+      "links": 17,
+      "overflow": false
+    },
+    {
+      "name": "world",
+      "width": 1440,
+      "buttons": 8,
+      "links": 27,
+      "overflow": false
+    },
+    {
+      "name": "tasks",
+      "width": 1440,
+      "buttons": 4,
+      "links": 15,
+      "overflow": false
+    },
+    {
+      "name": "settings",
+      "width": 1440,
+      "buttons": 2,
+      "links": 17,
+      "overflow": false
+    }
+  ]
+}

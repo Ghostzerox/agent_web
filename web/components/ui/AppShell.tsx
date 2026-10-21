@@ -12,12 +12,13 @@ export function AppShell({ route, title, description, children, actions, chat = 
   route: string; title: string; description: string; children: ReactNode; actions?: ReactNode; chat?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [moduleOpen, setModuleOpen] = useState(false);
   const params = useAppQuery();
   const owner = workspaceOwner(route);
   const localLinks = owner ? MODULE_LINKS[owner] : [];
   const currentUrl = `${route}${params.size ? `?${params}` : ""}`;
   useEffect(() => {
-    const close = () => setOpen(false);
+    const close = () => { setOpen(false); setModuleOpen(false); };
     window.addEventListener("hashchange", close);
     return () => window.removeEventListener("hashchange", close);
   }, []);
@@ -46,14 +47,12 @@ export function AppShell({ route, title, description, children, actions, chat = 
         </button>
         <div className="workspace-heading"><h1>{title}</h1><p>{description}</p></div>
         {actions && <div className="workspace-actions">{actions}</div>}
+        {owner && localLinks.length > 1 && <button type="button" className="ui-button ui-button-quiet" aria-label="打开本模块功能" aria-expanded={moduleOpen} aria-controls="module-functions" onClick={() => setModuleOpen(true)}>功能</button>}
       </header>
       {owner && <LiveModelUsage scope={owner} />}
-      {owner && <details className="module-navigation" key={currentUrl}>
-        <summary>{owner === "chat" ? "对话内导航" : "本模块导航"}<span className="ml-2 text-xs font-normal text-[var(--workspace-muted)]">返回首页 / 打开功能子页</span></summary>
-        <nav aria-label="模块内导航" className="flex flex-wrap gap-2 p-3">{localLinks.map((link) => <AppLink key={link.href} href={link.href} aria-current={currentUrl === link.href ? "page" : undefined} className="module-local-link">{link.label}</AppLink>)}</nav>
-      </details>}
       {chat ? <div id="workspace-content" tabIndex={-1} className="workspace-chat-content">{children}</div> : <main id="workspace-content" tabIndex={-1} className="workspace-page-content">{children}</main>}
     </div>
     {open && <Drawer id="workspace-navigation" label="模式与导航" onClose={() => setOpen(false)}>{navigation(true)}</Drawer>}
+    {moduleOpen && <Drawer id="module-functions" label="本模块功能" variant="sheet" onClose={() => setModuleOpen(false)}><nav className="module-nav-panel" aria-label="模块内导航"><h2>本模块功能</h2>{localLinks.map((link) => <AppLink key={link.href} href={link.href} aria-label={link.label} aria-current={currentUrl === link.href ? "page" : undefined} onClick={() => setModuleOpen(false)}>{link.label}{link.description && <small className="block text-[var(--workspace-muted)]">{link.description}</small>}</AppLink>)}<button className="ui-button mt-3" onClick={() => setModuleOpen(false)}>关闭</button></nav></Drawer>}
   </div>;
 }

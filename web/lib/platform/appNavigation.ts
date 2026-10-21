@@ -14,13 +14,19 @@ export function appHref(path: string): string {
 }
 
 export function navigateToAppPath(path: string): void {
-  if (!requestNavigationPermission()) return;
+  if (!requestNavigationPermission(undefined, path)) return;
   const href = appHref(path);
   if (navigationMode === "hash") {
     window.location.hash = href.slice(1);
   } else {
     window.location.assign(href);
   }
+}
+
+/** Replace a section inside a mounted editor; callers must preserve pending edits. */
+export function replaceCurrentAppPath(path: string): void {
+  window.history.replaceState(window.history.state, "", appHref(path));
+  window.dispatchEvent(new Event("companion:replace-route"));
 }
 
 export function currentAppSearchParams(location = window.location): URLSearchParams {

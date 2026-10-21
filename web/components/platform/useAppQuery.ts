@@ -11,8 +11,8 @@ export function useAppQueryReady(): URLSearchParams | null {
     // Read after those listeners, never unmount a dirty editor before that decision.
     let active = true;
     const afterNavigation = () => window.setTimeout(() => { if (active) read(); }, 0);
-    read(); window.addEventListener("hashchange", afterNavigation); window.addEventListener("popstate", afterNavigation);
-    return () => { active = false; window.removeEventListener("hashchange", afterNavigation); window.removeEventListener("popstate", afterNavigation); };
+    read(); window.addEventListener("companion:replace-route", read); window.addEventListener("hashchange", afterNavigation); window.addEventListener("popstate", afterNavigation);
+    return () => { active = false; window.removeEventListener("companion:replace-route", read); window.removeEventListener("hashchange", afterNavigation); window.removeEventListener("popstate", afterNavigation); };
   }, []);
   return query === null ? null : new URLSearchParams(query);
 }

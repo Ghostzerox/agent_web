@@ -19,5 +19,5 @@ export function EntertainmentWorkspace() {
   if (params.get("view") === "creator" && params.get("world") && (section === "design-items" || section === "design-characters"))
     return <AssetDesignWorkspace key={`${params.get("world")}:${section}:${params.get("design") ?? "list"}`} worldId={params.get("world")!} kind={section === "design-items" ? "item" : "character"} />;
   if (params.get("view") === "creator") return <WorldCreationWorkspace key={params.get("world") ?? "creator"} />;
-  return params.has("session") || params.get("view") === "worlds" ? <GameSessionManager key={params.get("session") ?? "worlds"} /> : <ModuleDirectory title="为想象力打开一扇门" description="先选择世界与存档，或进入规则包冒险。地图、装备、角色和历史只会出现在当前世界里，不放到全局导航。" links={MODULE_LINKS.entertainment.slice(1)} />;
+  return params.has("session") || params.get("view") === "worlds" ? <GameSessionManager key={params.get("session") ?? "worlds"} /> : <ModuleDirectory title="为想象力打开一扇门" description="继续一段旅程，或亲手创作一个可以自由探索的世界。" links={MODULE_LINKS.entertainment.slice(1)} />;
 }

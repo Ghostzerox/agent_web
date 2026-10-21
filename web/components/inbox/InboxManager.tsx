@@ -11,6 +11,8 @@ import {
   type InboxItem,
 } from "@/lib/api/inboxClient";
 import { MarkdownMessage } from "@/components/chat/MarkdownMessage";
+import { useConfirmAction } from "@/components/ui/Actions";
+import { AppLink } from "@/components/platform/AppLink";
 import { appHref } from "@/lib/platform/appNavigation";
 import { useAppQuery } from "@/components/platform/useAppQuery";
 
@@ -52,7 +54,8 @@ function inboxSourceLabel(source: InboxItem["source"]): string {
   return "普通提醒";
 }
 
-export function InboxManager() {
+export function InboxManager({ contentOnly = false }: { contentOnly?: boolean } = {}) {
+  const { confirm, confirmation } = useConfirmAction();
   const params = useAppQuery();
   const source = params.get("source"); const highlight = params.get("highlight");
   const [items, setItems] = useState<InboxItem[]>([]);
@@ -107,7 +110,7 @@ export function InboxManager() {
   };
 
   const remove = async (item: InboxItem) => {
-    if (!window.confirm(`确定删除“${item.title}”吗？`)) return;
+    if (!await confirm({ title: "删除这条消息？", description: `将删除「${item.title}」，不会删除原任务或撤销行动；此操作不可撤销。`, confirmLabel: "删除消息", danger: true })) return;
     setBusyId(item.id);
     setError(null);
     try {
@@ -139,22 +142,22 @@ export function InboxManager() {
     }
   };
 
-  const unreadCount = items.filter((item) => item.status === "unread").length;
-  const visibleItems = items.filter((item) => !source || item.source === source);
+  const visibleItems = items.filter((item) => (!source || item.source === source) && (!contentOnly || ["personal_briefing", "book_recommendation", "reflection_question"].includes(item.source)));
+  const unreadCount = visibleItems.filter((item) => item.status === "unread").length;
   useEffect(() => {
     if (!loading && highlight) document.getElementById(`inbox-${highlight}`)?.scrollIntoView({ block: "center", behavior: "instant" });
   }, [loading, highlight, items]);
 
   return (
-    <section className="mx-auto w-full max-w-4xl" aria-label="提醒收件箱">
+    <section className="mx-auto w-full max-w-4xl" aria-label="提醒收件箱">{confirmation}
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-zinc-500">Inbox</p>
+          <p className="ui-kicker">{contentOnly ? "内容 / 最新投递" : "收件箱"}</p>
           <h2 className="mt-1 text-xl font-semibold text-zinc-950 dark:text-zinc-50">
-            提醒消息
+            {contentOnly ? "最近值得读的" : "提醒消息"}
           </h2>
           <p className="mt-1 text-sm text-zinc-500">
-            {filter === "all" ? `${unreadCount} 条未读` : `${items.length} 条记录`}
+            {filter === "all" ? `${unreadCount} 条未读` : `${visibleItems.length} 条记录`}
           </p>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto" role="group" aria-label="筛选提醒">
@@ -191,6 +194,7 @@ export function InboxManager() {
           {error}
         </div>
       )}
+      {!contentOnly && <nav className="ui-tabs mb-4" aria-label="消息来源">{[["", "全部来源"], ["reminder", "普通提醒"], ["personal_briefing", "新闻简报"], ["book_recommendation", "书籍"], ["reflection_question", "思考问题"]].map(([value, label]) => <AppLink key={value} href={value ? `/inbox?source=${value}` : "/inbox"} aria-current={(source ?? "") === value ? "page" : undefined}>{label}</AppLink>)}</nav>}
       {source && <p className="mb-4 text-sm text-zinc-500">来源筛选：{inboxSourceLabel(source as InboxItem["source"])}（当前已加载结果）。<a href={appHref("/inbox")} className="ml-2 underline">查看全部来源</a></p>}
       {!loading && highlight && !visibleItems.some((item) => item.id === highlight) && <p role="status" className="mb-4 rounded-xl border border-amber-300 p-3 text-sm">指定投递不在当前可访问列表或筛选中，可能已删除；没有自动标为已读。可清除筛选后重试。</p>}
 
@@ -200,8 +204,8 @@ export function InboxManager() {
         </p>
       ) : visibleItems.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-zinc-300 bg-white/60 p-10 text-center dark:border-zinc-700 dark:bg-zinc-950/60">
-          <p className="font-medium text-zinc-800 dark:text-zinc-200">这里暂时没有提醒</p>
-          <p className="mt-1 text-sm text-zinc-500">任务到达设定时间后，会自动出现在这里。</p>
+          <p className="font-medium text-zinc-800 dark:text-zinc-200">{contentOnly ? "还没有已投递的内容" : "这里暂时没有提醒"}</p>
+          <p className="mt-1 text-sm text-zinc-500">{contentOnly ? "可以先设置新闻、书籍或思考问题订阅；浏览这里不会自动调用AI。" : "任务到达设定时间后，会自动出现在这里。"}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -236,7 +240,7 @@ export function InboxManager() {
                     </time>
                   </div>
                   {item.body && (
-                    <details open={highlight === item.id} className="mt-2 break-words text-sm leading-6 text-zinc-600 dark:text-zinc-400"><summary className="min-h-11 cursor-pointer py-2">展开投递正文</summary>
+                    <details open={highlight === item.id} className="mt-2 break-words text-sm leading-6 text-zinc-600 dark:text-zinc-400"><summary className="min-h-11 cursor-pointer py-2">阅读正文</summary>
                       <MarkdownMessage content={item.body} />
                     </details>
                   )}
