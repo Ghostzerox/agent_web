@@ -6,6 +6,7 @@
 |---|---|
 | 开发、测试、构建 | [开发手册](DEVELOPMENT.md) |
 | 当前架构与技术边界 | [技术地图](PRODUCT_TECHNICAL_ROADMAP.md) |
+| 避免重复造轮子 / 模块开源复用 | [R11调研与决策规划](OPEN_SOURCE_REUSE_PLAN.md) |
 | R9精简封版与支持范围 | [封版报告](reports/R9_5_REPORT.md)、[R9规划](PROJECT_SIMPLIFICATION_PLAN.md)、[原始盘点](R9_1_SIMPLIFICATION_AUDIT.md) |
 | 启动 / 升级 / Tailscale / 备份恢复 | [自托管](SELF_HOSTING.md)、[数据库](DATABASE_OPERATIONS.md) |
 | API与模型配置 | [会话API](SERVER_DATA_API.md)、[Provider](SERVER_MODEL_PROVIDER.md) |
