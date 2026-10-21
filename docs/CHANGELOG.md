@@ -2,6 +2,12 @@
 
 当前收敛阶段摘要。完整旧日志见 [R9.4前冻结版本](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/CHANGELOG.md)，各阶段索引见 [历史](HISTORY.md)。当前排序只看 [产品主线](PRODUCT_MAINLINE_GUIDE.md)。
 
+## 规划 — R12 UI交互重构（2026-10-21，未实施）
+
+- 登记以按钮主次、操作机制、上下文指引和视觉层级为中心的[R12规划](R12_UI_INTERACTION_REFACTOR_PLAN.md)：世界创作先试点，再覆盖七模块，含状态 / 确认规则、页面关系、技术边界、分期交付与验收。
+- 主线下一步调整为R12.1体验审计与关键原型；保留现有数据、版本 / 分支、现场用量与收费确认，不新增兼容层或UI框架。
+- 本次仅文档修改，不改变运行界面、数据库、依赖、模型调用或APK；视觉和真机验收未执行，不引用旧测试成绩代替本轮证据。
+
 ## 体验修正 — 现场Token用量与开放世界自然相遇（2026-10-21）
 
 **Commit**: `same delivery commit`
