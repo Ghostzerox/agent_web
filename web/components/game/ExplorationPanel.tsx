@@ -89,6 +89,18 @@ function CharacterCard({ person, here, disabled, run, perceptions }: { person: W
   </article>;
 }
 
+function EncounterPanel({ disabled, run }: { disabled: boolean; run: Run }) {
+  const [activity, setActivity] = useState("");
+  useNavigationGuard(Boolean(activity.trim()), "相遇行动尚未发送，离开可能丢失草稿。");
+  return <details className={card}><summary className="cursor-pointer text-sm">行动中自然相遇（可选 AI）</summary>
+    <p className="text-xs text-zinc-500">描述你在当前地点的活动，按当地环境遇见普通人物；也可能无人。不会自动移动、发奖励、改写重要人物或预定剧情。只在确认后调用AI，失败不写入本分支。</p>
+    <label className="block text-xs">你正在做什么？<textarea aria-label="相遇行动" rows={3} maxLength={1000} value={activity} disabled={disabled} onChange={(event) => setActivity(event.target.value)} className="mt-1 w-full rounded border border-[var(--workspace-border)] bg-transparent p-2" /></label>
+    <button className={button} disabled={disabled || !activity.trim()} onClick={() => {
+      if (window.confirm("将调用一次AI生成当前地点的相遇，可能产生费用。通过检查后记录到当前分支，不改变世界模板或其他分支。是否继续？")) void run({ action: "encounter", activity: activity.trim(), confirmed: true }, activity.trim()).then((saved) => { if (saved) setActivity(""); });
+    }}>探索并记录相遇（调用AI）</button>
+  </details>;
+}
+
 function HistoryPanel({ state, sessionId, parentTurnId, onError }: { state: ExplorationState; sessionId: string; parentTurnId: string | null; onError: (message: string | null) => void }) {
   const [q, setQ] = useState(""); const [actorId, setActorId] = useState("");
   const [result, setResult] = useState<ExplorationHistoryResult | null>(null); const [busy, setBusy] = useState(false);
@@ -134,14 +146,15 @@ export function ExplorationPanel({ state, sessionId, parentTurnId, disabled, run
             {path && <><p className="text-xs text-zinc-500">↳ {path.reason}</p><button className={button} disabled={disabled || !path.accessible} onClick={() => void run({ action: "move", targetId: location.id })}>前往{location.name}</button></>}
           </article>;
         })}</div>
-        <h4 className="pt-2 text-sm font-semibold">这里可以调查</h4><div className="flex flex-wrap gap-2">{current.points.map((point) => <button key={point.id} className={button} disabled={disabled || state.flags[`investigated-${point.id}`]} title={point.description} onClick={() => void run({ action: "investigate", targetId: point.id })}>{state.flags[`investigated-${point.id}`] ? "已调查 · " : "调查"}{point.name}</button>)}<button className={button} disabled={disabled} onClick={() => void run({ action: "inspect", targetId: current.id })}>观察当前位置</button><button className={button} disabled={disabled} onClick={() => void run({ action: "wait" })}>等待片刻</button></div>
+        <h4 className="pt-2 text-sm font-semibold">这里可以了解</h4><div className="flex flex-wrap gap-2">{current.points.map((point) => <button key={point.id} className={button} disabled={disabled || state.flags[`investigated-${point.id}`]} title={point.description} onClick={() => void run({ action: "investigate", targetId: point.id })}>{state.flags[`investigated-${point.id}`] ? "已了解 · " : "了解"}{point.name}</button>)}<button className={button} disabled={disabled} onClick={() => void run({ action: "inspect", targetId: current.id })}>观察当前位置</button><button className={button} disabled={disabled} onClick={() => void run({ action: "wait" })}>等待片刻</button></div>
         <p className="text-xs text-zinc-500">在场：{present.map((person) => person.name).join("、") || "尚未遇见人物"}；可到“人物”交谈。</p>
       </>}
+      {(tab === "map" || tab === "people") && <EncounterPanel disabled={disabled} run={run} />}
       {tab === "items" && <><p className="text-xs text-zinc-500">装备槽：{state.view.slots.map((slot) => `${slot} ${state.view.items.find((item) => item.id === state.instances.find((instance) => instance.equippedSlot === slot)?.definitionId)?.name ?? "空"}`).join(" / ")}。赠出剧情道具可能改变后续选择。</p><div className="grid gap-3 sm:grid-cols-2">{state.instances.filter((item) => item.owner === "player" || item.owner === current.id || present.some((person) => person.id === item.owner)).map((item) => {
         const definition = state.view.items.find((entry) => entry.id === item.definitionId);
         return definition && <ItemCard key={item.id} item={item} definition={definition} state={state} disabled={disabled} run={run} />;
       })}</div></>}
-      {tab === "people" && <div className="grid gap-3 xl:grid-cols-2">{Object.values(state.characters).length === 0 && <p className="text-sm text-zinc-500">还没遇见人物，先去集市或灯塔看看。</p>}{Object.values(state.characters).map((person) => <CharacterCard key={person.id} person={person} here={person.locationId === current.id} disabled={disabled} run={run} perceptions={state.cognition?.records.filter((entry) => entry.audience.includes(person.id) && entry.audience.includes("player")) ?? []} />)}</div>}
+      {tab === "people" && <div className="grid gap-3 xl:grid-cols-2">{!present.length && <p className="text-sm text-zinc-500">当前地点尚未遇见人物。可以继续自己的活动，或使用“行动中自然相遇”；并非每个地方都一定有人。</p>}{Object.values(state.characters).map((person) => <CharacterCard key={person.id} person={person} here={person.locationId === current.id} disabled={disabled} run={run} perceptions={state.cognition?.records.filter((entry) => entry.audience.includes(person.id) && entry.audience.includes("player")) ?? []} />)}</div>}
       {tab === "events" && <>
         {state.view.events.length === 0 && <p className="text-sm text-zinc-500">尚未触发公开事件。可以自由探索，无需接受任何主线。</p>}
         {state.view.events.map((event) => <article key={event.id} className={card}><h4 className="font-semibold">{event.name} <span className="text-xs font-normal text-zinc-500">{event.scope === "world" ? "世界" : event.scope === "character" ? "人物" : "地方"}事件 · {event.settled ? "已结束" : event.locationId === current.id ? "可在此处理" : "前往对应地点处理"}</span></h4><p className="text-sm text-zinc-500">{event.description}</p>{event.choices.map((choice) => <div key={choice.id} className="space-y-1"><button className={button} disabled={disabled || !choice.available || event.locationId !== current.id} onClick={() => {

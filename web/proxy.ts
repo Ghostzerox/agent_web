@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const DEFAULT_MOBILE_ORIGINS = ["https://localhost"];
 const CORS_METHODS = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
-const CORS_HEADERS = "Content-Type";
+const CORS_HEADERS = "Content-Type, X-Model-Operation-Id";
 
 export function allowedMobileOrigins(
   configured = process.env.MOBILE_ALLOWED_ORIGINS,

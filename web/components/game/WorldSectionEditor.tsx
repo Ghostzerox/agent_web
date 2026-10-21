@@ -5,7 +5,7 @@ import { worldBlueprintSchema, type WorldBlueprint, type WorldSection } from "@/
 
 export const worldFieldClass = "mt-1 w-full min-w-0 rounded-lg border border-[var(--workspace-border)] bg-[var(--workspace-surface)] p-2 text-sm";
 export const worldButtonClass = "rounded-lg border border-[var(--workspace-border)] px-3 py-2 text-sm disabled:opacity-40";
-const names: Record<string, string> = { name: "名称", premise: "世界前提", tone: "基调", era: "时代", technology: "技术水平", supernatural: "超自然规则与代价", cultures: "文化（每行一项）", factions: "势力（每行一项）", history: "历史背景（每行一项）", text: "内容", playerRole: "玩家定位", description: "描述", acceptText: "参与选项文字", outcome: "参与结果", declineOutcome: "拒绝结果", discovery: "可调查线索", identity: "身份", goal: "近期目标", personality: "性格", speech: "说话方式" };
+const names: Record<string, string> = { name: "名称", premise: "世界前提", tone: "基调", era: "时代", technology: "技术水平", supernatural: "超自然规则与代价", cultures: "文化（每行一项）", factions: "势力（每行一项）", history: "历史背景（每行一项）", text: "内容", playerRole: "玩家定位", description: "描述", acceptText: "参与选项文字", outcome: "参与结果", declineOutcome: "拒绝结果", discovery: "当地环境与可了解的事物", identity: "身份", goal: "近期目标", personality: "性格", speech: "说话方式" };
 
 export function WorldSectionEditor({ content, section, onChange, onError, onPendingChange }: { content: WorldBlueprint; section: WorldSection;
   onChange: (next: WorldBlueprint) => void; onError: (message: string) => void; onPendingChange?: (pending: boolean) => void }) {
@@ -19,7 +19,9 @@ export function WorldSectionEditor({ content, section, onChange, onError, onPend
   const textField = (key: string, value: string, update: (value: string) => void) => <label key={key} className="block text-xs">{names[key] ?? key}<textarea className={worldFieldClass} rows={key === "name" ? 1 : 3} value={value} maxLength={key === "name" ? 120 : 600} onChange={(event) => update(event.target.value)} /></label>;
   const locationSelect = (value: string, update: (value: string) => void) => <label className="block text-xs">所在地点<select aria-label="所在地点" className={worldFieldClass} value={value} onChange={(event) => update(event.target.value)}>{content.region.locations.map((place) => <option key={place.id} value={place.id}>{place.name}</option>)}</select></label>;
   return <div className="space-y-4">
-    {(section === "overview" || section === "opening" || section === "hook") && <div className="grid gap-3 sm:grid-cols-2">{Object.entries(content[section]).map(([key, value]) => {
+    {section === "characters" && <p className="text-sm text-zinc-500">只需预设世界观明确的重要人物；可以留空。普通人物可在游玩行动中遇见，不必预写人物表、谜案或结局。已有预设人物不会自动删除。</p>}
+    {section === "hook" && <div className="space-y-2"><p className="text-sm text-zinc-500">初始交互可为空，不是强制主线；没有事件也能自由行动。</p><button className={worldButtonClass} onClick={() => patch(content.hook ? null : { id: "initial-opportunity", name: "可选机会", locationId: content.region.startId, description: "待设计的自愿活动", acceptText: "选择参与", outcome: "你自行决定下一步。", declineOutcome: "你继续自己的行动。" })}>{content.hook ? "移除预设初始事件（需保存）" : "添加可选初始交互"}</button></div>}
+    {(section === "overview" || section === "opening" || section === "hook") && content[section] && <div className="grid gap-3 sm:grid-cols-2">{Object.entries(content[section]).map(([key, value]) => {
       if (key === "id") return <p key={key} className="text-xs text-zinc-500">稳定ID：{String(value)}</p>;
       if (key === "locationId") return <div key={key}>{locationSelect(String(value), (next) => patch({ ...content[section], [key]: next }))}</div>;
       if (typeof value === "boolean") return <label key={key} className="text-sm"><input type="checkbox" checked={value} onChange={(event) => patch({ ...content[section], [key]: event.target.checked })} /> 使用超自然能力（须符合硬约束）</label>;

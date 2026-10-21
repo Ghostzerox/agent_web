@@ -6,6 +6,7 @@ import { WORKSPACE_SECTIONS, MODULE_LINKS, isWorkspaceRouteActive } from "@/lib/
 import { workspaceOwner } from "@/lib/platform/appRoutes";
 import { useAppQuery } from "@/components/platform/useAppQuery";
 import { Drawer } from "./Drawer";
+import { LiveModelUsage } from "@/components/config/LiveModelUsage";
 
 export function AppShell({ route, title, description, children, actions, chat = false }: {
   route: string; title: string; description: string; children: ReactNode; actions?: ReactNode; chat?: boolean;
@@ -46,6 +47,7 @@ export function AppShell({ route, title, description, children, actions, chat = 
         <div className="workspace-heading"><h1>{title}</h1><p>{description}</p></div>
         {actions && <div className="workspace-actions">{actions}</div>}
       </header>
+      {owner && <LiveModelUsage scope={owner} />}
       {owner && <details className="module-navigation" key={currentUrl}>
         <summary>{owner === "chat" ? "对话内导航" : "本模块导航"}<span className="ml-2 text-xs font-normal text-[var(--workspace-muted)]">返回首页 / 打开功能子页</span></summary>
         <nav aria-label="模块内导航" className="flex flex-wrap gap-2 p-3">{localLinks.map((link) => <AppLink key={link.href} href={link.href} aria-current={currentUrl === link.href ? "page" : undefined} className="module-local-link">{link.label}</AppLink>)}</nav>

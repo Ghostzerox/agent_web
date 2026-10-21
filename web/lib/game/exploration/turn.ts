@@ -11,6 +11,7 @@ import { formatSemanticInput } from "./semanticContracts";
 import { getWorldTemplate } from "./catalog";
 import type { WorldTemplateResolver } from "./templateRegistry";
 import { recordEventKnowledge } from "../events/knowledge";
+import { resolveEncounter } from "./encounters";
 
 export async function resolveExplorationTurn(session: GameSessionDetail, input: CreateGameTurnRequest,
   parent: GameState, fingerprint: string, generator: GameNarrativeGeneratorPort, signal?: AbortSignal, resolve: WorldTemplateResolver = getWorldTemplate) {
@@ -24,7 +25,9 @@ export async function resolveExplorationTurn(session: GameSessionDetail, input: 
       throw new ExplorationError("启动的模板与创建时选择的模板版本不一致。");
   }
   if (!parent.exploration && action?.action !== "start") throw new ExplorationError("请先开启探索世界。");
-  const state = action ? applyExplorationAction(parent.exploration, action, input.requestId!, resolve) : structuredClone(parent.exploration!);
+  if (action?.action === "encounter" && (input.narrate || input.semanticInput?.length)) throw new ExplorationError("相遇是独立行动，请勿同时提交人物台词或额外叙事请求。");
+  const encounter = action?.action === "encounter" ? await resolveEncounter(parent.exploration!, action, input.requestId!, generator, resolve, signal) : null;
+  const state = encounter ? encounter.state : action ? applyExplorationAction(parent.exploration, action, input.requestId!, resolve) : structuredClone(parent.exploration!);
   if (action?.action === "start") {
     const player = session.characters.find((character) => character.controller === "user");
     if (player) Object.assign(state.characters.player, { name: player.name, identity: player.role,
@@ -36,10 +39,10 @@ export async function resolveExplorationTurn(session: GameSessionDetail, input: 
   recordPerceptions(state, scope, input.requestId!, input.semanticInput, action, resolve);
   recordEventKnowledge(parent.exploration, state, resolve(state.templateId, state.templateVersion), input.requestId!, action);
   const targetId = dialogues[0]?.targetId;
-  const shouldGenerate = Boolean(input.narrate || (input.semanticInput &&
+  const shouldGenerate = !encounter && Boolean(input.narrate || (input.semanticInput &&
     input.semanticInput.some((part) => !["private_thought", "ooc_instruction"].includes(part.kind))));
   let assistantContent = action ? state.lastResult : "已保存私人想法 / 场外创作意图；未向人物发言、未改变世界。需要设计世界时，请进入世界与存档中的创作工作台。";
-  let model = "host-exploration/v1";
+  let model = encounter?.model ?? "host-exploration/v1";
   if (shouldGenerate) {
     const content = input.semanticInput ? formatSemanticInput(input.semanticInput) : input.content;
     const generated = await generator.generate(explorationMessages(state, content, targetId, [], session.safetyBoundaries, scope, resolve), signal);

@@ -23,6 +23,7 @@ describe("mobile API CORS proxy", () => {
       "https://localhost",
     );
     expect(response.headers.get("access-control-allow-methods")).toContain("PATCH");
+    expect(response.headers.get("access-control-allow-headers")).toContain("X-Model-Operation-Id");
   });
 
   it("does not grant CORS access to an unknown website", () => {

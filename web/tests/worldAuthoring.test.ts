@@ -9,7 +9,7 @@ import { createGameSessionRepository } from "@/lib/repositories/gameSessionRepos
 import { createGameTurnService } from "@/lib/game/gameTurnService";
 import { createGameNarrativeGenerator, GameNarrativeGenerationError, type GameNarrativeGeneratorPort } from "@/lib/game/gameNarrativeGenerator";
 import { createWorldGenerationService, WORLD_CREATION_PROMPT_VERSION } from "@/lib/game/worlds/generation";
-import { blankWorldBlueprint } from "@/lib/game/worlds/blueprint";
+import { seededWorldBlueprint as blankWorldBlueprint } from "./helpers/worldBlueprint";
 import { compileWorld, worldDraftIssues } from "@/lib/game/worlds/compile";
 import { WORLD_SECTIONS, type WorldBrief } from "@/lib/game/worlds/contracts";
 import { startWorld, applyExplorationAction } from "@/lib/game/exploration/engine";

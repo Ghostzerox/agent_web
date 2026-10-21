@@ -4,6 +4,7 @@ import { getWorldTemplate } from "./catalog";
 import type { WorldTemplateResolver } from "./templateRegistry";
 import { ExplorationError, type ExplorationAction, type ExplorationState } from "./contracts";
 import type { PerceptionRecord, SemanticInput } from "./semanticContracts";
+import { withEncounterCharacters } from "./runtimeCharacters";
 
 export type PerceptionScope = {
   sessionId: string;
@@ -39,7 +40,9 @@ export function actorContext(state: ExplorationState, targetId: string, scope: P
   const actor = state.characters[targetId];
   if (!actor || actor.locationId !== state.locationId || actor.controller === "user")
     throw new ExplorationError("人物不存在、不在场或不由AI控制；不能回退到主持上下文。");
-  const template = resolve(state.templateId, state.templateVersion);
+  const template = withEncounterCharacters(resolve(state.templateId, state.templateVersion), state);
+  const encounter = state.encounters?.find((entry) => entry.actorId === targetId);
+  if (encounter && !scope.sources.has(encounter.sourceRequestId)) throw new ExplorationError("相遇人物不属于当前来源分支。");
   const definition = template.characters.find((person) => person.card.id === targetId);
   if (!definition) throw new ExplorationError("人物定义不存在。");
   const location = template.locations.find((place) => place.id === state.locationId)!;

@@ -1,4 +1,5 @@
 import { getProblemSolvingApi } from "@/lib/api/problemSolvingApi";
+import { withModelOperation } from "@/lib/ai/server/operationContext";
 
 export const dynamic = "force-dynamic";
 
@@ -7,5 +8,5 @@ export async function POST(
   context: RouteContext<"/api/v1/problem-solving/[id]/interactions">,
 ) {
   const { id } = await context.params;
-  return getProblemSolvingApi().respond(id, request);
+  return withModelOperation(request, () => getProblemSolvingApi().respond(id, request));
 }

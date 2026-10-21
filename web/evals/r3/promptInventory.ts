@@ -20,7 +20,8 @@ export type PromptEntryId = typeof PROMPT_ENTRY_POINTS[number]["id"];
 // Auxiliary paid operation, separately tested with source/branch/approval fixtures; not a new user mode.
 export const AUXILIARY_PROMPT_ENTRY_POINTS = [
   { id: "context-summary", source: "lib/api/conversationSummaryApi.ts", builder: "lib/conversation/summary.ts", version: "branch-summary/r5.5-v1", fallback: "full raw branch or explicit input-limit error; never automatic regeneration" },
-  { id: "world-authoring", source: "lib/game/worlds/generation.ts", builder: "lib/game/worlds/generation.ts", version: "r10/world-authoring-v3", fallback: "schema-derived contract; actionable diagnostics and local repair; invalid/aborted/stale output preserves draft; no automatic retry" },
+  { id: "world-authoring", source: "lib/game/worlds/generation.ts", builder: "lib/game/worlds/generation.ts", version: "r10/world-authoring-v4", fallback: "open-world default with optional preset actors/events; schema diagnostics and local repair; no automatic retry" },
+  { id: "world-encounter", source: "lib/game/exploration/encounters.ts", builder: "lib/game/exploration/encounters.ts", version: "world-encounter/v1", fallback: "explicit paid action, public ordinary NPC or nobody; validated branch-only snapshot; no hidden author context or automatic retry" },
   { id: "item-character-design", source: "lib/game/worlds/assetGeneration.ts", builder: "lib/game/worlds/assetGeneration.ts", version: "r10/item-character-design-v1", fallback: "explicit fields/locks; invalid, stale or canceled result preserves design; confirmation never grants inventory" },
   { id: "draw-item-design", source: "lib/game/draws/generation.ts", builder: "lib/game/draws/generation.ts", version: "r10/draw-item-design-v2", fallback: "complete current-shaped item without wrappers; durable attempt claim; fixed host sample; failed/stale/cancelled output never grants or deducts" },
   { id: "event-design", source: "lib/game/events/generation.ts", builder: "lib/game/events/generation.ts", version: "r10/event-design-v2", fallback: "complete selected-field replacements with bounded sourced context; durable attempt claims; proposals never execute; explicit confirmation and finite host graph" },
@@ -52,6 +53,7 @@ export const MODEL_CALLER_FILES = [
   "lib/tasks/reflectionQuestionGenerator.ts", "lib/plugins/hostCapabilityAdapters.ts",
   "lib/game/gameTurnService.ts", "lib/game/gameNarrativeGenerator.ts",
   "lib/game/exploration/turn.ts",
+  "lib/game/exploration/encounters.ts",
   "lib/game/worlds/generation.ts", "lib/api/gameWorldApi.ts", "lib/game/worlds/assetGeneration.ts", "lib/api/gameAssetDesignApi.ts",
   "lib/game/draws/generation.ts", "lib/api/gameDrawApi.ts",
   "lib/game/events/generation.ts", "lib/api/gameEventDesignApi.ts",
@@ -69,7 +71,7 @@ export const PROMPT_SOURCE_FILES = [...new Set([
   "lib/game/worlds/assetContracts.ts", "lib/game/worlds/assetValidation.ts", "lib/game/worlds/assetBlueprint.ts",
   "lib/game/draws/contracts.ts", "lib/game/draws/pools.ts", "lib/game/draws/items.ts", "lib/repositories/gameDrawRepository.ts", "lib/game/exploration/runtimeItems.ts",
   "lib/game/events/contracts.ts", "lib/game/events/validation.ts", "lib/game/events/knowledge.ts", "lib/game/events/source.ts", "lib/repositories/gameEventDesignRepository.ts", "lib/repositories/gameWorldRepository.ts",
-  "lib/game/exploration/inventory.ts", "lib/game/exploration/engine.ts", "lib/game/exploration/validateTemplate.ts",
+  "lib/game/exploration/inventory.ts", "lib/game/exploration/engine.ts", "lib/game/exploration/validateTemplate.ts", "lib/game/exploration/encounters.ts", "lib/game/exploration/runtimeCharacters.ts",
   "lib/memory/domainPolicy.ts", "lib/repositories/memoryRepository.ts", "lib/repositories/promptRunRepository.ts",
   "lib/repositories/conversationRepository.ts",
   "lib/knowledge/retrieval.ts", "lib/knowledge/citations.ts", "lib/repositories/knowledgeRetrievalRepository.ts", "lib/repositories/knowledgeRepository.ts",

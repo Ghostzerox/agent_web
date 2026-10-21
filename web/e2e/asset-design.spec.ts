@@ -13,7 +13,7 @@ import { createGameSessionApi } from "../lib/api/gameSessionApi";
 import { createGamePlayApi } from "../lib/api/gamePlayApi";
 import { createAssetGenerationService } from "../lib/game/worlds/assetGeneration";
 import { createGameTurnService } from "../lib/game/gameTurnService";
-import { blankWorldBlueprint } from "../lib/game/worlds/blueprint";
+import { seededWorldBlueprint as blankWorldBlueprint } from "../tests/helpers/worldBlueprint";
 
 const mobile = process.env.ASSET_DESIGN_MOBILE_BUNDLE === "true";
 for (const width of [360, 1440]) test(`designs item and important character, confirms, publishes and plays at ${width}px`, async ({ page }) => {

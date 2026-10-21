@@ -25,12 +25,12 @@ export const worldBlueprintSchema = z.object({
   region: z.object({ name: text, startId: key, locations: z.array(z.object({
     id: key, name: text.max(120), description: text, exits: z.array(key).max(8), discovery: text,
   }).strict()).min(2).max(8) }).strict(),
-  characters: z.array(characterDesignSchema).min(1).max(8),
+  characters: z.array(characterDesignSchema).max(8),
   lore: z.array(z.object({ id: key, text, kind: z.enum(["fact", "rumor", "legend", "opinion"]),
     locationId: key, visibility: z.enum(["public", "author"]), knownBy: z.array(key).max(5) }).strict()).max(12),
   opening: z.object({ text, playerRole: text }).strict(),
   hook: z.object({ id: key, name: text.max(120), description: text, locationId: key,
-    acceptText: text, outcome: text, declineOutcome: text }).strict(),
+    acceptText: text, outcome: text, declineOutcome: text }).strict().nullable(),
   authorNotes: lines, conflicts: lines,
 }).strict().refine((value) => JSON.stringify(value).length <= 50000, "世界草稿不能超过50000字符。");
 export type WorldBrief = z.infer<typeof worldBriefSchema>;

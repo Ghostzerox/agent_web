@@ -5,6 +5,6 @@ import { createModelUsageRepository } from "@/lib/repositories/modelUsageReposit
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export function GET() {
-  return createModelUsageApi(createModelUsageRepository(getDatabase())).get();
+export function GET(request: Request) {
+  return createModelUsageApi(createModelUsageRepository(getDatabase())).get(request);
 }

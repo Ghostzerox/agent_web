@@ -6,6 +6,7 @@ import { gameWorldDrafts as drafts, gameWorldRevisions as revisions, gameWorldSa
 import { gameEventDesigns, gameSessions, gameTurns } from "@/lib/db/schema";
 import { gameTurnPath } from "@/lib/game/turnTree";
 import { withAcquiredItems } from "@/lib/game/exploration/runtimeItems";
+import { withEncounterCharacters } from "@/lib/game/exploration/runtimeCharacters";
 import type { ExplorationState } from "@/lib/game/exploration/contracts";
 import { LOCAL_USER_ID } from "./conversationRepository";
 import { createGameSessionRepository } from "./gameSessionRepository";
@@ -108,7 +109,7 @@ export function createGameWorldRepository<H extends PgQueryResultHKT>(db: PgData
           resolved = { ...definition, events: [...definition.events, ...ids.map((id) => rows.find((plan) => plan.id === id)!.content)] };
         }
       }
-      validateWorldTemplate(validationState ? withAcquiredItems(resolved, validationState) : resolved); return resolved;
+      validateWorldTemplate(validationState ? withEncounterCharacters(withAcquiredItems(resolved, validationState), validationState) : resolved); return resolved;
     },
   };
 }

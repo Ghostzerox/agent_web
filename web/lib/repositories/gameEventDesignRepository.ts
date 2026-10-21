@@ -10,6 +10,7 @@ import { stableJson } from "@/lib/ai/stableJson";
 import { compileWorld } from "@/lib/game/worlds/compile";
 import { worldBlueprintSchema } from "@/lib/game/worlds/contracts";
 import { withAcquiredItems } from "@/lib/game/exploration/runtimeItems";
+import { withEncounterCharacters } from "@/lib/game/exploration/runtimeCharacters";
 import { refreshWorldEvents, startWorld } from "@/lib/game/exploration/engine";
 import { validateWorldTemplate } from "@/lib/game/exploration/validateTemplate";
 import { perceptionScope, recordPerceptions } from "@/lib/game/exploration/perception";
@@ -38,7 +39,7 @@ export function createGameEventDesignRepository<H extends PgQueryResultHKT>(db: 
     const parent = session.turns.find((turn) => turn.id === parentTurnId); const state = parent?.stateSnapshot.exploration;
     if (!parent || !state) throw new EventDesignError("EVENT_INVALID", "请选择本存档已开启探索的回合。");
     const base = await createGameWorldRepository(db).resolveSessionTemplate(id, state.templateId, state.templateVersion, parentTurnId);
-    const snapshot: EventSnapshot = { template: withAcquiredItems(base, state), context: { locationId: state.locationId, tick: state.tick, coins: state.coins,
+    const snapshot: EventSnapshot = { template: withEncounterCharacters(withAcquiredItems(base, state), state), context: { locationId: state.locationId, tick: state.tick, coins: state.coins,
       inventory: state.instances.map(({ definitionId, quantity, owner }) => ({ definitionId, quantity, owner })),
       issuedUniqueItems: [...new Set([...(state.issuedUniqueItems ?? []), ...(state.acquisitions?.receipts.filter((receipt) => base.items.some((item) => item.id === receipt.definitionId && item.unique)).map((receipt) => receipt.definitionId) ?? [])])],
       actors: Object.values(state.characters).filter((person) => person.controller !== "user").map((person) => ({ id: person.id, name: person.name, goals: person.goals, relationship: person.relationship, relationshipReason: person.relationshipReason })),
@@ -121,7 +122,7 @@ export function createGameEventDesignRepository<H extends PgQueryResultHKT>(db: 
         const current = await repo.captureSession(row.sessionId!, row.parentTurnId!, row.sourceVersion);
         if ((current.state.eventPlanIds?.length ?? 0) >= 20) throw new EventDesignError("EVENT_INVALID", "本分支事件计划已达20项上限。");
         const template = { ...current.base, events: [...current.base.events, row.content] };
-        validateWorldTemplate(withAcquiredItems(template, current.state));
+        validateWorldTemplate(withEncounterCharacters(withAcquiredItems(template, current.state), current.state));
         const state = structuredClone(current.state); (state.eventPlanIds ??= []).push(row.id);
         state.receipt = { requestId: row.id, fingerprint: createHash("sha256").update(`event-confirm:${row.id}:${row.version}`).digest("hex") };
         refreshWorldEvents(state, template, row.id);

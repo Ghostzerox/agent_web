@@ -13,7 +13,6 @@ export function worldDraftIssues(input: WorldBrief, content: WorldBlueprint | nu
   for (const [label, ids, count] of [["地点", locations, content.region.locations.length], ["人物", characters, content.characters.length]] as const)
     if (ids.size !== count) issues.push(`${label}ID重复。`);
   if ([...characters].some((id) => locations.has(id))) issues.push("人物和地点ID不能重名。");
-  if (!content.characters.some((person) => person.category !== "player")) issues.push("至少需要一名非玩家人物。");
   if (!locations.has(content.region.startId)) issues.push("起点不存在。");
   for (const place of content.region.locations) if (place.exits.some((id) => !locations.has(id) || id === place.id)) issues.push(`${place.name}的路径引用无效。`);
   const reached = new Set<string>(); const queue = [content.region.startId];
@@ -27,14 +26,15 @@ export function worldDraftIssues(input: WorldBrief, content: WorldBlueprint | nu
   for (const person of content.characters) if (!locations.has(person.locationId)) issues.push(`${person.name}的地点不存在。`);
   if (new Set(content.lore.map((entry) => entry.id)).size !== content.lore.length) issues.push("史料ID重复。");
   for (const entry of content.lore) if (!locations.has(entry.locationId) || entry.knownBy.some((id) => !characters.has(id) || id === "player")) issues.push(`史料${entry.id}的地点或知情者不存在。`);
-  if (!locations.has(content.hook.locationId)) issues.push("初始交互事件的地点不存在。");
+  if (content.hook && !locations.has(content.hook.locationId)) issues.push("初始交互事件的地点不存在。");
   if (input.magic === "forbidden" && content.overview.usesSupernatural) issues.push("硬约束冲突：禁止超自然能力，但草稿声明使用超自然设定。");
   if (input.numericPolicy !== "light" && content.ranks.levelsPerTier !== undefined) issues.push("定性世界 / 指定属性世界不得强制每阶等级数。");
   if (input.numericPolicy === "light" && content.ranks.levelsPerTier === undefined) issues.push("轻数值世界需要明确每阶等级数。");
   issues.push(...worldAssetIssues(input, content), ...content.conflicts.map((line) => `待解决冲突：${line}`));
   issues.push(...drawPoolIssues(content.drawPools ?? [], { items: content.items.definitions, locations: content.region.locations, ranks: content.ranks, numericPolicy: input.numericPolicy, slots: content.itemRules.slots }));
   const events = content.eventDesigns ?? [];
-  if (new Set([content.hook.id, ...events.map((event) => event.id)]).size !== events.length + 1) issues.push("事件ID与初始交互或其他事件重复。");
+  const eventIds = [...(content.hook ? [content.hook.id] : []), ...events.map((event) => event.id)];
+  if (new Set(eventIds).size !== eventIds.length) issues.push("事件ID与初始交互或其他事件重复。");
   for (const event of events) issues.push(...eventDesignIssues(event, { items: content.items.definitions, instances: content.items.placements, acquisitionRules: { magic: input.magic }, locations: content.region.locations,
     characters: content.characters.filter((person) => person.id !== "player").map((person) => ({ card: { id: person.id } })),
     lore: [...content.lore, ...content.characters.flatMap((person) => person.profile.secrets.map((_, index) => ({ id: `${person.id}-secret-${index}` })))] }));
@@ -78,19 +78,19 @@ export function compileWorld(id: string, revision: number, input: WorldBrief, ra
       { locationId: item.useEffect!.locationId, condition: item.useEffect!.requiresCondition }])),
     locations: region.locations.map((place) => ({ id: place.id, name: place.name, description: place.description,
       exits: place.exits.map((to) => ({ to, reason: `沿路前往${region.locations.find((entry) => entry.id === to)!.name}` })),
-      points: [{ id: `${place.id}-discovery`, name: "调查当地线索", description: "观察当地可以核对的线索。", result: place.discovery,
+      points: [{ id: `${place.id}-discovery`, name: "观察与了解当地", description: "观察环境与当地生活，不预设存在谜案或线索。", result: place.discovery,
         effect: { reveal: lore.filter((entry) => entry.locationId === place.id && entry.visibility === "public").map((entry) => entry.id) } }] })),
     characters: characters.filter((person) => person.category !== "player").map((person) => ({ card: publicCard(person),
       knowledge: [...lore.filter((entry) => entry.knownBy.includes(person.id)).map((entry) => entry.id), ...privateLore.filter((entry) => entry.actorIds.includes(person.id)).map((entry) => entry.id)], trader: false,
       topics: lore.filter((entry) => entry.visibility === "public" && entry.knownBy.includes(person.id)).map((entry) => ({ id: entry.id, label: "询问当地资料", answer: entry.text, effect: { reveal: [entry.id] } })) })),
     lore: [...lore.map((entry) => ({ id: entry.id, text: entry.text, kind: entry.kind, origin: "setting" as const, locationId: entry.locationId,
       actorIds: entry.knownBy, eventId: null, source: `${worldId}@${version}:${entry.id}` })), ...privateLore],
-    events: [{ id: hook.id, name: hook.name, scope: "local", locationId: hook.locationId, actorIds: [], trigger: {}, stages: [
+    events: [...(hook ? [{ id: hook.id, name: hook.name, scope: "local" as const, locationId: hook.locationId, actorIds: [], trigger: {}, stages: [
       { id: "available", description: hook.description, terminal: false, choices: [
         { id: "accept", label: hook.acceptText, cost: "无消耗；确认后写入本分支", next: "completed", effect: {}, result: hook.outcome },
         { id: "decline", label: "暂不参与", cost: "无消耗", next: "declined", effect: {}, result: hook.declineOutcome },
       ] }, { id: "completed", description: hook.outcome, terminal: true, choices: [] }, { id: "declined", description: hook.declineOutcome, terminal: true, choices: [] },
-    ] }, ...(content.eventDesigns ?? [])], epics: [],
+    ] }] : []), ...(content.eventDesigns ?? [])], epics: [],
   };
   validateWorldTemplate(template); return template;
 }

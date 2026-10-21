@@ -17,7 +17,10 @@ it("persists metadata idempotently, bounds reads and rolls back only the usage t
     const call: ModelCallTelemetry = { id: crypto.randomUUID(), business: "game", providerOrigin: "https://provider.example", model: "mock", startedAt: "2026-10-01T00:00:00.000Z", status: "completed", attempts: 1, durationMs: 15, firstTokenMs: 5, usage: null, finishReason: null, errorCode: null, price: null, estimatedCost: null };
     await repository.record(call);
     await repository.record(call);
-    await repository.record({ ...call, id: crypto.randomUUID(), promptVersion: "game/r3.3-v1" });
+    const operationId = crypto.randomUUID();
+    await repository.record({ ...call, id: crypto.randomUUID(), promptVersion: "game/r3.3-v1", operationId });
+    expect((await repository.list(new Date("2026-09-30"), 50, operationId)).calls).toHaveLength(1);
+    expect((await repository.list(new Date("2026-09-30"), 50, crypto.randomUUID())).calls).toEqual([]);
     expect((await repository.list(new Date("2026-09-30"), 1))).toMatchObject({ calls: [expect.objectContaining({ business: "game", model: "mock" })], truncated: true });
     expect((await repository.list(new Date("2026-09-30"))).calls).toHaveLength(2);
     const stored = (await repository.list(new Date("2026-09-30"))).calls;

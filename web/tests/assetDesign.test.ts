@@ -11,7 +11,7 @@ import { createGameTurnService } from "@/lib/game/gameTurnService";
 import { createGameNarrativeGenerator } from "@/lib/game/gameNarrativeGenerator";
 import { createGameAssetDesignApi } from "@/lib/api/gameAssetDesignApi";
 import { createAssetGenerationService, ASSET_DESIGN_PROMPT_VERSION } from "@/lib/game/worlds/assetGeneration";
-import { blankWorldBlueprint } from "@/lib/game/worlds/blueprint";
+import { seededWorldBlueprint as blankWorldBlueprint } from "./helpers/worldBlueprint";
 import { blankAssetDesign } from "@/lib/game/worlds/assetBlueprint";
 import { blankCharacterProfile, type ItemDesign, type CharacterDesign } from "@/lib/game/worlds/assetContracts";
 import { compileWorld, worldDraftIssues } from "@/lib/game/worlds/compile";

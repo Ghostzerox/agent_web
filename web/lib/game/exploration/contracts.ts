@@ -106,6 +106,8 @@ export const explorationStateSchema = z.object({
   knownEvents: keys.optional(),
   issuedUniqueItems: keys.optional(),
   acquisitions: acquisitionSchema.optional(),
+  encounters: z.array(z.object({ actorId: worldKey, sourceRequestId: z.uuid(), locationId: worldKey, tick: z.number().int().nonnegative() }).strict()).max(20)
+    .refine((entries) => new Set(entries.map((entry) => entry.actorId)).size === entries.length).optional(),
   cognition: cognitionSchema.optional(),
   receipt: z.object({ requestId: z.uuid(), fingerprint: z.string().regex(/^[a-f0-9]{64}$/u) }).strict().optional(),
 }).strict().superRefine((state, ctx) => {
@@ -147,6 +149,7 @@ export const explorationActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("negotiate"), targetId: worldKey }).strict(),
   z.object({ action: z.literal("choose"), eventId: worldKey, choiceId: worldKey }).strict(),
   z.object({ action: z.literal("wait") }).strict(),
+  z.object({ action: z.literal("encounter"), activity: z.string().trim().min(1).max(1000), confirmed: z.literal(true) }).strict(),
 ]);
 export type ExplorationState = z.infer<typeof explorationStateSchema>;
 export type ExplorationAction = z.infer<typeof explorationActionSchema>;

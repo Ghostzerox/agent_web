@@ -198,13 +198,13 @@ export function GamePlayPanel({ detail, onChange, onError, onNotice }: Props) {
 
   const runExploration = async (explorationAction: ExplorationAction, playerContent?: string, narrate = false, semanticInput?: SemanticInput) => {
     if (busy || detail.status !== "active") return false;
-    setBusy(true); onError(null); onNotice(narrate ? "AI 正在回应；只有这次明确发送会调用模型。" : null);
+    setBusy(true); onError(null); onNotice(explorationAction.action === "encounter" ? "AI 相遇请求处理中，用量以返回记录为准。" : narrate ? "AI 正在回应；只有这次明确发送会调用模型。" : null);
     const key = JSON.stringify({ session: detail.id, parentTurnId, version: detail.version, explorationAction, playerContent, narrate, semanticInput });
     if (toolRetry.current?.key !== key) toolRetry.current = { key, requestId: crypto.randomUUID() };
     try {
       const next = await createGameTurn(detail.id, playerContent ?? `探索动作：${explorationAction.action}`, parentTurnId, detail.version, [], null, { requestId: toolRetry.current.requestId, explorationAction, narrate, ...(semanticInput ? { semanticInput } : {}) });
       onChange(next); setBranchSelection(null); toolRetry.current = null;
-      onNotice(narrate ? "人物对话与宿主结果已保存。" : "探索动作已保存；未调用 AI。");
+      onNotice(explorationAction.action === "encounter" ? "相遇结果已保存；模型用量见上方（可能产生费用）。" : narrate ? "人物对话与宿主结果已保存。" : "探索动作已保存；未调用 AI。");
       return true;
     } catch (error) { onError(message(error)); onNotice(null); await recoverConflict(error); return false; }
     finally { setBusy(false); }

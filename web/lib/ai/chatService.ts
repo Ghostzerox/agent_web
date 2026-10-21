@@ -17,6 +17,7 @@ import {
   appendMessage,
 } from "@/lib/conversation/tree";
 import { apiFetch } from "@/lib/api/clientRuntime";
+import { finishModelResponse } from "./modelOperations";
 
 /**
  * 纯 API 调用。signal 直接传入 fetch，支持 AbortController。
@@ -52,6 +53,7 @@ export async function sendChatMessage(
     signal,
   });
 
+  try {
   if (!response.ok) {
     const body = await response.json().catch(() => null);
     const message = body?.error?.message;
@@ -113,6 +115,8 @@ export async function sendChatMessage(
   }
 
   return result || "（AI 未返回内容）";
+  } catch (error) { finishModelResponse(response, true); throw error; }
+  finally { finishModelResponse(response); }
 }
 
 // ── 领域 Action（纯计算，只算不写）──

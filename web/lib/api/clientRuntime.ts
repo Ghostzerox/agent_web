@@ -1,3 +1,4 @@
+import { beginModelOperation, bindModelResponse, finishModelOperation } from "@/lib/ai/modelOperations";
 let apiBaseUrl = "";
 
 export class ApiBaseUrlError extends Error {
@@ -48,6 +49,15 @@ export function resolveApiUrl(path: string): string {
   return apiBaseUrl ? new URL(path, `${apiBaseUrl}/`).toString() : path;
 }
 
-export function apiFetch(path: string, init?: RequestInit): Promise<Response> {
-  return fetch(resolveApiUrl(path), init);
+export async function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  const url = resolveApiUrl(path);
+  const operation = beginModelOperation(path, init);
+  if (!operation) return fetch(url, init);
+  const headers = new Headers(init?.headers); headers.set("x-model-operation-id", operation.id);
+  try {
+    const response = await fetch(url, { ...init, headers });
+    bindModelResponse(response, operation.id);
+    if (!response.ok || !response.headers.get("content-type")?.includes("text/event-stream")) finishModelOperation(operation.id, !response.ok);
+    return response;
+  } catch (error) { finishModelOperation(operation.id, true); throw error; }
 }

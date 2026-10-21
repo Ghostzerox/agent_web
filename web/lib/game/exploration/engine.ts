@@ -4,6 +4,7 @@ import type { WorldCondition, WorldEffect, WorldTemplate } from "./templateTypes
 import type { WorldTemplateResolver } from "./templateRegistry";
 import { withAcquiredItems } from "./runtimeItems";
 import { grantInventoryItem } from "./inventory";
+import { withEncounterCharacters } from "./runtimeCharacters";
 
 export function meets(state: ExplorationState, condition?: WorldCondition): boolean {
   return !condition || ((!condition.flag || state.flags[condition.flag] === true)
@@ -88,7 +89,7 @@ export function applyWorldEffect(state: ExplorationState, template: WorldTemplat
 }
 
 export function projectWorld(state: ExplorationState, template = getWorldTemplate(state.templateId, state.templateVersion)): ExplorationState {
-  template = withAcquiredItems(template, state);
+  template = withEncounterCharacters(withAcquiredItems(template, state), state);
   const current = template.locations.find((location) => location.id === state.locationId) ?? fail("当前位置不存在。");
   for (const exit of current.exits) if (meets(state, exit.requires)) add(state.discovered, exit.to);
   for (const definition of template.characters) {
@@ -177,7 +178,7 @@ export function applyExplorationAction(raw: ExplorationState | undefined, rawAct
   }
   if (!raw) fail("请先开启探索世界。");
   const state = explorationStateSchema.parse(structuredClone(raw));
-  const template = withAcquiredItems(resolve(state.templateId, state.templateVersion), state);
+  const template = withEncounterCharacters(withAcquiredItems(resolve(state.templateId, state.templateVersion), state), state);
   const location = template.locations.find((item) => item.id === state.locationId)!;
   state.tick += action.action === "inspect" ? 0 : 1;
   if (action.action === "move") {

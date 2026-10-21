@@ -12,7 +12,7 @@ import { createGamePlayApi } from "../lib/api/gamePlayApi";
 import { createGameTurnService } from "../lib/game/gameTurnService";
 import { createWorldGenerationService } from "../lib/game/worlds/generation";
 import { GameNarrativeGenerationError } from "../lib/game/gameNarrativeGenerator";
-import { blankWorldBlueprint } from "../lib/game/worlds/blueprint";
+import { seededWorldBlueprint as blankWorldBlueprint } from "../tests/helpers/worldBlueprint";
 
 const mobile = process.env.WORLD_CREATION_MOBILE_BUNDLE === "true";
 for (const width of [360, 1440]) test(`world authoring publishes a playable pinned revision at ${width}px`, async ({ page }) => {

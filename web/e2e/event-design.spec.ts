@@ -13,7 +13,7 @@ import { createGamePlayApi } from "../lib/api/gamePlayApi";
 import { createGameEventDesignApi } from "../lib/api/gameEventDesignApi";
 import { createEventGenerationService } from "../lib/game/events/generation";
 import { createGameTurnService } from "../lib/game/gameTurnService";
-import { blankWorldBlueprint } from "../lib/game/worlds/blueprint";
+import { seededWorldBlueprint as blankWorldBlueprint } from "../tests/helpers/worldBlueprint";
 import { blankAssetDesign } from "../lib/game/worlds/assetBlueprint";
 import type { ItemDesign } from "../lib/game/worlds/assetContracts";
 

@@ -17,7 +17,7 @@ import { createGameSessionApi } from "../lib/api/gameSessionApi";
 import { createGamePlayApi } from "../lib/api/gamePlayApi";
 import { createGameTurnService } from "../lib/game/gameTurnService";
 import { createGameNarrativeGenerator } from "../lib/game/gameNarrativeGenerator";
-import { blankWorldBlueprint } from "../lib/game/worlds/blueprint";
+import { seededWorldBlueprint as blankWorldBlueprint } from "../tests/helpers/worldBlueprint";
 import type { ModelStreamRequest } from "../lib/ai/server/modelProvider";
 
 const mobile = process.env.CREATION_JOURNEY_MOBILE_BUNDLE === "true";

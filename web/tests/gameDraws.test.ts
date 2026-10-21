@@ -9,7 +9,7 @@ import { createGameSessionRepository } from "@/lib/repositories/gameSessionRepos
 import { createGameDrawRepository } from "@/lib/repositories/gameDrawRepository";
 import { createGameTurnService } from "@/lib/game/gameTurnService";
 import { createGameTurnSchema } from "@/lib/game/contracts";
-import { blankWorldBlueprint } from "@/lib/game/worlds/blueprint";
+import { seededWorldBlueprint as blankWorldBlueprint } from "./helpers/worldBlueprint";
 import { blankAssetDesign } from "@/lib/game/worlds/assetBlueprint";
 import type { ItemDesign } from "@/lib/game/worlds/assetContracts";
 import type { DrawEntry, DrawPool } from "@/lib/game/draws/contracts";

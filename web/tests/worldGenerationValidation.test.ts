@@ -3,6 +3,7 @@ import { z } from "zod";
 import { blankWorldBlueprint } from "@/lib/game/worlds/blueprint";
 import { WORLD_SECTIONS, type WorldBrief } from "@/lib/game/worlds/contracts";
 import { validateWorldGenerationOutput, worldGenerationPatchSchema } from "@/lib/game/worlds/generationValidation";
+import { seededWorldBlueprint } from "./helpers/worldBlueprint";
 
 const brief: WorldBrief = { brief: "合成无魔法港城", magic: "forbidden", numericPolicy: "qualitative", constraints: [] };
 describe("world generation contract shared by prompt, server and local recovery", () => {
@@ -23,7 +24,7 @@ describe("world generation contract shared by prompt, server and local recovery"
     for (const raw of ['{"overview":', `解释：${full}`, "null", "[]"]) expect(validateWorldGenerationOutput(raw, [...WORLD_SECTIONS], null).success).toBe(false);
   });
   it("reports exact missing nested paths, leaving caller input unchanged", () => {
-    const content = blankWorldBlueprint(brief);
+    const content = seededWorldBlueprint(brief);
     const broken = JSON.parse(JSON.stringify(content)); delete broken.characters[0].profile.privateBackground;
     const raw = JSON.stringify(broken);
     expect(validateWorldGenerationOutput(raw, [...WORLD_SECTIONS], null)).toMatchObject({ success: false, stage: "schema", issues: expect.arrayContaining([expect.objectContaining({ path: "characters.0.profile.privateBackground" })]) });
@@ -36,7 +37,7 @@ describe("world generation contract shared by prompt, server and local recovery"
     expect(JSON.stringify(current)).toBe(original);
   });
   it("rejects the real-probe empty faction case and accepts only an explicit local correction", () => {
-    const content = blankWorldBlueprint(brief); content.characters[0].profile.faction = "";
+    const content = seededWorldBlueprint(brief); content.characters[0].profile.faction = "";
     const raw = JSON.stringify(content);
     expect(validateWorldGenerationOutput(raw, [...WORLD_SECTIONS], null)).toMatchObject({ success: false, stage: "schema", issues: expect.arrayContaining([expect.objectContaining({ path: "characters.0.profile.faction" })]) });
     expect(content.characters[0].profile.faction).toBe("");

@@ -13,7 +13,7 @@ import { createEventGenerationService, EVENT_DESIGN_PROMPT_VERSION } from "@/lib
 import { createGameTurnService } from "@/lib/game/gameTurnService";
 import { createGameTurnSchema } from "@/lib/game/contracts";
 import { createGameNarrativeGenerator } from "@/lib/game/gameNarrativeGenerator";
-import { blankWorldBlueprint } from "@/lib/game/worlds/blueprint";
+import { seededWorldBlueprint as blankWorldBlueprint } from "./helpers/worldBlueprint";
 import { blankAssetDesign } from "@/lib/game/worlds/assetBlueprint";
 import type { ItemDesign, CharacterDesign } from "@/lib/game/worlds/assetContracts";
 import { compileWorld } from "@/lib/game/worlds/compile";
