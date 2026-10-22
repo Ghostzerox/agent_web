@@ -1,4 +1,9 @@
 import type { WorldBlueprint, WorldBrief, WorldSection } from "./contracts";
+import { stableJson } from "@/lib/ai/stableJson";
+
+export function changedWorldSections(previous: WorldBlueprint | null, next: WorldBlueprint, sections: readonly WorldSection[]): WorldSection[] {
+  return sections.filter((section) => !previous || stableJson(previous[section]) !== stableJson(next[section]));
+}
 
 export const WORLD_SECTION_LABELS: Record<WorldSection, string> = {
   overview: "世界概览", ranks: "规则字典", region: "区域与地图", characters: "世界级人物（可为空）",

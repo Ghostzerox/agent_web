@@ -6,7 +6,7 @@ import { useNavigationGuard } from "@/components/platform/useNavigationGuard";
 import { replaceCurrentAppPath, navigateToAppPath } from "@/lib/platform/appNavigation";
 import { Button, Feedback, fieldClass as field, useConfirmAction } from "@/components/ui/Actions";
 import { WORLD_SECTIONS, type WorldBrief, type WorldSection, type WorldGenerationDiagnostics } from "@/lib/game/worlds/contracts";
-import { blankWorldBlueprint, WORLD_SECTION_LABELS } from "@/lib/game/worlds/blueprint";
+import { blankWorldBlueprint, changedWorldSections, WORLD_SECTION_LABELS } from "@/lib/game/worlds/blueprint";
 import { worldDraftIssues } from "@/lib/game/worlds/compile";
 import { createWorldDraft, getWorldDraft, listWorldDrafts, saveWorldDraft, generateWorldDraft, publishWorldDraft, createPublishedWorldSave,
   WorldGenerationClientError, type WorldDraft, type WorldDraftSummary, type WorldDraftDetail } from "@/lib/api/gameWorldClient";
@@ -66,11 +66,16 @@ export function WorldCreationWorkspace() {
     : draft?.content?.items.definitions.length && generationSections.includes("items") ? "已有道具不能用整稿生成覆盖，请选择具体部分或进入道具设计。" : "";
   const generate = async () => {
     if (!draft || generationBlocked || busy) return;
-    if (!await confirm({ title: "确认AI世界生成", modelCall: true, confirmLabel: "开始生成", description: <><p>将生成并保存：{unlockedSections.map((key) => WORLD_SECTION_LABELS[key]).join("、")}。</p><p>{draft.content ? "这些部分的原内容会被替换，锁定部分不变。" : "根据描述生成可编辑的世界草稿。"}使用模型设置中的当前服务，可能产生API费用；失败不自动重试，取消不退还已用费用。不会发布或改变旧存档。</p></> })) return;
+    if (!await confirm({ title: "确认AI世界生成", modelCall: true, confirmLabel: "开始生成", description: <><p>将生成并保存：{unlockedSections.map((key) => WORLD_SECTION_LABELS[key]).join("、")}。</p><p>{draft.content ? "根据已保存的创作描述重新设计这些部分，不是润色旧稿；原内容会被替换，锁定及未选部分不变。" : "根据描述生成可编辑的世界草稿。"}使用模型设置中的当前服务，可能产生API费用；失败不自动重试，取消不退还已用费用。不会发布或改变旧存档。</p></> })) return;
     void operate(async () => {
       if (generationAttempt.current?.key !== generationKey) generationAttempt.current = { key: generationKey, id: crypto.randomUUID() };
       abort.current = new AbortController(); setGenerating(true);
-      try { install(await generateWorldDraft(draft.id, draft.version, generationSections, generationAttempt.current.id, abort.current.signal)); generationAttempt.current = null; setNotice("AI草稿已保存，待你审阅；检查与发布后才用于新旅程。"); }
+      try {
+        const next = await generateWorldDraft(draft.id, draft.version, generationSections, generationAttempt.current.id, abort.current.signal);
+        const changed = next.content ? changedWorldSections(draft.content, next.content, unlockedSections) : [];
+        install(next); generationAttempt.current = null;
+        setNotice(changed.length ? `AI草稿已保存为v${next.version}；实际更新：${changed.map((key) => WORLD_SECTION_LABELS[key]).join("、")}。待你审阅，检查与发布后才用于新旅程。` : `本次返回与当前所选内容一致，当前为草稿v${next.version}；没有新的世界改动。`);
+      }
       finally { abort.current = null; setGenerating(false); }
     });
   };
@@ -119,7 +124,7 @@ export function WorldCreationWorkspace() {
         {revisions.length > 0 && <section className="space-y-3 border-t border-[var(--workspace-border)] pt-5"><h4 className="font-semibold">已发布，可以开始探索</h4><Button disabled={busy} onClick={() => startSave(revisions.reduce((latest, row) => Math.max(latest, row.revision), 0))}>开始新旅程</Button><details><summary className="text-sm">其他已发布版本</summary>{revisions.map((revision) => <div key={revision.revision} className="flex items-center gap-2"><span className={styles.metadata}>版本r{revision.revision}</span><Button disabled={busy} onClick={() => startSave(revision.revision)}>使用此版本</Button></div>)}</details>{saveId && <AppLink className="ui-button ui-button-primary" href={`/entertainment?session=${saveId}`}>打开新旅程 →</AppLink>}</section>}
       </>}
       </section>
-      <div className="ui-actionbar"><span className={styles.metadata}>{busy ? generating ? "正在生成，准确用量返回后显示" : "正在处理…" : pendingStructure ? "JSON修改尚未应用" : dirty ? "未保存更改" : "已保存"}</span><div className="flex flex-wrap gap-2"><Button variant={section === "preview" ? "secondary" : "primary"} disabled={busy || !dirty || pendingStructure} onClick={() => void operate(async () => { install(await saveWorldDraft(draft)); setNotice("更改已保存，旧旅程不受影响。"); })}>保存更改</Button>{section !== "preview" && <Button disabled={busy || pendingStructure} onClick={() => chooseSection("preview")}>检查与发布</Button>}</div></div>
+      <div className="ui-actionbar"><span className={styles.metadata}>{busy ? generating ? "正在生成，准确用量返回后显示" : "正在处理…" : pendingStructure ? "JSON修改尚未应用" : dirty ? "未保存更改" : `已保存 · 草稿v${draft.version}`}</span><div className="flex flex-wrap gap-2"><Button variant={section === "preview" ? "secondary" : "primary"} disabled={busy || !dirty || pendingStructure} onClick={() => void operate(async () => { install(await saveWorldDraft(draft)); setNotice("更改已保存，旧旅程不受影响。"); })}>保存更改</Button>{section !== "preview" && <Button disabled={busy || pendingStructure} onClick={() => chooseSection("preview")}>检查与发布</Button>}</div></div>
     </div></div>}
   </main>;
 }

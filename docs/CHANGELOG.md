@@ -2,6 +2,14 @@
 
 当前收敛阶段摘要。完整旧日志见 [R9.4前冻结版本](https://github.com/Ghostzerox/agent_web/blob/ebaeecbf67dfc03e34065d25e68d51f005177095/docs/CHANGELOG.md)，各阶段索引见 [历史](HISTORY.md)。当前排序只看 [产品主线](PRODUCT_MAINLINE_GUIDE.md)。
 
+## 修正 — 世界多次覆盖与生成反馈（2026-10-22）
+
+**Commit**: `same delivery commit`
+
+- 同描述的覆盖明确为重新设计：v5 Prompt不再把待覆盖旧稿作为底稿，只保留描述 / 约束与不可改动分区；数据库仍仅替换授权分区，锁定 / 发布 / 旧存档边界不变。
+- 完全相同的模型结果不再当作新版本保存，明确提示原稿未变和可能费用，不自动重试；成功后显示实际变化分区和草稿版本，保留请求幂等与版本冲突保护。
+- 新增独立SQL / API及双宿主浏览器回归，覆盖同描述连续全稿生成→刷新读取新版、未变输出、锁定和同请求重放。不发送用户世界或调用收费模型；无依赖、迁移和localStorage键变化，验证结果见[世界创作指南](WORLD_CREATION_GUIDE.md)。
+
 ## R12反馈修正 — 上级返回、收纳与模式视觉（2026-10-22）
 
 **Commit**: `same delivery commit`

@@ -157,11 +157,53 @@ describe("R10.3 persisted world creation and playable revisions", () => {
     expect(first.content?.overview).toEqual(locked.content?.overview); expect(first.content?.opening.text).toBe("合成新开场");
     expect(first.origins.opening).toBe("ai"); expect(first.origins.overview).toBe("user");
     expect(JSON.parse(requests[0].messages.at(-1)!.content as string).requestedSections).toEqual(["opening"]);
+    const context = JSON.parse(requests[0].messages.at(-1)!.content as string);
+    expect(context.operation).toBe("regenerate");
+    expect(context.current).not.toHaveProperty("opening");
+    expect(context.current.overview).toEqual(locked.content!.overview);
     expect((await createWorldGenerationService(repo, generator).generate(row.id, input)).version).toBe(first.version);
     expect(requests).toHaveLength(1);
     await expect(service.generate(row.id, { ...input, sections: ["region"] })).rejects.toMatchObject({ code: "WORLD_VERSION_CONFLICT" });
     await expect(service.generate(row.id, { ...input, requestId: crypto.randomUUID(), expectedVersion: first.version, sections: ["overview"] })).rejects.toMatchObject({ code: "WORLD_INVALID" });
     expect(requests).toHaveLength(1); expect(await repo.revisions(row.id)).toEqual([]);
+  });
+
+  it("regenerates the same brief repeatedly without using replacement targets as source, then cold-loads the newest draft", async () => {
+    const original = await filled();
+    const payloads: { operation: string; input: WorldBrief; current: unknown }[] = [];
+    const generator = { generate: vi.fn<GameNarrativeGeneratorPort["generate"]>(async (messages) => {
+      payloads.push(JSON.parse(messages.at(-1)!.content as string));
+      const next = blueprint(); next.overview.name = `全新设计${payloads.length}`; next.region.name = `新区域${payloads.length}`;
+      return { content: JSON.stringify(next), model: "synthetic" };
+    }) };
+    const service = createWorldGenerationService(repo, generator);
+    const firstRequest = { expectedVersion: original.version, requestId: crypto.randomUUID(), sections: [...WORLD_SECTIONS] };
+    const first = await service.generate(original.id, firstRequest);
+    const replay = await createWorldGenerationService(repo, generator).generate(original.id, firstRequest);
+    expect(replay).toEqual(first); expect(generator.generate).toHaveBeenCalledOnce();
+    const second = await service.generate(original.id, { ...firstRequest, expectedVersion: first.version, requestId: crypto.randomUUID() });
+    expect(first.content!.overview.name).toBe("全新设计1");
+    expect(second.content!.overview.name).toBe("全新设计2");
+    expect(second.content!.region.name).toBe("新区域2");
+    expect(second.version).toBe(original.version + 2);
+    expect(await createGameWorldRepository(db).get(original.id)).toEqual(second);
+    expect(payloads).toEqual([1, 2].map(() => ({ operation: "regenerate", input: brief, current: {}, requestedSections: [...WORLD_SECTIONS], lockedSections: [] })));
+    expect(original.content!.overview.name).toBe("合成铜湾");
+    expect(await repo.revisions(original.id)).toEqual([]);
+  });
+
+  it("does not report an identical model response as a new saved version or retry it automatically", async () => {
+    const row = await filled();
+    // Key order is not a meaningful change.
+    const overview = Object.fromEntries(Object.entries(row.content!.overview).reverse());
+    const generate = vi.fn<GameNarrativeGeneratorPort["generate"]>().mockResolvedValue({ content: JSON.stringify({ overview }), model: "synthetic" });
+    const api = createGameWorldApi(repo, createWorldGenerationService(repo, { generate }));
+    const response = await api(new Request(`http://test.invalid/api/v1/game-worlds/${row.id}/generate`, { method: "POST",
+      body: JSON.stringify({ expectedVersion: row.version, requestId: crypto.randomUUID(), sections: ["overview"] }) }), [row.id, "generate"]);
+    expect(response.status).toBe(422);
+    expect((await response.json()).error).toMatchObject({ code: "WORLD_GENERATION_FAILED", message: expect.stringContaining("完全相同"), retryable: false });
+    expect(await repo.get(row.id)).toEqual(row);
+    expect(generate).toHaveBeenCalledOnce();
   });
 
   it("initially generates all sections, but malformed, canceled, stale and racing outputs never overwrite prior edits", async () => {

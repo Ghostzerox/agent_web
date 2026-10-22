@@ -14,7 +14,7 @@ import { createGameDrawRepository } from "../../lib/repositories/gameDrawReposit
 import { seededWorldBlueprint as blankWorldBlueprint } from "../../tests/helpers/worldBlueprint";
 import { worldDraftIssues } from "../../lib/game/worlds/compile";
 import { WORLD_SECTIONS, type WorldBrief } from "../../lib/game/worlds/contracts";
-import { createWorldGenerationService } from "../../lib/game/worlds/generation";
+import { createWorldGenerationService, WORLD_CREATION_PROMPT_VERSION } from "../../lib/game/worlds/generation";
 import { createAssetGenerationService } from "../../lib/game/worlds/assetGeneration";
 import { createEventGenerationService } from "../../lib/game/events/generation";
 import { createDrawGenerationService } from "../../lib/game/draws/generation";
@@ -27,8 +27,8 @@ export function syntheticQualityReply(request: ModelStreamRequest): string {
   if (request.promptVersion === "r10/exploration-v3") return JSON.stringify({ narrative: "我还没核对港口告示，不如一起看看？", statePatch: {} });
   const payload = JSON.parse(request.messages.findLast((message) => message.role === "user")!.content as string);
   switch (request.promptVersion) {
-    case "r10/world-authoring-v4": {
-      const current = payload.current ?? blankWorldBlueprint(payload.input);
+    case WORLD_CREATION_PROMPT_VERSION: {
+      const current = { ...blankWorldBlueprint(payload.input), ...payload.current };
       return JSON.stringify(Object.fromEntries(payload.requestedSections.map((key: string) => [key, key === "overview"
         ? { ...current.overview, name: "铜湾港", era: "蒸汽时代", technology: "铜铆与蒸汽工艺" } : current[key]])));
     }
