@@ -7,9 +7,10 @@ import { validateWorldGenerationOutput } from "@/lib/game/worlds/generationValid
 import { WORLD_SECTION_LABELS } from "@/lib/game/worlds/blueprint";
 import { buttonClass as worldButtonClass, fieldClass as worldFieldClass, useConfirmAction } from "@/components/ui/Actions";
 
-export function WorldGenerationRecovery({ diagnostics, draft, disabled, onApply, onDiscard }: {
+export function WorldGenerationRecovery({ diagnostics, draft, disabled, onApply, onDiscard, onError }: {
   diagnostics: WorldGenerationDiagnostics; draft: WorldDraft; disabled: boolean;
   onApply: (content: WorldBlueprint) => void; onDiscard: () => void;
+  onError?: (message: string) => void;
 }) {
   const { confirm, confirmation } = useConfirmAction();
   const [raw, setRaw] = useState(diagnostics.rawOutput);
@@ -24,7 +25,7 @@ export function WorldGenerationRecovery({ diagnostics, draft, disabled, onApply,
     <p className="text-xs text-zinc-500">{stale ? "草稿版本或锁定范围已改变，此结果不能直接应用。请先复制保留并核对新草稿。" : disabled ? "请先应用 / 放弃其他未提交的JSON并保存草稿，再处理此结果。" : "修正后点击检查；通过才放入当前表单，之后仍需手动保存，不会发布或改动存档。"}</p>
     <div className="flex flex-wrap gap-2"><button className={worldButtonClass} disabled={disabled || stale || !diagnostics.rawComplete} onClick={() => {
       const result = validateWorldGenerationOutput(raw, diagnostics.sections, draft.content);
-      if (!result.success) { setIssues(result.issues); return; }
+      if (!result.success) { setIssues(result.issues); onError?.(`本地重新检查：${result.stage === "json" ? "JSON语法" : "结构 / 字段"}问题：${result.issues.map((issue) => `${issue.path}：${issue.message}`).join("；")}。原草稿未改动，不调用AI。`); return; }
       onApply(result.content);
     }}>检查并应用</button>
       <button className={worldButtonClass} disabled={disabled} onClick={async () => { if (await confirm({ title: "丢弃失败结果？", description: "只移除当前页面的结果，原草稿不变。已用API费用不退。", confirmLabel: "丢弃结果", danger: true })) onDiscard(); }}>丢弃结果</button></div>

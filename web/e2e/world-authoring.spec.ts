@@ -74,6 +74,7 @@ for (const width of [360, 1440]) test(`world authoring publishes a playable pinn
     const corrected = JSON.parse(await failedJson.inputValue()); corrected.characters[0].profile.privateBackground = "合成修正：曾在港口整理旧档案。";
     await recovery.getByRole("button", { name: "检查并应用", exact: true }).click();
     await expect(recovery).toBeVisible(); expect(calls).toBe(2);
+    await expect(page.getByRole("main", { name: "世界创作工作台", exact: true }).getByRole("alert")).toContainText("本地重新检查：结构 / 字段");
     await failedJson.fill(JSON.stringify(corrected));
     await recovery.getByRole("button", { name: "检查并应用", exact: true }).click();
     await expect(recovery).toHaveCount(0); expect(calls).toBe(2);

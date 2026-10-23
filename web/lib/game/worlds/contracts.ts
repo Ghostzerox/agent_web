@@ -1,12 +1,12 @@
 import { z } from "zod";
 import { numericPolicySchema, worldRanksSchema } from "../exploration/contracts";
-import { characterDesignSchema, itemRulesSchema, worldItemsSchema } from "./assetContracts";
+import { characterDesignSchema, designKey, itemRulesSchema, worldItemsSchema } from "./assetContracts";
 import { drawPoolsSchema } from "../draws/contracts";
 import { eventDefinitionSchema } from "../events/contracts";
 
 const text = z.string().trim().min(1).max(600);
 const lines = z.array(text).max(12);
-const key = z.string().regex(/^[a-z][a-z0-9-]{0,23}$/u).refine((id) => !["player", "host", "constructor", "prototype"].includes(id));
+const key = designKey;
 export const WORLD_SECTIONS = ["overview", "ranks", "itemRules", "region", "characters", "items", "lore", "opening", "hook", "authorNotes", "conflicts"] as const;
 export const worldSectionSchema = z.enum(WORLD_SECTIONS);
 export type WorldSection = typeof WORLD_SECTIONS[number];

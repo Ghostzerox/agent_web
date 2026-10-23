@@ -1,0 +1,107 @@
+import { expect, test } from "@playwright/test";
+import { PGlite } from "@electric-sql/pglite";
+import { drizzle } from "drizzle-orm/pglite";
+import * as schema from "../lib/db/schema";
+import { loadMigrations, migrateDatabase } from "../lib/db/migrations";
+import { createPgliteMigrationDatabase } from "../tests/helpers/pglite";
+import { createGameWorldRepository } from "../lib/repositories/gameWorldRepository";
+import { createGameSessionRepository } from "../lib/repositories/gameSessionRepository";
+import { createGameWorldApi } from "../lib/api/gameWorldApi";
+import { createGameSessionApi } from "../lib/api/gameSessionApi";
+import { createGamePlayApi } from "../lib/api/gamePlayApi";
+import { createGameTurnService } from "../lib/game/gameTurnService";
+import { createWorldGenerationService } from "../lib/game/worlds/generation";
+import { blankWorldBlueprint } from "../lib/game/worlds/blueprint";
+import { blankAssetDesign } from "../lib/game/worlds/assetBlueprint";
+import { selectWorldSection, confirmNewJourney } from "./helpers/r12Navigation";
+
+const mobile = process.env.WORLD_CREATION_MOBILE_BUNDLE === "true";
+for (const width of [360, 1440]) test(`local JSON recovery → plot-free action → persisted scene at ${width}px`, async ({ page }) => {
+  test.setTimeout(90000); const pg = new PGlite(); let calls = 0;
+  try {
+    await migrateDatabase(createPgliteMigrationDatabase(pg), await loadMigrations()); const db = drizzle(pg, { schema });
+    const worlds = createGameWorldRepository(db); const sessions = createGameSessionRepository(db);
+    const input = { brief: "合成田园自由生活，不要谜案与预写人物。", magic: "forbidden" as const, numericPolicy: "qualitative" as const, constraints: [] };
+    const created = await worlds.create(input); const original = blankWorldBlueprint(input);
+    await worlds.update(created.id, { expectedVersion: created.version, input, content: original, lockedSections: [] });
+    const restored = structuredClone(original); restored.overview.name = "恢复后的合成世界";
+    restored.lore = [{ id: `synthetic-rule-${"x".repeat(11)}`, text: "当地人以种植为生。", locationId: restored.region.startId, kind: "fact", visibility: "public", knownBy: [] }];
+    const worldApi = createGameWorldApi(worlds, createWorldGenerationService(worlds, { generate: async () => { throw new Error("Local recovery must never generate"); } }));
+    const sessionApi = createGameSessionApi(sessions);
+    const playApi = createGamePlayApi(sessions, createGameTurnService(sessions, { generate: async (messages, _signal, options) => {
+      calls++; expect(options?.promptVersion).toBe("world-free-action/v1"); expect(messages[0].content).toContain("不需要预设剧情");
+      return { content: '{"narrative":"你在树荫下练习呼吸，然后安静地歇息了一会儿。","statePatch":{}}', model: "synthetic" };
+    } }, undefined, undefined, worlds.resolveSessionTemplate));
+    await page.route("**/api/**", async (route) => {
+      const req = route.request(), url = new URL(req.url());
+      const request = new Request(req.url(), { method: req.method(), ...(req.postData() ? { body: req.postData()! } : {}) });
+      let result: Response;
+      if (url.pathname.startsWith("/api/v1/game-worlds")) result = await worldApi(request, url.pathname.split("/").slice(4));
+      else if (url.pathname === "/api/v1/game-sessions") result = await sessionApi.list();
+      else if (url.pathname.startsWith("/api/v1/game-sessions/")) {
+        const [, , , , id, action] = url.pathname.split("/");
+        result = action === "turns" ? await playApi.createTurn(id, request) : action === "status" ? await playApi.updateStatus(id, request) : await sessionApi.get(id);
+      } else return route.fulfill({ json: { data: [] } });
+      await route.fulfill({ status: result.status, contentType: "application/json", body: await result.text() });
+    });
+    page.on("dialog", (dialog) => dialog.accept()); await page.setViewportSize({ width, height: 900 });
+    const path = `/entertainment?view=creator&world=${created.id}&section=overview`;
+    await page.goto(mobile ? `/#${path}` : path);
+    await page.getByRole("main", { name: "世界创作工作台", exact: true }).getByText("更多", { exact: true }).click();
+    await page.getByRole("button", { name: "从文件恢复草稿", exact: true }).click();
+    const panel = page.getByRole("region", { name: "从文件恢复草稿", exact: true });
+    await panel.getByRole("textbox", { name: "完整生成结果JSON", exact: true }).fill('{"overview":');
+    await panel.getByRole("button", { name: "检查并放入表单", exact: true }).click();
+    await expect(panel.getByRole("alert")).toContainText("完整JSON");
+    expect((await worlds.get(created.id)).content).toEqual(original); expect(calls).toBe(0);
+    await panel.getByLabel("生成结果文件", { exact: true }).setInputFiles({ name: "synthetic-world.txt", mimeType: "text/plain", buffer: Buffer.from(`\uFEFF${JSON.stringify(restored)}`) });
+    await expect(panel.getByRole("button", { name: "检查并放入表单", exact: true })).toBeEnabled();
+    await panel.getByRole("button", { name: "检查并放入表单", exact: true }).click();
+    await expect(panel).toHaveCount(0); await expect(page.getByRole("status")).toContainText("尚未保存");
+    expect((await worlds.get(created.id)).content).toEqual(original);
+    await page.getByRole("button", { name: "保存更改", exact: true }).click();
+    await page.reload(); await expect(page.getByRole("textbox", { name: "名称", exact: true })).toHaveValue(restored.overview.name);
+    expect((await worlds.get(created.id)).content).toEqual(restored); expect(calls).toBe(0);
+    await page.getByText("保护此部分", { exact: true }).click(); await page.getByLabel("AI不改写此部分，仍可手动编辑").check();
+    await page.getByRole("button", { name: "保存更改", exact: true }).click();
+    await expect(page.getByRole("button", { name: "保存更改", exact: true })).toBeDisabled();
+    await page.getByRole("main", { name: "世界创作工作台", exact: true }).getByText("更多", { exact: true }).click();
+    await page.getByRole("button", { name: "从文件恢复草稿", exact: true }).click();
+    await panel.getByRole("textbox", { name: "完整生成结果JSON", exact: true }).fill(JSON.stringify(original));
+    await panel.getByRole("button", { name: "检查并放入表单", exact: true }).click();
+    await expect(panel.getByRole("alert")).toContainText("受保护部分"); expect((await worlds.get(created.id)).content).toEqual(restored);
+    await panel.getByRole("button", { name: "关闭恢复面板", exact: true }).click();
+    await page.getByRole("dialog", { name: "关闭恢复面板？", exact: true }).getByRole("button", { name: "关闭面板", exact: true }).click();
+    await expect(panel).toHaveCount(0);
+    // Import must not clear independent item definitions, even without a placement or reference.
+    let current = await worlds.get(created.id); const stocked = structuredClone(current.content!);
+    const item = blankAssetDesign("item", "synthetic-stool", input, stocked); if (item.kind !== "item") throw new Error("Expected item fixture");
+    stocked.items.definitions.push(item);
+    await worlds.update(created.id, { expectedVersion: current.version, input, content: stocked, lockedSections: current.lockedSections });
+    await page.reload(); await expect(page.getByRole("textbox", { name: "名称", exact: true })).toHaveValue(restored.overview.name);
+    await page.getByRole("main", { name: "世界创作工作台", exact: true }).getByText("更多", { exact: true }).click();
+    await page.getByRole("button", { name: "从文件恢复草稿", exact: true }).click();
+    await panel.getByRole("textbox", { name: "完整生成结果JSON", exact: true }).fill(JSON.stringify(restored));
+    await panel.getByRole("button", { name: "检查并放入表单", exact: true }).click();
+    await expect(panel.getByRole("alert")).toContainText("已有道具定义"); expect((await worlds.get(created.id)).content!.items.definitions).toHaveLength(1);
+    await panel.getByRole("textbox", { name: "完整生成结果JSON", exact: true }).fill(""); await panel.getByRole("button", { name: "关闭恢复面板", exact: true }).click();
+    // Restore this isolated fixture for the empty-world journey; no real database is involved.
+    current = await worlds.get(created.id);
+    await worlds.update(created.id, { expectedVersion: current.version, input, content: restored, lockedSections: current.lockedSections });
+    await page.reload(); await expect(page.getByRole("textbox", { name: "名称", exact: true })).toHaveValue(restored.overview.name);
+    await selectWorldSection(page, "预览与发布");
+    await page.getByLabel("我已审阅当前草稿、硬约束与公开 / 隐藏设定，确认发布本版本").check();
+    await page.getByRole("button", { name: "发布版本", exact: true }).click(); await confirmNewJourney(page);
+    await page.getByRole("link", { name: "打开新旅程 →", exact: true }).click();
+    await page.getByRole("button", { name: "开启探索世界", exact: true }).click();
+    await page.getByRole("combobox", { name: "探索输入类型", exact: true }).selectOption("action");
+    await page.getByRole("textbox", { name: "你的行动或台词", exact: true }).fill("在树荫下练习呼吸，然后歇息。不接任务。");
+    await page.getByRole("button", { name: "发送并继续", exact: true }).click();
+    await expect.poll(() => calls).toBe(1);
+    await expect(page.getByText("你在树荫下练习呼吸，然后安静地歇息了一会儿。", { exact: true }).first()).toBeVisible();
+    await page.reload(); await expect(page.getByText("你在树荫下练习呼吸，然后安静地歇息了一会儿。", { exact: true }).first()).toBeVisible();
+    const saved = await sessions.get((await sessions.list())[0].id); const state = saved!.turns.at(-1)!.stateSnapshot.exploration!;
+    expect(state.lastResult).toContain("呼吸"); expect(state.view.events).toEqual([]); expect(state.instances).toEqual([]); expect(Object.keys(state.characters)).toEqual(["player"]);
+    expect(calls).toBe(1); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  } finally { await pg.close(); }
+});

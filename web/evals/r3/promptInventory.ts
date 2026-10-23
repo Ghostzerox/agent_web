@@ -1,5 +1,5 @@
 import { GAME_PROMPT_VERSION, TASK_PROMPT_PROFILES } from "@/lib/ai/taskPromptProfiles";
-import { EXPLORATION_PROMPT_VERSION } from "@/lib/game/exploration/prompt";
+import { EXPLORATION_PROMPT_VERSION, FREE_ACTION_PROMPT_VERSION } from "@/lib/game/exploration/prompt";
 
 /** Audit data only; runtime generation uses the actual builders below. */
 export const PROMPT_BASELINE_VERSION = "r10/integration-v1";
@@ -20,7 +20,8 @@ export type PromptEntryId = typeof PROMPT_ENTRY_POINTS[number]["id"];
 // Auxiliary paid operation, separately tested with source/branch/approval fixtures; not a new user mode.
 export const AUXILIARY_PROMPT_ENTRY_POINTS = [
   { id: "context-summary", source: "lib/api/conversationSummaryApi.ts", builder: "lib/conversation/summary.ts", version: "branch-summary/r5.5-v1", fallback: "full raw branch or explicit input-limit error; never automatic regeneration" },
-  { id: "world-authoring", source: "lib/game/worlds/generation.ts", builder: "lib/game/worlds/generation.ts", version: "r10/world-authoring-v5", fallback: "open-world create/regenerate with replacement targets excluded from context; unchanged-result feedback; schema diagnostics and local repair; no automatic retry" },
+  { id: "world-authoring", source: "lib/game/worlds/generation.ts", builder: "lib/game/worlds/generation.ts", version: "r10/world-authoring-v6", fallback: "open-world create/regenerate with replacement targets excluded from context; unchanged-result feedback; schema diagnostics and local repair; no automatic retry" },
+  { id: "world-free-action", source: "lib/game/exploration/turn.ts", builder: "lib/game/exploration/prompt.ts", version: FREE_ACTION_PROMPT_VERSION, fallback: "action-only scene resolution saved in branch; invalid/canceled output never appended; inventory/map/NPC changes remain structured tool results" },
   { id: "world-encounter", source: "lib/game/exploration/encounters.ts", builder: "lib/game/exploration/encounters.ts", version: "world-encounter/v1", fallback: "explicit paid action, public ordinary NPC or nobody; validated branch-only snapshot; no hidden author context or automatic retry" },
   { id: "item-character-design", source: "lib/game/worlds/assetGeneration.ts", builder: "lib/game/worlds/assetGeneration.ts", version: "r10/item-character-design-v1", fallback: "explicit fields/locks; invalid, stale or canceled result preserves design; confirmation never grants inventory" },
   { id: "draw-item-design", source: "lib/game/draws/generation.ts", builder: "lib/game/draws/generation.ts", version: "r10/draw-item-design-v2", fallback: "complete current-shaped item without wrappers; durable attempt claim; fixed host sample; failed/stale/cancelled output never grants or deducts" },

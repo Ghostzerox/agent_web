@@ -12,6 +12,7 @@ import { createWorldDraft, getWorldDraft, listWorldDrafts, saveWorldDraft, gener
   WorldGenerationClientError, type WorldDraft, type WorldDraftSummary, type WorldDraftDetail } from "@/lib/api/gameWorldClient";
 import { WorldSectionEditor } from "./WorldSectionEditor";
 import { WorldGenerationRecovery } from "./WorldGenerationRecovery";
+import { WorldDraftImport } from "./WorldDraftImport";
 import { WorldCreationNavigation, creatorLink, issueSection } from "./WorldCreationNavigation";
 import styles from "./worldCreation.module.css";
 
@@ -30,6 +31,7 @@ export function WorldCreationWorkspace() {
   const [reviewed, setReviewed] = useState(false); const [whole, setWhole] = useState(false);
   const [pendingStructure, setPendingStructure] = useState(false); const [editorEpoch, setEditorEpoch] = useState(0);
   const [recovery, setRecovery] = useState<WorldGenerationDiagnostics | null>(null);
+  const [importing, setImporting] = useState(false);
   const abort = useRef<AbortController | null>(null); const generationAttempt = useRef<{ key: string; id: string } | null>(null);
   const saveAttempt = useRef<{ revision: number; requestId: string } | null>(null);
   const { confirm, confirmation } = useConfirmAction();
@@ -87,21 +89,22 @@ export function WorldCreationWorkspace() {
   return <main className={styles.workspace} aria-label="世界创作工作台">
     {confirmation}
     <header className={styles.heading}><div><p className={styles.eyebrow}>WORLD ATELIER / 世界创作</p><h2>{draft?.content?.overview.name ?? "世界创作工作台"}</h2><p>把想法变成可自由探索的世界。</p></div><span className={styles.compass} aria-hidden="true">✧</span>
-      {draft && <details className="ui-more"><summary className="ui-button ui-button-quiet">更多</summary><div><Button variant="quiet" disabled={busy} onClick={() => void operate(async () => {
+      {draft && <details className="ui-more"><summary className="ui-button ui-button-quiet">更多</summary><div><Button variant="quiet" disabled={busy || importing} onClick={() => void operate(async () => {
         if ((dirty || recovery) && !await confirm({ title: "放弃本地修改并重新加载？", danger: true, confirmLabel: "放弃并加载", description: "未保存编辑和本次失败生成结果将被丢弃，服务端草稿不受影响。" })) return;
         const fresh = await getWorldDraft(draft.id); install(fresh); setRevisions(fresh.revisions); setNotice("已重新加载。");
-      })}>重新加载</Button><p className="p-2 text-xs text-[var(--workspace-muted)]">草稿版本 {draft.version}<br />仅新旅程使用新发布版本</p></div></details>}
+      })}>重新加载</Button><Button variant="quiet" disabled={busy || dirty || importing} onClick={(event) => { setImporting(true); event.currentTarget.closest("details")?.removeAttribute("open"); }}>从文件恢复草稿</Button><p className="p-2 text-xs text-[var(--workspace-muted)]">草稿版本 {draft.version}<br />仅新旅程使用新发布版本</p></div></details>}
     </header>
     <div className={styles.steps}><span aria-current={!draft ? "step" : undefined}>1 描述世界</span><span aria-current={draft && section !== "preview" ? "step" : undefined}>2 完善设定</span><span aria-current={section === "preview" ? "step" : undefined}>3 检查与开始</span></div>
     <Feedback error={error} notice={notice} />
-    {recovery && draft && <WorldGenerationRecovery key={`${recovery.worldId}:${recovery.requestId}`} diagnostics={recovery} draft={draft} disabled={busy || dirty} onApply={(content) => { edit({ ...draft, content }); setRecovery(null); setError(""); setNotice("修正结果已应用到表单，尚未保存；保存后可继续检查与发布。没有调用AI。"); }} onDiscard={() => { setRecovery(null); setError(""); }} />}
+    {recovery && draft && <WorldGenerationRecovery key={`${recovery.worldId}:${recovery.requestId}`} diagnostics={recovery} draft={draft} disabled={busy || dirty || importing} onError={setError} onApply={(content) => { edit({ ...draft, content }); setRecovery(null); setError(""); setNotice("修正结果已应用到表单，尚未保存；保存后可继续检查与发布。没有调用AI。"); }} onDiscard={() => { setRecovery(null); setError(""); }} />}
+    {importing && draft && <WorldDraftImport key={draft.id} draft={draft} disabled={busy || dirty} onApply={(content) => { edit({ ...draft, content }); setImporting(false); setRecovery(null); setError(""); setNotice("文件已通过检查并放入表单，尚未保存；请审阅后保存更改。没有调用AI。"); }} onClose={() => setImporting(false)} />}
     {!id && <div className="grid gap-6 lg:grid-cols-2"><form className={`${styles.panel} space-y-4`} onSubmit={(event) => { event.preventDefault(); void operate(async () => { const created = await createWorldDraft(input); setCreatedId(created.id); }); }}>
       <h3>从一个想法开始</h3><label className="block text-sm">粗略世界描述<textarea required disabled={busy || Boolean(createdId)} placeholder="例如：没有魔法的海边城市，人们以手艺和航海为生……" maxLength={4000} rows={6} className={field} value={input.brief} onChange={(event) => setInput({ ...input, brief: event.target.value })} /></label>
       <BriefOptions input={input} onChange={setInput} /><p className={styles.metadata}>先保存描述，再选择AI补全或手动填写；创建本身不调用AI。</p>
       <Button type="submit" variant="primary" disabled={busy || !input.brief.trim() || Boolean(createdId)}>{busy ? "创建中…" : "创建世界"}</Button>
     </form><section className={`${styles.panel} space-y-3`}><h3>我的世界</h3>{!list.length && <p className={styles.metadata}>还没有世界。从描述开始，不必先设计完整人物与故事。</p>}{list.map((row) => <AppLink key={row.id} href={creatorLink(row.id, "overview")} className="module-card"><strong>{row.name}</strong><p className={styles.metadata}>{row.brief}</p><span className="text-sm text-[var(--workspace-accent)]">继续编辑 →</span></AppLink>)}</section></div>}
     {id && !draft && !error && <p role="status">正在读取世界草稿…</p>}
-    {draft && <div className={styles.body}><WorldCreationNavigation id={draft.id} section={section} onSelect={chooseSection} /><div className={styles.editor}>
+    {draft && !importing && <div className={styles.body}><WorldCreationNavigation id={draft.id} section={section} onSelect={chooseSection} /><div className={styles.editor}>
       <section className={`${styles.panel} space-y-5`} aria-label="当前创作部分"><fieldset disabled={busy} className="space-y-4">
         {section === "brief" && <><h3>创作描述</h3><p className={styles.metadata}>你的描述与规则由你决定，AI不会改写。</p><label className="block text-sm">粗略世界描述<textarea maxLength={4000} rows={5} className={field} value={draft.input.brief} onChange={(event) => edit({ ...draft, input: { ...draft.input, brief: event.target.value } })} /></label><BriefOptions input={draft.input} onChange={(value) => edit({ ...draft, input: value })} /></>}
         {selected && <><h3>{WORLD_SECTION_LABELS[selected]}</h3><p className={styles.metadata}>{draft.origins[selected] === "ai" ? "AI补充，待审阅" : "按你的想法编辑；更改后记得保存。"}</p>

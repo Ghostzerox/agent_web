@@ -2,10 +2,10 @@ import type { CreateGameTurnRequest } from "../contracts";
 import type { GameNarrativeGeneratorPort } from "../gameNarrativeGenerator";
 import { parseGameModelTurn, GameStateValidationError, type GameState } from "../state";
 import type { GameSessionDetail } from "@/lib/repositories/gameSessionRepository";
-import { applyExplorationAction } from "./engine";
+import { applyExplorationAction, refreshWorldEvents } from "./engine";
 import { ExplorationError, explorationStateSchema } from "./contracts";
 import { sessionExplorationTemplate } from "./templateReference";
-import { explorationMessages } from "./prompt";
+import { explorationMessages, FREE_ACTION_PROMPT_VERSION } from "./prompt";
 import { appendPerception, perceptionScope, recordPerceptions } from "./perception";
 import { formatSemanticInput } from "./semanticContracts";
 import { getWorldTemplate } from "./catalog";
@@ -34,10 +34,14 @@ export async function resolveExplorationTurn(session: GameSessionDetail, input: 
       backstory: player.description.slice(0, 600), personality: player.personality.slice(0, 600) || "由玩家决定",
       goals: player.goals, boundaries: player.boundaries });
   }
+  // Only an explicitly action-only submission is a scene resolution. Mixed narration,
+  // private notes and dialogue keep their existing non-authoritative semantics.
+  const freeAction = !action && Boolean(input.semanticInput?.length && input.semanticInput.every((part) => part.kind === "action"));
+  if (freeAction) state.tick++;
   state.receipt = { requestId: input.requestId!, fingerprint };
   const scope = perceptionScope(session, input.parentTurnId, { requestId: input.requestId!, state });
   recordPerceptions(state, scope, input.requestId!, input.semanticInput, action, resolve);
-  recordEventKnowledge(parent.exploration, state, resolve(state.templateId, state.templateVersion), input.requestId!, action);
+  if (!freeAction) recordEventKnowledge(parent.exploration, state, resolve(state.templateId, state.templateVersion), input.requestId!, action);
   const targetId = dialogues[0]?.targetId;
   const shouldGenerate = !encounter && Boolean(input.narrate || (input.semanticInput &&
     input.semanticInput.some((part) => !["private_thought", "ooc_instruction"].includes(part.kind))));
@@ -45,10 +49,22 @@ export async function resolveExplorationTurn(session: GameSessionDetail, input: 
   let model = encounter?.model ?? "host-exploration/v1";
   if (shouldGenerate) {
     const content = input.semanticInput ? formatSemanticInput(input.semanticInput) : input.content;
-    const generated = await generator.generate(explorationMessages(state, content, targetId, [], session.safetyBoundaries, scope, resolve), signal);
+    if (signal?.aborted) throw new ExplorationError("行动已取消，原分支未改变。");
+    const generated = await generator.generate(explorationMessages(state, content, targetId, [], session.safetyBoundaries, scope, resolve, freeAction), signal,
+      freeAction ? { promptVersion: FREE_ACTION_PROMPT_VERSION } : undefined);
+    if (signal?.aborted) throw new ExplorationError("生成已取消，原分支未改变；可能已产生API费用。");
     const output = parseGameModelTurn(generated.content);
     if (Object.keys(output.statePatch).length) throw new GameStateValidationError("GAME_OUTPUT_INVALID", "AI不能改写探索动作的确定性结算；本回合未保存。");
-    assistantContent = `${action ? `${state.lastResult}\n\n---\n\n` : "主持建议（不替人物发言，不自动成为世界事实）\n\n"}${output.narrative}`;
+    assistantContent = `${action ? `${state.lastResult}\n\n---\n\n` : freeAction ? "" : "主持建议（不替人物发言，不自动成为世界事实）\n\n"}${output.narrative}`;
+    if (freeAction) {
+      // The full narrative remains in the immutable turn; this field is a bounded recent-scene excerpt.
+      state.lastResult = output.narrative.slice(0, 600);
+      state.history = [...state.history, { id: `${input.requestId}:free-action`, tick: state.tick, kind: "fact" as const,
+        origin: "play" as const, text: state.lastResult, locationId: state.locationId, actorIds: ["player"], eventId: null, source: input.requestId! }].slice(-200);
+      appendPerception(state, { sourceRequestId: input.requestId!, tick: state.tick, locationId: state.locationId,
+        kind: "host_result", speakerId: "host", audience: ["player"], evidence: "fact", text: output.narrative.slice(0, 2000) });
+      refreshWorldEvents(state, resolve(state.templateId, state.templateVersion), input.requestId!);
+    }
     if (targetId) {
       const present = Object.values(state.characters).filter((person) => person.locationId === state.locationId && person.controller !== "user").map((person) => person.id);
       appendPerception(state, { sourceRequestId: input.requestId!, tick: state.tick, locationId: state.locationId,
@@ -57,6 +73,7 @@ export async function resolveExplorationTurn(session: GameSessionDetail, input: 
     }
     model = generated.model;
   }
+  if (freeAction) recordEventKnowledge(parent.exploration, state, resolve(state.templateId, state.templateVersion), input.requestId!, action);
   return { state: { ...parent, exploration: explorationStateSchema.parse(state),
     scene: state.view.locations.find((place) => place.id === state.locationId)!.name }, assistantContent, model,
     playerContent: input.semanticInput ? formatSemanticInput(input.semanticInput) : input.content };

@@ -7,9 +7,10 @@ import type { WorldTemplateResolver } from "./templateRegistry";
 
 export const EXPLORATION_CONTEXT_BUDGET = 14000;
 export const EXPLORATION_PROMPT_VERSION = "r10/exploration-v3";
+export const FREE_ACTION_PROMPT_VERSION = "world-free-action/v1";
 export function explorationMessages(state: ExplorationState, content: string, targetId?: string,
   history: readonly { playerContent: string; assistantContent: string }[] = [], boundaries: readonly string[] = [], scope?: PerceptionScope,
-  resolve: WorldTemplateResolver = getWorldTemplate): ChatCompletionMessage[] {
+  resolve: WorldTemplateResolver = getWorldTemplate, freeAction = false): ChatCompletionMessage[] {
   if (targetId !== undefined) {
     if (!scope) throw new ExplorationError("人物调用必须提供服务端构建的来源范围。");
     const context = actorContext(state, targetId, scope, resolve);
@@ -70,7 +71,7 @@ export function explorationMessages(state: ExplorationState, content: string, ta
   return [
     { role: "system", content: `你是叙事型探索世界的中文主持人。只处理独立虚构 GameSession，不访问或写入现实记忆、任务或个人身份。
 普通交流不掷骰，不追求数值膨胀。评级、品质、等阶和等级不是成功概率。使用当前地点和本次宿主事实，保持角色动机、语气、边界与关系连续；NPC可以拒绝、协商、提出自己的需要。
-自由主持叙事不是人物台词；只描写环境、回应意图或提出可选行动，不替NPC发言或声称NPC已经知道秘密，需要角色回应时引导到人物交流。未知内容保持未知，不擅自解锁地区或创建历史事实。私人想法不对外公开，旁白建议与行动意图不是已完成动作；场外指令不变成世界事实。
+${freeAction ? "本次是自由行动的场景裁决，不是主持建议：根据玩家主动选择的行动与世界条件，描述其合理尝试、可观察过程和眼下结果，并保留失败、平静与无事发生的可能。生成结果将作为当前分支的场景经历保存，下一次必须承接；不需要预设剧情、任务、线索、触发器或固定选项才能行动。不要每次加入委托、神秘人、危机或反转，不强推故事；生活、练习、休息、研究、经营准备等均可以是目标本身。只裁决用户本次明确提交的尝试，不代替玩家决定下一步、许诺或内心。不替NPC发言或声称NPC已经知道秘密，需要角色回应时引导到人物交流。允许合理的环境细节自然涌现，但不得据此新造已具名人物、关键史实、远处真相或秘密线索。私人想法不对外公开；场外指令不变成世界事实。现有事件是可选背景，不是行动许可，不要求先推进它。" : "自由主持叙事不是人物台词；只描写环境、回应意图或提出可选行动，不替NPC发言或声称NPC已经知道秘密，需要角色回应时引导到人物交流。未知内容保持未知，不擅自解锁地区或创建历史事实。私人想法不对外公开，旁白建议与行动意图不是已完成动作；场外指令不变成世界事实。"}
 保留玩家控制权，不替玩家决定关键行动、承诺、内心或结局。传说、传闻、观点不冒充已证实事实。
 地图移动、获得/消耗/赠送/买卖道具、关系升级、事件结算仅由结构化动作确定。没有宿主结果时不得声称这些改变已经发生；将自由输入中的此类意图提示为待确认动作。AI不能创造确定性动作未支持的交易、装备或奖励。
 本局内容边界（始终遵守）：${boundaries.slice(0, 20).map((line) => line.slice(0, 300)).join("；") || "保持适度，不出现露骨或血腥细节"}。

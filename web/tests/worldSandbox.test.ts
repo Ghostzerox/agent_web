@@ -31,22 +31,44 @@ it("publishes an empty sandbox and persists natural encounters only in the selec
     await worlds.publish(draft.id, draft.version); let session = await worlds.createSave(draft.id, 1, crypto.randomUUID());
     session = await sessions.updateStatus(session.id, { expectedVersion: session.version, status: "active", now: new Date() });
     const generator = { generate: vi.fn(async (messages: ChatCompletionMessage[], _signal?: AbortSignal, options?: { promptVersion: string }) => {
-      requests.push(messages); return { content: options?.promptVersion === "world-encounter/v1" ? JSON.stringify({ observation: "步道边，一位菜农正坐在树荫下休息。", person }) : '{"narrative":"我在这里歇会儿，你也走累了吗？","statePatch":{}}', model: "synthetic" };
+      requests.push(messages); return { content: options?.promptVersion === "world-encounter/v1" ? JSON.stringify({ observation: "步道边，一位菜农正坐在树荫下休息。", person }) : options?.promptVersion === "world-free-action/v1" ? '{"narrative":"你在树荫下伸展手臂，练习了一会儿呼吸，然后安静地歇息。","statePatch":{}}' : '{"narrative":"我在这里歇会儿，你也走累了吗？","statePatch":{}}', model: "synthetic" };
     }) };
     const service = createGameTurnService(sessions, generator, undefined, undefined, worlds.resolveSessionTemplate);
     const step = async (body: object, parentTurnId = session.activeLeafTurnId) => { session = await service.create(session.id, createGameTurnSchema.parse({ content: "合成行动", expectedVersion: session.version, parentTurnId, requestId: crypto.randomUUID(), ...body })); return session; };
     await step({ explorationAction: { action: "start", templateId: `world-${draft.id}`, templateVersion: "1.0.1" } });
     const startId = session.activeLeafTurnId!; expect(session.turns.at(-1)!.stateSnapshot.exploration!.view.events).toEqual([]); expect(generator.generate).not.toHaveBeenCalled();
+    const original = structuredClone(session.turns.at(-1)!.stateSnapshot.exploration!);
+    const freeRequest = crypto.randomUUID();
+    const freeInput = createGameTurnSchema.parse({ content: "练习呼吸后歇一会儿，不要接任务", parentTurnId: startId, expectedVersion: session.version,
+      requestId: freeRequest, semanticInput: [{ kind: "action", text: "练习呼吸后歇一会儿，不要接任务" }] });
+    session = await service.create(session.id, freeInput);
+    const freeTurn = session.turns.at(-1)!; const freeState = freeTurn.stateSnapshot.exploration!;
+    expect(generator.generate).toHaveBeenCalledTimes(1);
+    expect(generator.generate.mock.calls.at(-1)![2]?.promptVersion).toBe("world-free-action/v1");
+    expect(JSON.stringify(requests.at(-1))).toContain("不需要预设剧情");
+    expect(freeTurn.assistantContent).not.toContain("主持建议");
+    expect(freeState).toMatchObject({ tick: original.tick + 1, instances: original.instances, coins: original.coins, locationId: original.locationId });
+    expect(freeState.history).toContainEqual(expect.objectContaining({ source: freeRequest, kind: "fact", text: expect.stringContaining("呼吸") }));
+    expect(freeState.cognition!.records.filter((entry) => entry.sourceRequestId === freeRequest).every((entry) => entry.tick === freeState.tick && entry.audience.join() === "player")).toBe(true);
+    expect((await service.create(session.id, freeInput))).toEqual(session); expect(generator.generate).toHaveBeenCalledTimes(1);
+    const reloaded = await createGameSessionRepository(db).get(session.id);
+    expect(reloaded!.turns.at(-1)!.stateSnapshot.exploration!.lastResult).toContain("呼吸");
+    // A sibling from before the free action cannot inherit that scene result.
+    await step({ explorationAction: { action: "wait" } }, startId);
+    expect(session.turns.at(-1)!.stateSnapshot.exploration!.history.some((entry) => entry.source === freeRequest)).toBe(false);
+    // Continue on the action branch; the following encounter still uses its own independent scope.
+    session = { ...session, activeLeafTurnId: freeTurn.id };
     await step({ explorationAction: { action: "encounter", activity: "沿步道散步看看周围", confirmed: true } });
     const state = session.turns.at(-1)!.stateSnapshot.exploration!; const actorId = state.encounters![0].actorId;
     expect(state.characters[actorId]).toMatchObject({ name: person.name, category: "npc", controller: "ai", knownInformation: [] });
     const promoted = structuredClone(state); promoted.characters[actorId].category = "important";
     expect(withEncounterCharacters(compileWorld(draft.id, 1, input, blank), promoted).characters.find((entry) => entry.card.id === actorId)?.card.category).toBe("important");
-    expect((await worlds.get(draft.id)).content!.characters).toEqual([]); expect(generator.generate).toHaveBeenCalledTimes(1);
+    expect((await worlds.get(draft.id)).content!.characters).toEqual([]); expect(generator.generate).toHaveBeenCalledTimes(2);
     expect((await createGameSessionRepository(db).get(session.id))!.turns.at(-1)!.stateSnapshot.exploration!.encounters).toHaveLength(1);
     await step({ semanticInput: [{ kind: "private_thought", text: "SYNTH_PRIVATE_THOUGHT" }, { kind: "dialogue", targetId: actorId, text: "你好", channel: "direct" }] });
-    expect(generator.generate).toHaveBeenCalledTimes(2); const actorPrompt = JSON.stringify(requests.at(-1));
+    expect(generator.generate).toHaveBeenCalledTimes(3); const actorPrompt = JSON.stringify(requests.at(-1));
     expect(actorPrompt).toContain("单个人物"); expect(actorPrompt).not.toContain("SYNTH_PRIVATE_THOUGHT");
+    expect(actorPrompt).not.toContain("练习了一会儿呼吸");
     await step({ explorationAction: { action: "wait" } }, startId);
     expect(session.turns.at(-1)!.stateSnapshot.exploration!.characters[actorId]).toBeUndefined();
     expect(session.turns.at(-1)!.stateSnapshot.exploration!.encounters).toBeUndefined();

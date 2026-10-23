@@ -3,7 +3,7 @@
 - 当前阶段：Mobile M1.3 本地通知发布加固代码已完成；2026-10-17 按用户要求暂缓真机回归，统一合并前期、R5.6 与后续设备检查
 - 构建类型：仅 Debug APK，不是可发布签名版本
 - 应用 ID：`com.ghostzero.aistudycompanion`
-- 最近大阶段重包：2026-10-21 R12，构建 / 110个Bundle文件逐项核对 / APK v2签名通过，未安装；大小与SHA-256见[R12报告](reports/R12_REPORT.md)。历史R10证据仍见[R10报告](reports/R10_6_REPORT.md)。
+- 最近功能重包：2026-10-23 开放行动 / 世界结果恢复，构建 / 本地React资源与Origin / APK v2签名通过，未安装；大小与SHA-256见[世界创作指南](WORLD_CREATION_GUIDE.md)。历史大阶段证据见[R12报告](reports/R12_REPORT.md)与[R10报告](reports/R10_6_REPORT.md)。
 
 真机测试的排期、历史结果和合并清单见 [真机验收统一待办](DEVICE_ACCEPTANCE_BACKLOG.md)。以下矩阵保留操作细节，恢复测试时集中执行，不要求现在逐项操作；暂缓不等于通过，不阻塞后续无关功能开发。
 

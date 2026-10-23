@@ -3,7 +3,7 @@ import { z } from "zod";
 const text = z.string().trim().min(1).max(2000);
 const actorId = z.string().min(1).max(60);
 export const SEMANTIC_LABELS = {
-  dialogue: "台词", action: "行动意图", world_narration: "旁白建议",
+  dialogue: "台词", action: "自由行动", world_narration: "旁白建议",
   private_thought: "私人想法", ooc_instruction: "场外创作指令",
 } as const;
 export const semanticFragmentSchema = z.discriminatedUnion("kind", [

@@ -4,6 +4,8 @@ import { blankWorldBlueprint } from "@/lib/game/worlds/blueprint";
 import { WORLD_SECTIONS, type WorldBrief } from "@/lib/game/worlds/contracts";
 import { validateWorldGenerationOutput, worldGenerationPatchSchema } from "@/lib/game/worlds/generationValidation";
 import { seededWorldBlueprint } from "./helpers/worldBlueprint";
+import { designKey, MAX_DESIGN_KEY_LENGTH } from "@/lib/game/worlds/assetContracts";
+import { compileWorld } from "@/lib/game/worlds/compile";
 
 const brief: WorldBrief = { brief: "合成无魔法港城", magic: "forbidden", numericPolicy: "qualitative", constraints: [] };
 describe("world generation contract shared by prompt, server and local recovery", () => {
@@ -22,6 +24,30 @@ describe("world generation contract shared by prompt, server and local recovery"
     const full = JSON.stringify(blankWorldBlueprint(brief));
     expect(validateWorldGenerationOutput(`\n\`\`\`json\n${full}\n\`\`\`\n`, [...WORLD_SECTIONS], null)).toMatchObject({ success: true, normalizedCodeFence: true });
     for (const raw of ['{"overview":', `解释：${full}`, "null", "[]"]) expect(validateWorldGenerationOutput(raw, [...WORLD_SECTIONS], null).success).toBe(false);
+  });
+  it("losslessly accepts BOM/whitespace and one JSON-string transport wrapper, never repairs incomplete facts", () => {
+    const full = JSON.stringify(blankWorldBlueprint(brief));
+    for (const raw of [`\uFEFF  ${full}\n`, JSON.stringify(full), `\uFEFF\n\`\`\`json\n${full}\n\`\`\``])
+      expect(validateWorldGenerationOutput(raw, [...WORLD_SECTIONS], null)).toMatchObject({ success: true });
+    for (const raw of [full.slice(0, -2), JSON.stringify(full.slice(0, -2)), JSON.stringify(JSON.stringify(full))])
+      expect(validateWorldGenerationOutput(raw, [...WORLD_SECTIONS], null).success).toBe(false);
+    const failed = validateWorldGenerationOutput('{"opening": true\n "overview": 1}', ["opening"], blankWorldBlueprint(brief));
+    expect(failed).toMatchObject({ success: false, stage: "json", issues: [{ path: "$", message: expect.stringContaining("第2行") }] });
+  });
+  it("accepts descriptive IDs beyond 24 characters and safely compiles the maximum derived map ID", () => {
+    const content = blankWorldBlueprint(brief);
+    content.lore = [{ id: `synthetic-rule-${"x".repeat(11)}`, text: "合成世界的普通公开规则", locationId: content.region.startId, kind: "fact", visibility: "public", knownBy: [] }];
+    expect(content.lore[0].id).toHaveLength(26);
+    expect(validateWorldGenerationOutput(JSON.stringify(content), [...WORLD_SECTIONS], null).success).toBe(true);
+    const old = content.region.startId; const longest = "a".repeat(MAX_DESIGN_KEY_LENGTH);
+    content.region.startId = longest;
+    content.region.locations = content.region.locations.map((place) => ({ ...place, id: place.id === old ? longest : place.id, exits: place.exits.map((id) => id === old ? longest : id) }));
+    content.lore[0].locationId = longest;
+    const template = compileWorld(crypto.randomUUID(), 1, brief, content);
+    expect(template.locations[0].points[0].id).toHaveLength(60);
+    expect(designKey.safeParse(`${longest}a`).success).toBe(false);
+    for (const id of ["player", "host", "constructor", "prototype", "中文"])
+      expect(designKey.safeParse(id).success).toBe(false);
   });
   it("reports exact missing nested paths, leaving caller input unchanged", () => {
     const content = seededWorldBlueprint(brief);

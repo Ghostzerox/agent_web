@@ -198,6 +198,32 @@ describe("current exploration service boundary regression", () => {
     expect(detail).toEqual(before);
   });
 
+  it("resolves explicit free actions in one call, with scene continuity but no model-authored inventory", async () => {
+    const detail = syntheticSession(); const before = structuredClone(detail.turns[0].stateSnapshot.exploration!);
+    const { service, requests } = harness(detail, { narrative: "你靠在窗边歇息了一会儿，海风慢慢平静下来。", statePatch: {} });
+    const result = await service.create(sessionId, createGameTurnSchema.parse({ content: "歇息", parentTurnId: rootId, expectedVersion: 1, requestId,
+      semanticInput: [{ kind: "action", text: "靠在窗边歇息，不追查任何线索" }] }));
+    const turn = result.turns.at(-1)!; const state = turn.stateSnapshot.exploration!;
+    expect(requests).toHaveLength(1); expect(requests[0].promptVersion).toBe("world-free-action/v1");
+    expect(requests[0].messages[0].content).toContain("场景裁决"); expect(requests[0]).not.toHaveProperty("maxOutputTokens");
+    expect(state.tick).toBe(before.tick + 1); expect(state.instances).toEqual(before.instances); expect(state.coins).toBe(before.coins);
+    expect(state.locationId).toBe(before.locationId); expect(state.lastResult).toContain("歇息");
+    expect(turn.assistantContent).not.toContain("主持建议"); expect(detail.turns[0].stateSnapshot.exploration).toEqual(before);
+    expect(JSON.stringify(actorContext(state, "keeper", perceptionScope(result, result.activeLeafTurnId)))).not.toContain("海风慢慢平静下来");
+  });
+
+  it.each(["bad-json", "state-patch", "canceled"])("does not save a failed free-action outcome: %s", async (mode) => {
+    const detail = syntheticSession(); const before = structuredClone(detail); const { service, repository, stream } = harness(detail);
+    const controller = new AbortController();
+    stream.mockImplementationOnce(async function* () {
+      if (mode === "canceled") controller.abort();
+      yield { type: "delta" as const, text: mode === "bad-json" ? "{broken" : JSON.stringify({ narrative: "合成结果", statePatch: mode === "state-patch" ? { adjustResources: { gold: 100 } } : {} }) };
+    });
+    await expect(service.create(sessionId, createGameTurnSchema.parse({ content: "自由行动", parentTurnId: rootId, expectedVersion: 1, requestId,
+      semanticInput: [{ kind: "action", text: "在这里练习" }] }), controller.signal)).rejects.toThrow();
+    expect(repository.appendTurn).not.toHaveBeenCalled(); expect(await repository.get(sessionId)).toEqual(before); expect(stream).toHaveBeenCalledTimes(1);
+  });
+
   it("C11 enforces numeric policy at the world boundary instead of globally requiring item levels", () => {
     const state = startWorld("fog-harbor", "1.0.0"); const item = state.view.items[0];
     expect(worldItemSchema.safeParse(item).success).toBe(true);
@@ -233,7 +259,7 @@ describe("R10.2 executable semantic acceptance", () => {
     const result = await service.create(sessionId, createGameTurnSchema.parse({ content: "语义输入", parentTurnId: rootId,
       expectedVersion: 1, requestId, semanticInput: [{ kind: "world_narration", text: "港外下雨" }, { kind: "action", text: "收起伞" }] }));
     const turn = result.turns.at(-1)!;
-    expect(turn.playerContent).toContain("[旁白建议]"); expect(turn.playerContent).toContain("[行动意图]");
+    expect(turn.playerContent).toContain("[旁白建议]"); expect(turn.playerContent).toContain("[自由行动]");
     expect(JSON.stringify(turn.stateSnapshot.exploration!.cognition)).not.toContain("玩家说");
     expect(requests[0].messages[0].content).toContain("中文主持人");
     expect(turn.stateSnapshot.exploration!.flags).toEqual(syntheticSession().turns[0].stateSnapshot.exploration!.flags);

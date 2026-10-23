@@ -2,7 +2,10 @@ import { z } from "zod";
 import { attributeRuleSchema, characterPersonaSchema, worldItemSchema } from "../exploration/contracts";
 
 const text = z.string().trim().min(1).max(600);
-export const designKey = z.string().regex(/^[a-z][a-z0-9-]{0,23}$/u).refine((id) => !["player", "host", "constructor", "prototype"].includes(id));
+// Runtime keys allow 60 characters; leave ten for derived IDs such as "-discovery".
+export const MAX_DESIGN_KEY_LENGTH = 50;
+export const designKey = z.string().max(MAX_DESIGN_KEY_LENGTH, "引用标识最多50字符").regex(/^[a-z][a-z0-9-]*$/u)
+  .refine((id) => !["player", "host", "constructor", "prototype"].includes(id));
 const personKey = z.union([z.literal("player"), designKey]);
 export const itemRulesSchema = z.object({ slots: z.array(designKey).max(8), attributes: z.array(attributeRuleSchema).max(8) }).strict();
 export const characterProfileSchema = characterPersonaSchema.extend({ faction: text, appearance: text, publicBackground: text,
